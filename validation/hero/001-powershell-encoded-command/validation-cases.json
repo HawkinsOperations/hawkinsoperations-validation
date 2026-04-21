@@ -1,0 +1,82 @@
+{
+  "positives": [
+    {
+      "id": "pos-001",
+      "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "CommandLine": "powershell.exe -NoP -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAKQA="
+    },
+    {
+      "id": "pos-002",
+      "Image": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "CommandLine": "pwsh.exe -encodedcommand SQBuAHYAbwBrAGUALQBXAGUAYgBSAGUAcQB1AGUAcwB0AA=="
+    },
+    {
+      "id": "pos-003",
+      "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "CommandLine": "powershell.exe -Command [Convert]::FromBase64String('SQBFAFgA')"
+    },
+    {
+      "id": "pos-004",
+      "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "CommandLine": "powershell.exe -w hidden -enc UwB0AGEAcgB0AC0AUAByAG8AYwBlAHMAcwA="
+    },
+    {
+      "id": "pos-005",
+      "Image": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "CommandLine": "pwsh.exe -NoProfile -EncodedCommand SQBFAFgAIAAtAE4AbwBQAHIAbwBmAGkAbABlAA=="
+    }
+  ],
+  "negatives": [
+    {
+      "id": "neg-001",
+      "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "CommandLine": "powershell.exe -File C:\\Scripts\\daily-maintenance.ps1"
+    },
+    {
+      "id": "neg-002",
+      "Image": "C:\\Windows\\System32\\cmd.exe",
+      "CommandLine": "cmd.exe /c echo hello -enc"
+    },
+    {
+      "id": "neg-003",
+      "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "CommandLine": "powershell.exe -Command Get-Process"
+    },
+    {
+      "id": "neg-004",
+      "Image": "C:\\Windows\\System32\\wscript.exe",
+      "CommandLine": "wscript.exe //e:vbscript C:\\Temp\\run.vbs"
+    },
+    {
+      "id": "neg-005",
+      "Image": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "CommandLine": "pwsh.exe -NoProfile -Command Get-Date"
+    },
+    {
+      "id": "neg-006",
+      "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "CommandLine": "powershell.exe -nop -command \"[Text.Encoding]::UTF8.GetString($bytes)\""
+    },
+    {
+      "id": "neg-007",
+      "Image": "C:\\Windows\\System32\\mshta.exe",
+      "CommandLine": "mshta.exe http://example.local/test.hta"
+    },
+    {
+      "id": "neg-008",
+      "Image": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "CommandLine": "pwsh.exe -NoLogo -File .\\build.ps1"
+    },
+    {
+      "id": "neg-009",
+      "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "CommandLine": "powershell.exe -Command \"$x='-enc'; Write-Output $x\""
+    },
+    {
+      "id": "neg-010",
+      "Image": "C:\\Windows\\System32\\notepad.exe",
+      "CommandLine": "notepad.exe"
+    }
+  ]
+}
+

@@ -1,0 +1,105 @@
+{
+  "rule_id": "HOD-001",
+  "rule_name": "PowerShell Encoded Command",
+  "executed_at": "2026-04-21T10:54:31-05:00",
+  "totals": {
+    "total_cases": 15,
+    "pass": 15,
+    "fail": 0
+  },
+  "positive": [
+    {
+      "id": "pos-001",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-002",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-003",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-004",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-005",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    }
+  ],
+  "negative": [
+    {
+      "id": "neg-001",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-002",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-003",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-004",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-005",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-006",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-007",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-008",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-009",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-010",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    }
+  ],
+  "status": "pass"
+}

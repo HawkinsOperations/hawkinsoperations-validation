@@ -1,7 +1,22 @@
 {
   "ledger_version": "1.0.0",
   "repository": "hawkinsoperations-validation",
-  "generated_at": "2026-04-21T00:00:00Z",
-  "entries": []
+  "generated_at": "2026-04-21T10:54:31-05:00",
+  "entries": [
+    {
+      "id": "VAL-HOD-001-2026-04-21-001",
+      "timestamp": "2026-04-21T10:54:31-05:00",
+      "type": "validation_report",
+      "summary": "Hero Rule 001 baseline harness execution; 15/15 cases passed.",
+      "artifact_paths": [
+        "reports/hero001-validation-report.json",
+        "reports/hero001-validation-report.md",
+        "validation/hero/001-powershell-encoded-command/validation-cases.json",
+        "scripts/validate-hero001.ps1"
+      ],
+      "sha256": "b919006a124f241b1a8dbbfa2c25e2d3a4dceb06adde1d2ecaaf2bfdd9fafc81",
+      "source_ref": "HOD-001",
+      "notes": "Starter validation run for first hero detection."
+    }
+  ]
 }
-

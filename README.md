@@ -30,10 +30,16 @@ This repository verifies that detection logic behaves as intended against contro
 - Reproducible test methodology
 - Versioned pass/fail snapshots
 
+## Current Validation Work
+
+- Hero Rule `001-powershell-encoded-command`
+  - Cases: `validation/hero/001-powershell-encoded-command/validation-cases.json`
+  - Harness: `scripts/validate-hero001.ps1`
+  - Report output: `reports/hero001-validation-report.json`
+
 ## Related Repositories
 
 - Detections: `hawkinsoperations-detections`
 - Platform: `hawkinsoperations-platform`
 - Proof: `hawkinsoperations-proof`
 - Website: `hawkinsoperations-website`
-

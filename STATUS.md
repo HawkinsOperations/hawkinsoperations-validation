@@ -2,13 +2,12 @@
 
 ## Current Milestone
 
-Governance baseline initialized.
+Governance baseline initialized and Hero Rule 001 validation scaffold added.
 
 ## Next Gate
 
-Add first executable validation harness and one report record in evidence ledger.
+Run and record Hero Rule 001 validation output in evidence ledger.
 
 ## Blocking Risks
 
 - None currently recorded.
-
