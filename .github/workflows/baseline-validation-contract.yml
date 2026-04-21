@@ -1,0 +1,22 @@
+name: baseline-validation-contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  baseline-hero-validation-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate Baseline Hero Validation Contract
+        # Scope is intentionally narrow right now:
+        # - validates HOD-001 baseline validation report schema shape
+        # - validates current baseline hero validation artifact paths
+        # - does not yet validate non-hero families or cross-repo linkage
+        run: python3 ./scripts/verify_validation_contract.py

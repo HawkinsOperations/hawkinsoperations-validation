@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Validation Report Contract",
+  "type": "object",
+  "required": [
+    "rule_id",
+    "executed_at",
+    "totals",
+    "status"
+  ],
+  "properties": {
+    "rule_id": { "type": "string" },
+    "rule_name": { "type": "string" },
+    "executed_at": { "type": "string" },
+    "totals": {
+      "type": "object",
+      "required": ["total_cases", "pass", "fail"],
+      "properties": {
+        "total_cases": { "type": "integer", "minimum": 0 },
+        "pass": { "type": "integer", "minimum": 0 },
+        "fail": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pass", "fail"]
+    }
+  },
+  "additionalProperties": true
+}
