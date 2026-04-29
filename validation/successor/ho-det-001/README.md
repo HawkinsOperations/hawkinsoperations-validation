@@ -16,6 +16,14 @@ python scripts/autosoc-triage-ho-det-001.py --input reports/ho-det-001/validatio
 python scripts/offline-llm-summary-ho-det-001.py --input validation/successor/ho-det-001/autosoc-triage-packet.json
 ```
 
+The default mode is check-only and does not rewrite committed artifacts. Use `--write` only when intentionally regenerating the JSON and Markdown artifacts:
+
+```powershell
+python scripts/validate-ho-det-001.py --write
+python scripts/autosoc-triage-ho-det-001.py --input reports/ho-det-001/validation-result.json --write
+python scripts/offline-llm-summary-ho-det-001.py --input validation/successor/ho-det-001/autosoc-triage-packet.json --write
+```
+
 ## Artifact Map
 
 | Artifact | Purpose |

@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -209,6 +210,19 @@ def write_reports(report: dict[str, Any]) -> None:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Validate HO-DET-001 synthetic process-creation fixtures.")
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="Regenerate validation-result JSON and Markdown artifacts. Default is check-only and writes nothing.",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Run check-only mode. This is the default and is kept for explicit CI/readiness usage.",
+    )
+    args = parser.parse_args()
+
     source_text = read_text(SOURCE_FILE, "HO-DET-001 source rule")
     read_text(SPLUNK_SOURCE_FILE, "HO-DET-001 Splunk source")
     validate_source_contract(source_text)
@@ -248,15 +262,20 @@ def main() -> int:
         "trust_boundary": "Synthetic process-creation fixture validation only. This is not runtime, signal, evidence-linked, public-safe, production, or live SOC proof.",
         "privacy_status": "Synthetic fixtures only; no secrets, private hostnames, private addresses, or live telemetry intentionally included.",
     }
-    write_reports(report)
+    if args.write:
+        write_reports(report)
     print(f"STATUS={status}")
+    print(f"MODE={'write' if args.write else 'check'}")
     print(f"DETECTION_ID=HO-DET-001")
     print(f"TOTAL_CASES={report['totals']['total_cases']}")
     print(f"MATCHED_POSITIVE_COUNT={report['matched_positive_count']}")
     print(f"MISSED_POSITIVE_CASES={','.join(missed) if missed else 'none'}")
     print(f"FALSE_POSITIVE_NEGATIVE_CASES={','.join(false_positive) if false_positive else 'none'}")
-    print(f"REPORT_JSON={REPORT_JSON}")
-    print(f"REPORT_MD={REPORT_MD}")
+    if args.write:
+        print(f"REPORT_JSON={REPORT_JSON}")
+        print(f"REPORT_MD={REPORT_MD}")
+    else:
+        print("WRITE_SKIPPED=true")
     if status != "pass":
         return 1
     return 0

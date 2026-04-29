@@ -45,6 +45,16 @@ def sha256_file(path: Path) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate HO-DET-001 synthetic AutoSOC triage packet.")
     parser.add_argument("--input", required=True, type=Path, help="Path to validation-result.json")
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="Regenerate autosoc-triage-packet.json. Default is check-only and writes nothing.",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Run check-only mode. This is the default and is kept for explicit CI/readiness usage.",
+    )
     args = parser.parse_args()
 
     result_path = args.input.resolve()
@@ -83,13 +93,18 @@ def main() -> int:
         "generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
     }
 
-    PACKET_PATH.parent.mkdir(parents=True, exist_ok=True)
-    PACKET_PATH.write_text(json.dumps(packet, indent=2) + "\n", encoding="utf-8")
+    if args.write:
+        PACKET_PATH.parent.mkdir(parents=True, exist_ok=True)
+        PACKET_PATH.write_text(json.dumps(packet, indent=2) + "\n", encoding="utf-8")
     print("STATUS=pass")
+    print(f"MODE={'write' if args.write else 'check'}")
     print(f"PACKET_ID={packet['packet_id']}")
     print(f"DISPOSITION={packet['disposition']}")
     print(f"VALIDATION_RESULT_HASH={packet['validation_result_hash']}")
-    print(f"PACKET={PACKET_PATH}")
+    if args.write:
+        print(f"PACKET={PACKET_PATH}")
+    else:
+        print("WRITE_SKIPPED=true")
     return 0
 
 

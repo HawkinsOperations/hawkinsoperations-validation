@@ -46,6 +46,16 @@ def sha256_file(path: Path) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate deterministic HO-DET-001 offline LLM support stub.")
     parser.add_argument("--input", required=True, type=Path, help="Path to autosoc-triage-packet.json")
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="Regenerate llm-summary.json. Default is check-only and writes nothing.",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Run check-only mode. This is the default and is kept for explicit CI/readiness usage.",
+    )
     args = parser.parse_args()
 
     packet_path = args.input.resolve()
@@ -70,13 +80,18 @@ def main() -> int:
         "privacy_status": "Synthetic packet only; no live telemetry, secrets, private hostnames, or private addresses intentionally included.",
     }
 
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    if args.write:
+        SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+        SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print("STATUS=pass")
+    print(f"MODE={'write' if args.write else 'check'}")
     print("MODEL_RUNTIME_STATUS=BLOCKED")
     print("EXECUTION_MODE=deterministic_stub_no_model_call")
     print(f"INPUT_PACKET_HASH={summary['input_packet_hash']}")
-    print(f"SUMMARY={SUMMARY_PATH}")
+    if args.write:
+        print(f"SUMMARY={SUMMARY_PATH}")
+    else:
+        print("WRITE_SKIPPED=true")
     return 0
 
 
