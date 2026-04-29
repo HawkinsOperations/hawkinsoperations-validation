@@ -1,0 +1,26 @@
+{
+  "packet_id": "HO-DET-001-SYNTHETIC-TRIAGE-001",
+  "detection_id": "HO-DET-001",
+  "synthetic_case_refs": {
+    "positive_count": 7,
+    "negative_count": 7
+  },
+  "validation_result_ref": "hawkinsoperations-validation/reports/ho-det-001/validation-result.json",
+  "validation_result_hash": "59cefce14890c190c7b3b7deecaedef0725f5a5d4ec44a2031010834f9139318",
+  "disposition": "REVIEW_SYNTHETIC_DETECTION",
+  "disposition_basis": "deterministic synthetic validation result only",
+  "reason": "Synthetic HO-DET-001 fixtures matched expected encoded-command positives and did not match controlled negatives.",
+  "matched_positive_count": 7,
+  "missed_positive_cases": [],
+  "false_positive_negative_cases": [],
+  "unsupported_claims": [
+    "live AutoSOC",
+    "production triage",
+    "analyst-approved disposition",
+    "runtime-active",
+    "signal-observed",
+    "public-safe"
+  ],
+  "privacy_status": "Synthetic validation output only; no live telemetry, secrets, private hostnames, or private addresses intentionally included.",
+  "generated_at": "2026-04-29T15:48:44Z"
+}
