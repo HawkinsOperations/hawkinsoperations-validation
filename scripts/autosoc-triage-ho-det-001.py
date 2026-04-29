@@ -38,8 +38,22 @@ def load_json(path: Path) -> dict[str, Any]:
         fail(f"invalid validation result JSON: {exc}")
 
 
-def sha256_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def sha256_repo_text_file(path: Path) -> str:
+    """Hash text as it is stored in the repo blob.
+
+    Git normalizes these committed JSON text artifacts to LF. Windows checkouts
+    can materialize them as CRLF, so provenance hashes normalize CRLF to LF to
+    match the committed/GitHub blob bytes instead of local checkout bytes.
+    """
+
+    text = path.read_text(encoding="utf-8")
+    return hashlib.sha256(text.replace("\r\n", "\n").encode("utf-8")).hexdigest()
+
+
+def comparable_packet(packet: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(packet)
+    normalized.pop("generated_at", None)
+    return normalized
 
 
 def main() -> int:
@@ -81,7 +95,7 @@ def main() -> int:
             "negative_count": int(result.get("totals", {}).get("negative_cases", 0)),
         },
         "validation_result_ref": "hawkinsoperations-validation/reports/ho-det-001/validation-result.json",
-        "validation_result_hash": sha256_file(result_path),
+        "validation_result_hash": sha256_repo_text_file(result_path),
         "disposition": disposition,
         "disposition_basis": "deterministic synthetic validation result only",
         "reason": reason,
@@ -96,6 +110,13 @@ def main() -> int:
     if args.write:
         PACKET_PATH.parent.mkdir(parents=True, exist_ok=True)
         PACKET_PATH.write_text(json.dumps(packet, indent=2) + "\n", encoding="utf-8")
+    else:
+        committed = load_json(PACKET_PATH)
+        if comparable_packet(committed) != comparable_packet(packet):
+            print("FAIL: committed autosoc-triage-packet.json does not match computed packet", file=sys.stderr)
+            print(f"EXPECTED_VALIDATION_RESULT_HASH={packet['validation_result_hash']}", file=sys.stderr)
+            print(f"COMMITTED_VALIDATION_RESULT_HASH={committed.get('validation_result_hash', '')}", file=sys.stderr)
+            return 1
     print("STATUS=pass")
     print(f"MODE={'write' if args.write else 'check'}")
     print(f"PACKET_ID={packet['packet_id']}")

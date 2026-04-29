@@ -39,8 +39,22 @@ def load_json(path: Path) -> dict[str, Any]:
         fail(f"invalid triage packet JSON: {exc}")
 
 
-def sha256_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def sha256_repo_text_file(path: Path) -> str:
+    """Hash text as it is stored in the repo blob.
+
+    Git normalizes these committed JSON text artifacts to LF. Windows checkouts
+    can materialize them as CRLF, so provenance hashes normalize CRLF to LF to
+    match the committed/GitHub blob bytes instead of local checkout bytes.
+    """
+
+    text = path.read_text(encoding="utf-8")
+    return hashlib.sha256(text.replace("\r\n", "\n").encode("utf-8")).hexdigest()
+
+
+def comparable_summary(summary: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(summary)
+    normalized.pop("generated_at", None)
+    return normalized
 
 
 def main() -> int:
@@ -66,7 +80,7 @@ def main() -> int:
     summary = {
         "detection_id": "HO-DET-001",
         "input_packet_ref": "hawkinsoperations-validation/validation/successor/ho-det-001/autosoc-triage-packet.json",
-        "input_packet_hash": sha256_file(packet_path),
+        "input_packet_hash": sha256_repo_text_file(packet_path),
         "model_runtime_status": "BLOCKED",
         "execution_mode": "deterministic_stub_no_model_call",
         "summary_type": "hypothesis_triage_support_only",
@@ -83,6 +97,13 @@ def main() -> int:
     if args.write:
         SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
         SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    else:
+        committed = load_json(SUMMARY_PATH)
+        if comparable_summary(committed) != comparable_summary(summary):
+            print("FAIL: committed llm-summary.json does not match computed summary", file=sys.stderr)
+            print(f"EXPECTED_INPUT_PACKET_HASH={summary['input_packet_hash']}", file=sys.stderr)
+            print(f"COMMITTED_INPUT_PACKET_HASH={committed.get('input_packet_hash', '')}", file=sys.stderr)
+            return 1
     print("STATUS=pass")
     print(f"MODE={'write' if args.write else 'check'}")
     print("MODEL_RUNTIME_STATUS=BLOCKED")

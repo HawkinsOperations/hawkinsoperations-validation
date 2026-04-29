@@ -1,7 +1,7 @@
 {
   "detection_id": "HO-DET-001",
   "input_packet_ref": "hawkinsoperations-validation/validation/successor/ho-det-001/autosoc-triage-packet.json",
-  "input_packet_hash": "38a5d8c4832b9088e6392a30c63d71cf1be9430818aaefc0efe73b03f6b08a27",
+  "input_packet_hash": "e8b862c699090c0fe9b555fbb79295d5ffeec5bd0611e84c34022b0ffeba0ed9",
   "model_runtime_status": "BLOCKED",
   "execution_mode": "deterministic_stub_no_model_call",
   "summary_type": "hypothesis_triage_support_only",
@@ -16,6 +16,6 @@
     "signal-observed",
     "evidence-linked"
   ],
-  "generated_at": "2026-04-29T15:00:48Z",
+  "generated_at": "2026-04-29T15:48:59Z",
   "privacy_status": "Synthetic packet only; no live telemetry, secrets, private hostnames, or private addresses intentionally included."
 }

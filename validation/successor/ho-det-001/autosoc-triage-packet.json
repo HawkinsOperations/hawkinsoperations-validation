@@ -6,7 +6,7 @@
     "negative_count": 7
   },
   "validation_result_ref": "hawkinsoperations-validation/reports/ho-det-001/validation-result.json",
-  "validation_result_hash": "830f63a3966ee3050f80ce3a7465f45bc6df2da814ed7777036dcd4e76139160",
+  "validation_result_hash": "59cefce14890c190c7b3b7deecaedef0725f5a5d4ec44a2031010834f9139318",
   "disposition": "REVIEW_SYNTHETIC_DETECTION",
   "disposition_basis": "deterministic synthetic validation result only",
   "reason": "Synthetic HO-DET-001 fixtures matched expected encoded-command positives and did not match controlled negatives.",
@@ -22,5 +22,5 @@
     "public-safe"
   ],
   "privacy_status": "Synthetic validation output only; no live telemetry, secrets, private hostnames, or private addresses intentionally included.",
-  "generated_at": "2026-04-29T15:00:36Z"
+  "generated_at": "2026-04-29T15:48:44Z"
 }
