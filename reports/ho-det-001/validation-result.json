@@ -1,0 +1,123 @@
+{
+  "status": "pass",
+  "detection_id": "HO-DET-001",
+  "source_file": "hawkinsoperations-detections/detections/successor/ho-det-001/rule.yml",
+  "splunk_source_file": "hawkinsoperations-detections/detections/successor/ho-det-001/splunk.spl",
+  "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-001/validation-cases.json",
+  "executed_at": "2026-04-29T15:00:21Z",
+  "matched_positive_count": 7,
+  "missed_positive_cases": [],
+  "false_positive_negative_cases": [],
+  "totals": {
+    "total_cases": 14,
+    "positive_cases": 7,
+    "negative_cases": 7,
+    "pass": 14,
+    "fail": 0
+  },
+  "positive": [
+    {
+      "id": "pos-001-powershell-enc",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-002-powershell-encodedcommand",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-003-pwsh-enc",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-004-pwsh-encodedcommand",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-005-pwsh-slash-encodedcommand-colon",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-006-frombase64string",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-007-originalfilename-identity",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    }
+  ],
+  "negative": [
+    {
+      "id": "neg-001-powershell-no-encoded-command",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-002-cmd-encoded-looking",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-003-benign-admin-powershell",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-004-missing-image-and-originalfilename",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-005-missing-commandline",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-006-non-powershell-suspicious-argument",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-007-quoted-string-not-flag",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    }
+  ],
+  "exact_claim_supported": "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures.",
+  "claims_not_supported": [
+    "runtime-active",
+    "signal-observed",
+    "evidence-linked",
+    "public-safe",
+    "production-ready",
+    "live Splunk firing",
+    "Cribl-routed telemetry",
+    "Wazuh live collection",
+    "production triage",
+    "analyst-approved disposition"
+  ],
+  "proof_level_before": "SOURCE_EXISTS",
+  "proof_level_after": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "trust_boundary": "Synthetic process-creation fixture validation only. This is not runtime, signal, evidence-linked, public-safe, production, or live SOC proof.",
+  "privacy_status": "Synthetic fixtures only; no secrets, private hostnames, private addresses, or live telemetry intentionally included."
+}

@@ -1,0 +1,21 @@
+{
+  "detection_id": "HO-DET-001",
+  "input_packet_ref": "hawkinsoperations-validation/validation/successor/ho-det-001/autosoc-triage-packet.json",
+  "input_packet_hash": "38a5d8c4832b9088e6392a30c63d71cf1be9430818aaefc0efe73b03f6b08a27",
+  "model_runtime_status": "BLOCKED",
+  "execution_mode": "deterministic_stub_no_model_call",
+  "summary_type": "hypothesis_triage_support_only",
+  "hypothesis": "The synthetic packet is consistent with encoded-command process creation behavior. Analyst review would focus on command intent, parent process, user context, and environment-specific allowlisting.",
+  "analyst_review_required": true,
+  "unsupported_claims": [
+    "HO-GPU-01 runtime-active",
+    "offline LLM validated",
+    "AI decided disposition",
+    "public-safe",
+    "production-ready",
+    "signal-observed",
+    "evidence-linked"
+  ],
+  "generated_at": "2026-04-29T15:00:48Z",
+  "privacy_status": "Synthetic packet only; no live telemetry, secrets, private hostnames, or private addresses intentionally included."
+}

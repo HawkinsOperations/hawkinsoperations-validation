@@ -1,0 +1,147 @@
+{
+  "detection_id": "HO-DET-001",
+  "case_scope": "synthetic_process_creation",
+  "cases": {
+    "positive": [
+      {
+        "id": "pos-001-powershell-enc",
+        "description": "powershell.exe with -enc",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "OriginalFileName": "PowerShell.EXE",
+          "CommandLine": "powershell.exe -NoProfile -enc SQBFAFgA"
+        }
+      },
+      {
+        "id": "pos-002-powershell-encodedcommand",
+        "description": "powershell.exe with -EncodedCommand",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "OriginalFileName": "PowerShell.EXE",
+          "CommandLine": "powershell.exe -NoProfile -EncodedCommand SQBFAFgA"
+        }
+      },
+      {
+        "id": "pos-003-pwsh-enc",
+        "description": "pwsh.exe with -enc",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Program Files\\PowerShell\\7\\pwsh.exe",
+          "OriginalFileName": "pwsh.dll",
+          "CommandLine": "pwsh.exe -enc SQBFAFgA"
+        }
+      },
+      {
+        "id": "pos-004-pwsh-encodedcommand",
+        "description": "pwsh.exe with -EncodedCommand",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Program Files\\PowerShell\\7\\pwsh.exe",
+          "OriginalFileName": "pwsh.dll",
+          "CommandLine": "pwsh.exe -NoLogo -EncodedCommand SQBFAFgA"
+        }
+      },
+      {
+        "id": "pos-005-pwsh-slash-encodedcommand-colon",
+        "description": "pwsh.exe with /encodedcommand:",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Program Files\\PowerShell\\7\\pwsh.exe",
+          "OriginalFileName": "pwsh.dll",
+          "CommandLine": "pwsh.exe /encodedcommand:SQBFAFgA"
+        }
+      },
+      {
+        "id": "pos-006-frombase64string",
+        "description": "PowerShell command line containing FromBase64String(",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "OriginalFileName": "PowerShell.EXE",
+          "CommandLine": "powershell.exe -Command [Convert]::FromBase64String('SQBFAFgA')"
+        }
+      },
+      {
+        "id": "pos-007-originalfilename-identity",
+        "description": "OriginalFileName supplies process identity when Image is generic",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Temp\\renamed-host.exe",
+          "OriginalFileName": "PowerShell.EXE",
+          "CommandLine": "renamed-host.exe -enc SQBFAFgA"
+        }
+      }
+    ],
+    "negative": [
+      {
+        "id": "neg-001-powershell-no-encoded-command",
+        "description": "powershell.exe without encoded command behavior",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "OriginalFileName": "PowerShell.EXE",
+          "CommandLine": "powershell.exe -File .\\maintenance.ps1"
+        }
+      },
+      {
+        "id": "neg-002-cmd-encoded-looking",
+        "description": "cmd.exe with encoded-looking text but not PowerShell or pwsh image",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Windows\\System32\\cmd.exe",
+          "OriginalFileName": "Cmd.Exe",
+          "CommandLine": "cmd.exe /c echo -enc SQBFAFgA"
+        }
+      },
+      {
+        "id": "neg-003-benign-admin-powershell",
+        "description": "benign administrative PowerShell without encoded command flag",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "OriginalFileName": "PowerShell.EXE",
+          "CommandLine": "powershell.exe -NoProfile -Command Get-Process"
+        }
+      },
+      {
+        "id": "neg-004-missing-image-and-originalfilename",
+        "description": "missing Image and missing OriginalFileName",
+        "event": {
+          "EventID": 1,
+          "CommandLine": "powershell.exe -enc SQBFAFgA"
+        }
+      },
+      {
+        "id": "neg-005-missing-commandline",
+        "description": "missing CommandLine",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "OriginalFileName": "PowerShell.EXE"
+        }
+      },
+      {
+        "id": "neg-006-non-powershell-suspicious-argument",
+        "description": "non-PowerShell process with suspicious-looking argument",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Windows\\System32\\rundll32.exe",
+          "OriginalFileName": "RUNDLL32.EXE",
+          "CommandLine": "rundll32.exe javascript:FromBase64String('SQBFAFgA')"
+        }
+      },
+      {
+        "id": "neg-007-quoted-string-not-flag",
+        "description": "PowerShell command containing an encoded flag string but not using it as a flag",
+        "event": {
+          "EventID": 1,
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "OriginalFileName": "PowerShell.EXE",
+          "CommandLine": "powershell.exe -Command \"$flag='-enc'; Write-Output $flag\""
+        }
+      }
+    ]
+  }
+}
