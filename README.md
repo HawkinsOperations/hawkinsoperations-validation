@@ -1,6 +1,6 @@
 # HawkinsOperations Validation
 
-Validation framework and execution evidence for HawkinsOps V2 detections.
+Validation framework and execution evidence for HawkinsOperations detections.
 
 Owner identity: Raylee Hawkins, Detection Engineer | SOC Automation | Detection-as-Code | Security Automation.
 
@@ -9,6 +9,18 @@ Official links: [Raylee Hawkins on LinkedIn](https://www.linkedin.com/in/raylee-
 ## Purpose
 
 This repository verifies that detection logic behaves as intended against controlled test inputs and replay scenarios.
+
+## HO-DET-001 Enforcement Boundary
+
+- Current HO-DET-001 ceiling: TEST_VALIDATED_SYNTHETIC_SCOPE.
+- Validation enforcement status: CI_ENFORCED_FOR_SYNTHETIC_SCOPE.
+- Validation enforcement PR: `HawkinsOperations/hawkinsoperations-validation#10`.
+- Validation enforcement merge commit: `8b48500d2ebbaacd93ac88e77a31dccf1d3b4e25`.
+- Proof-loop workflow: `.github/workflows/ho-det-001-proof-loop.yml`.
+- Truth surface: validation truth. This repository proves test inputs, harnesses, validation methodology, validation checks, and recorded validation outputs only.
+- Control boundary: proof-loop CI is a real control only for the exact checked synthetic validation scope.
+
+This repository does not claim runtime-active, signal-observed, evidence-linked public proof, public-safe, live Splunk fired as public proof, production-ready, fleet-wide, enterprise deployed, Cribl-routed, Wazuh-routed, AWS-live, HO-GPU-01 runtime-active, autonomous SOC, AI-approved disposition, AI-decided disposition, analyst-approved disposition, or production AutoSOC triage status.
 
 ## Scope
 
@@ -28,7 +40,7 @@ This repository verifies that detection logic behaves as intended against contro
 - Validation outputs must be reproducible and traceable to specific detection versions.
 - Failures are treated as engineering defects, not documentation notes.
 
-## Public-Safe Proof
+## Reviewed External Proof Candidates
 
 - Sanitized validation summaries
 - Reproducible test methodology
