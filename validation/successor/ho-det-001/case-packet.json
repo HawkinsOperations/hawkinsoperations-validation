@@ -62,12 +62,12 @@
     {
       "name": "autosoc synthetic packet",
       "path": "hawkinsoperations-validation/validation/successor/ho-det-001/autosoc-triage-packet.json",
-      "sha256": "6646da61fb32a90515a6ae084a7b51aa079af4218dc2bc204d0dc5c5739283f8"
+      "sha256": "b059b1f8ca2172ffb3c7829bf3e8ed69cb851384a351076d55e80d9538ecbedd"
     },
     {
       "name": "blocked-runtime LLM stub",
       "path": "hawkinsoperations-validation/validation/successor/ho-det-001/llm-summary.json",
-      "sha256": "8bb2139fdd495cb9dc5854177e0a844d8e4df6a5dca16b50c54b2f501ee140a1"
+      "sha256": "deb62176350d0985f3e7b1e5178069f493f8a0ed8647be06a554d3cb2f744f52"
     }
   ],
   "triage_boundary": {

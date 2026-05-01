@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hawkinsoperations.local/contracts/ho-det-001-ai-triage-output.schema.json",
+  "title": "HawkinsOperations HO-DET-001 LLM Triage Support Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "detection_id",
+    "current_proof_ceiling",
+    "input_packet_ref",
+    "input_packet_hash",
+    "case_packet_ref",
+    "model_runtime_status",
+    "runtime_status",
+    "runtime_actions_taken",
+    "execution_mode",
+    "triage_authority",
+    "llm_role",
+    "allowed_use",
+    "prohibited_use",
+    "ai_decided_disposition",
+    "public_safe_status",
+    "summary_type",
+    "hypothesis",
+    "analyst_review_required",
+    "unsupported_claims",
+    "generated_at",
+    "privacy_status"
+  ],
+  "properties": {
+    "detection_id": {
+      "type": "string",
+      "const": "HO-DET-001"
+    },
+    "current_proof_ceiling": {
+      "type": "string",
+      "const": "TEST_VALIDATED_SYNTHETIC_SCOPE"
+    },
+    "input_packet_ref": {
+      "type": "string",
+      "const": "hawkinsoperations-validation/validation/successor/ho-det-001/autosoc-triage-packet.json"
+    },
+    "input_packet_hash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "case_packet_ref": {
+      "type": "string",
+      "const": "hawkinsoperations-validation/validation/successor/ho-det-001/case-packet.json"
+    },
+    "model_runtime_status": {
+      "type": "string",
+      "const": "BLOCKED"
+    },
+    "runtime_status": {
+      "type": "string",
+      "const": "BLOCKED"
+    },
+    "runtime_actions_taken": {
+      "type": "boolean",
+      "const": false
+    },
+    "execution_mode": {
+      "type": "string",
+      "const": "deterministic_stub_no_model_call"
+    },
+    "triage_authority": {
+      "type": "string",
+      "const": "deterministic_verifier_and_human_review"
+    },
+    "llm_role": {
+      "type": "string",
+      "const": "triage_support_only"
+    },
+    "allowed_use": {
+      "type": "string",
+      "const": "triage_support_only"
+    },
+    "prohibited_use": {
+      "type": "string",
+      "const": "final_disposition"
+    },
+    "ai_decided_disposition": {
+      "type": "boolean",
+      "const": false
+    },
+    "public_safe_status": {
+      "type": "string",
+      "const": "BLOCKED"
+    },
+    "summary_type": {
+      "type": "string",
+      "const": "hypothesis_triage_support_only"
+    },
+    "hypothesis": {
+      "type": "string",
+      "minLength": 1
+    },
+    "analyst_review_required": {
+      "type": "boolean",
+      "const": true
+    },
+    "unsupported_claims": {
+      "$ref": "#/$defs/blocked_claims"
+    },
+    "generated_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "privacy_status": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "blocked_claims": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "contains": {
+        "const": "AI decided disposition"
+      }
+    }
+  }
+}

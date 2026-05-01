@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hawkinsoperations.local/contracts/ho-det-001-ai-triage-input.schema.json",
+  "title": "HawkinsOperations HO-DET-001 AI Triage Input Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "packet_id",
+    "detection_id",
+    "current_proof_ceiling",
+    "synthetic_case_refs",
+    "validation_result_ref",
+    "validation_result_hash",
+    "case_packet_ref",
+    "disposition",
+    "disposition_basis",
+    "triage_authority",
+    "llm_role",
+    "ai_decided_disposition",
+    "analyst_review_required",
+    "runtime_status",
+    "runtime_actions_taken",
+    "public_safe_status",
+    "reason",
+    "matched_positive_count",
+    "missed_positive_cases",
+    "false_positive_negative_cases",
+    "unsupported_claims",
+    "privacy_status",
+    "generated_at"
+  ],
+  "properties": {
+    "packet_id": {
+      "type": "string",
+      "const": "HO-DET-001-SYNTHETIC-TRIAGE-001"
+    },
+    "detection_id": {
+      "type": "string",
+      "const": "HO-DET-001"
+    },
+    "current_proof_ceiling": {
+      "type": "string",
+      "const": "TEST_VALIDATED_SYNTHETIC_SCOPE"
+    },
+    "synthetic_case_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "positive_count",
+        "negative_count"
+      ],
+      "properties": {
+        "positive_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "negative_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "validation_result_ref": {
+      "type": "string",
+      "const": "hawkinsoperations-validation/reports/ho-det-001/validation-result.json"
+    },
+    "validation_result_hash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "case_packet_ref": {
+      "type": "string",
+      "const": "hawkinsoperations-validation/validation/successor/ho-det-001/case-packet.json"
+    },
+    "disposition": {
+      "type": "string",
+      "const": "REVIEW_SYNTHETIC_DETECTION"
+    },
+    "disposition_basis": {
+      "type": "string",
+      "const": "deterministic synthetic validation result only"
+    },
+    "triage_authority": {
+      "type": "string",
+      "const": "deterministic_verifier_and_human_review"
+    },
+    "llm_role": {
+      "type": "string",
+      "const": "triage_support_only"
+    },
+    "ai_decided_disposition": {
+      "type": "boolean",
+      "const": false
+    },
+    "analyst_review_required": {
+      "type": "boolean",
+      "const": true
+    },
+    "runtime_status": {
+      "type": "string",
+      "const": "BLOCKED"
+    },
+    "runtime_actions_taken": {
+      "type": "boolean",
+      "const": false
+    },
+    "public_safe_status": {
+      "type": "string",
+      "const": "BLOCKED"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "matched_positive_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "missed_positive_cases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "false_positive_negative_cases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "unsupported_claims": {
+      "$ref": "#/$defs/blocked_claims"
+    },
+    "privacy_status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "blocked_claims": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "contains": {
+        "const": "AI-approved disposition"
+      }
+    }
+  }
+}
