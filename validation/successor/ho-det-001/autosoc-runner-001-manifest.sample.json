@@ -1,0 +1,86 @@
+{
+  "run_id": "HO-DET-001-AUTOSOC-RUNNER-001",
+  "detection_id": "HO-DET-001",
+  "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "local_runner_completed": true,
+  "ssh_preflight_completed": true,
+  "remote_model_call_completed": true,
+  "selected_model": "qwen2.5:14b",
+  "verifier_status": "PASS",
+  "hash_verification_status": "PASS",
+  "supported_private_claim": "AutoSOC Runner 001 completed one bounded support-only remote LLM model-call test against the HO-DET-001 synthetic case packet, and deterministic verification preserved AI/disposition authority as blocked.",
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "repo_truth_updated": false,
+  "runtime_truth_status": "PRIVATE_REMOTE_PREFLIGHT_AND_MODEL_CALL_EVIDENCE_EXISTS",
+  "signal_truth_status": "NOT_SIGNAL_OBSERVED",
+  "evidence_truth_status": "PRIVATE_EVIDENCE_STAGED_AND_HASHED",
+  "public_proof_truth_status": "NOT_PUBLIC_SAFE",
+  "blocked_claims": [
+    "runtime-active public proof",
+    "signal-observed",
+    "evidence-linked public proof",
+    "public-safe",
+    "production AutoSOC",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition",
+    "HO-GPU-01 runtime-active public proof",
+    "fleet-wide",
+    "Cribl-routed",
+    "Wazuh-routed",
+    "AWS-live"
+  ],
+  "next_promotion_gate": "Create a repo-bound schema/verifier/manifest contract in hawkinsoperations-validation that references private evidence only by sanitized manifest fields and hash requirements.",
+  "artifact_hashes": [
+    {
+      "path_label": "case_packet",
+      "sha256": "7675d196c1815e2c8d99e05d401a2477a0b61aa4dec51a85e151becab687c5a2",
+      "classification": "SANITIZED_INPUT_HASH"
+    },
+    {
+      "path_label": "local_runner_output",
+      "sha256": "aef8491c3b2050f5825092c28009f266aa87ed08eb178c16fac45110edd20f0d",
+      "classification": "SANITIZED_OUTPUT_HASH"
+    },
+    {
+      "path_label": "local_runner_receipt",
+      "sha256": "8330a4b2a35b6839d269c355a918e773a6cc60992555b04841b1f91a24dfb12e",
+      "classification": "PRIVATE_RECEIPT_HASH"
+    },
+    {
+      "path_label": "remote_preflight_summary",
+      "sha256": "77dcdd79ce30fee21a2b78cfe9bd630c0a65950573b40025aacddca5a27f4b2f",
+      "classification": "PRIVATE_RECEIPT_HASH"
+    },
+    {
+      "path_label": "remote_model_call_receipt",
+      "sha256": "44f027ce29fc02274b854e8c926b62fe2ce26c39b7772807ed7d1fb616dddb5c",
+      "classification": "PRIVATE_RECEIPT_HASH"
+    },
+    {
+      "path_label": "normalized_llm_output",
+      "sha256": "62e0d2de7d0b677ce9be55d3caa76a586754bb305d074a566fb94f458cf3d0ff",
+      "classification": "SANITIZED_OUTPUT_HASH"
+    },
+    {
+      "path_label": "raw_llm_output",
+      "sha256": "f1584e62050c22eb758826ddcdc66c37e3a3646e0311ed8252e9586d84d1ddd8",
+      "classification": "PRIVATE_RAW_OUTPUT_HASH"
+    },
+    {
+      "path_label": "remote_model_verifier",
+      "sha256": "c40cc80cd7e76f136b4873529b067bbebc4dccf8c6ab6039d7a5f36ad3a9950d",
+      "classification": "VERIFIER_HASH"
+    },
+    {
+      "path_label": "remote_model_verifier_result",
+      "sha256": "c79c88d66863ee4aaef65622f8b0e034cdcf15042a40755b8ae9d7f3b135755b",
+      "classification": "PRIVATE_RECEIPT_HASH"
+    },
+    {
+      "path_label": "model_call_hash_manifest",
+      "sha256": "1eb253d59407548122dd15331819bb09da7b3bf8bce5eb38358193ce04b7c9bc",
+      "classification": "HASH_MANIFEST_HASH"
+    }
+  ]
+}

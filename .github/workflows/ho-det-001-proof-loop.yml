@@ -50,6 +50,9 @@ jobs:
       - name: Run case packet contract verifier
         run: python scripts/verify_case_packet_contract.py
 
+      - name: Run AutoSOC runner evidence manifest verifier
+        run: python scripts/verify-autosoc-runner-evidence-manifest.py
+
       - name: Run synthetic validation in check mode
         run: python scripts/validate-ho-det-001.py
 

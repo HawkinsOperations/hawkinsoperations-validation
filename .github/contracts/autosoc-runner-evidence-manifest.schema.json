@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hawkinsoperations.local/contracts/autosoc-runner-evidence-manifest.schema.json",
+  "title": "HawkinsOperations AutoSOC Runner Evidence Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "detection_id",
+    "proof_ceiling",
+    "local_runner_completed",
+    "ssh_preflight_completed",
+    "remote_model_call_completed",
+    "selected_model",
+    "verifier_status",
+    "hash_verification_status",
+    "supported_private_claim",
+    "public_safe_status",
+    "repo_truth_updated",
+    "runtime_truth_status",
+    "signal_truth_status",
+    "evidence_truth_status",
+    "public_proof_truth_status",
+    "blocked_claims",
+    "next_promotion_gate",
+    "artifact_hashes"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "const": "HO-DET-001-AUTOSOC-RUNNER-001"
+    },
+    "detection_id": {
+      "type": "string",
+      "const": "HO-DET-001"
+    },
+    "proof_ceiling": {
+      "type": "string",
+      "const": "TEST_VALIDATED_SYNTHETIC_SCOPE"
+    },
+    "local_runner_completed": {
+      "type": "boolean",
+      "const": true
+    },
+    "ssh_preflight_completed": {
+      "type": "boolean",
+      "const": true
+    },
+    "remote_model_call_completed": {
+      "type": "boolean",
+      "const": true
+    },
+    "selected_model": {
+      "type": "string",
+      "minLength": 1
+    },
+    "verifier_status": {
+      "type": "string",
+      "const": "PASS"
+    },
+    "hash_verification_status": {
+      "type": "string",
+      "const": "PASS"
+    },
+    "supported_private_claim": {
+      "type": "string",
+      "minLength": 1
+    },
+    "public_safe_status": {
+      "type": "string",
+      "const": "NOT_PUBLIC_SAFE"
+    },
+    "repo_truth_updated": {
+      "type": "boolean",
+      "const": false
+    },
+    "runtime_truth_status": {
+      "type": "string",
+      "const": "PRIVATE_REMOTE_PREFLIGHT_AND_MODEL_CALL_EVIDENCE_EXISTS"
+    },
+    "signal_truth_status": {
+      "type": "string",
+      "const": "NOT_SIGNAL_OBSERVED"
+    },
+    "evidence_truth_status": {
+      "type": "string",
+      "const": "PRIVATE_EVIDENCE_STAGED_AND_HASHED"
+    },
+    "public_proof_truth_status": {
+      "type": "string",
+      "const": "NOT_PUBLIC_SAFE"
+    },
+    "blocked_claims": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      },
+      "allOf": [
+        { "contains": { "const": "runtime-active public proof" } },
+        { "contains": { "const": "signal-observed" } },
+        { "contains": { "const": "evidence-linked public proof" } },
+        { "contains": { "const": "public-safe" } },
+        { "contains": { "const": "production AutoSOC" } },
+        { "contains": { "const": "autonomous SOC" } },
+        { "contains": { "const": "AI-approved disposition" } },
+        { "contains": { "const": "analyst-approved disposition" } },
+        { "contains": { "const": "HO-GPU-01 runtime-active public proof" } },
+        { "contains": { "const": "fleet-wide" } },
+        { "contains": { "const": "Cribl-routed" } },
+        { "contains": { "const": "Wazuh-routed" } },
+        { "contains": { "const": "AWS-live" } }
+      ]
+    },
+    "next_promotion_gate": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifact_hashes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path_label",
+          "sha256",
+          "classification"
+        ],
+        "properties": {
+          "path_label": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "SANITIZED_INPUT_HASH",
+              "SANITIZED_OUTPUT_HASH",
+              "PRIVATE_RECEIPT_HASH",
+              "PRIVATE_RAW_OUTPUT_HASH",
+              "VERIFIER_HASH",
+              "HASH_MANIFEST_HASH"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
