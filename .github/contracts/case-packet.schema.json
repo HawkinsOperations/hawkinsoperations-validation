@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hawkinsoperations.local/contracts/case-packet.schema.json",
+  "title": "HawkinsOperations HO-DET-001 Validation Case Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_id",
+    "detection_id",
+    "detection_title",
+    "truth_surface",
+    "proof_level",
+    "allowed_scope",
+    "public_safe_status",
+    "blocked_claims",
+    "event",
+    "detection_references",
+    "validation_references",
+    "triage_boundary",
+    "public_claim_boundary"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "const": "HO-DET-001-CASE-PACKET-001"
+    },
+    "detection_id": {
+      "type": "string",
+      "const": "HO-DET-001"
+    },
+    "detection_title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "truth_surface": {
+      "type": "string",
+      "const": "repo truth"
+    },
+    "proof_level": {
+      "type": "string",
+      "const": "TEST_VALIDATED_SYNTHETIC_SCOPE"
+    },
+    "allowed_scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "public_safe_status": {
+      "type": "string",
+      "const": "NO"
+    },
+    "blocked_claims": {
+      "$ref": "#/$defs/blocked_claims"
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_time",
+        "host",
+        "user",
+        "image",
+        "original_file_name",
+        "command_line",
+        "parent_image",
+        "event_id",
+        "source",
+        "sourcetype",
+        "index"
+      ],
+      "properties": {
+        "event_time": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host": {
+          "type": "string",
+          "minLength": 1
+        },
+        "user": {
+          "type": "string",
+          "minLength": 1
+        },
+        "image": {
+          "type": "string",
+          "minLength": 1
+        },
+        "original_file_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "command_line": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parent_image": {
+          "type": "string",
+          "minLength": 1
+        },
+        "event_id": {
+          "type": "integer"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourcetype": {
+          "type": "string",
+          "minLength": 1
+        },
+        "index": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "detection_references": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reference"
+      },
+      "minItems": 1
+    },
+    "validation_references": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reference"
+      },
+      "minItems": 1
+    },
+    "triage_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ai_role",
+        "ai_may_decide_disposition",
+        "disposition_authority"
+      ],
+      "properties": {
+        "ai_role": {
+          "type": "string",
+          "const": "support_only"
+        },
+        "ai_may_decide_disposition": {
+          "type": "boolean",
+          "const": false
+        },
+        "disposition_authority": {
+          "type": "string",
+          "const": "deterministic_verifier_and_human_review"
+        }
+      }
+    },
+    "public_claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "public_safe_status",
+        "supported_claim",
+        "blocked_claims"
+      ],
+      "properties": {
+        "public_safe_status": {
+          "type": "string",
+          "const": "NO"
+        },
+        "supported_claim": {
+          "type": "string",
+          "minLength": 1
+        },
+        "blocked_claims": {
+          "$ref": "#/$defs/blocked_claims"
+        }
+      }
+    },
+    "validation_summary": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "determinism": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "blocked_claims": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    }
+  }
+}
