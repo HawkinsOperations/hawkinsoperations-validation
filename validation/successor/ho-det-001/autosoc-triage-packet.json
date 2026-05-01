@@ -23,12 +23,21 @@
   "missed_positive_cases": [],
   "false_positive_negative_cases": [],
   "unsupported_claims": [
-    "live AutoSOC",
-    "production triage",
-    "analyst-approved disposition",
     "runtime-active",
     "signal-observed",
-    "public-safe"
+    "evidence-linked public proof",
+    "public-safe",
+    "live Splunk firing",
+    "production triage",
+    "analyst-approved disposition",
+    "HO-GPU-01 runtime-active",
+    "Cribl-routed",
+    "Wazuh-routed",
+    "AWS-live",
+    "autonomous SOC",
+    "production-ready SOC",
+    "fleet-wide deployment",
+    "AI-approved disposition"
   ],
   "privacy_status": "Synthetic validation output only; no live telemetry, secrets, private hostnames, or private addresses intentionally included.",
   "generated_at": "2026-04-29T15:48:44Z"
