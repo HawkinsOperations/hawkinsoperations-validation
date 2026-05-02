@@ -1,0 +1,83 @@
+{
+  "loop_id": "Closed AutoSOC Loop 001",
+  "detection_id": "HO-DET-001",
+  "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "validation_pass_reference": {
+    "path": "reports/ho-det-001/validation-result.json",
+    "sha256": "830f63a3966ee3050f80ce3a7465f45bc6df2da814ed7777036dcd4e76139160",
+    "status": "pass",
+    "supported_claim": "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures."
+  },
+  "synthetic_fixture_result_reference": {
+    "total_cases": 14,
+    "positive_cases": 7,
+    "negative_cases": 7,
+    "matched_positive_count": 7,
+    "missed_positive_cases": [],
+    "false_positive_negative_cases": []
+  },
+  "case_packet_reference": {
+    "path": "validation/successor/ho-det-001/case-packet.json",
+    "sha256": "7bdbcbfbfb017eabd0d3ffccf0b4417859f3854378d3b3867ea46b0a8f38d7c8"
+  },
+  "autosoc_triage_reference": {
+    "path": "validation/successor/ho-det-001/autosoc-triage-packet.json",
+    "sha256": "1b4679a82a4732c09581229b69beda5a0d28a03fa9ae3e0413fa9c9a8418662e"
+  },
+  "llm_summary_reference": {
+    "path": "validation/successor/ho-det-001/llm-summary.json",
+    "sha256": "6344a12469b521b2fb674e90cdd14eae266ed80ba5a0d1a0ef092d30483f63d8"
+  },
+  "authority_boundary": {
+    "ai_role": "triage_support_only",
+    "ai_decided_disposition": false,
+    "human_review_required": true,
+    "recommended_disposition": null,
+    "ai_may_approve": false,
+    "ai_may_promote": false,
+    "ai_may_close": false
+  },
+  "claim_boundary": {
+    "runtime_active_public_claim": false,
+    "signal_observed_public_claim": false,
+    "production_claim": false,
+    "fleet_wide_claim": false,
+    "autonomous_soc_claim": false,
+    "cribl_routed_claim": false,
+    "wazuh_routed_claim": false,
+    "public_safe_claim": false,
+    "public_safe_status": "NOT_PUBLIC_SAFE",
+    "allowed_public_claim": "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures."
+  },
+  "blocked_claims": [
+    "runtime-active public claim",
+    "signal-observed public claim",
+    "production",
+    "fleet-wide",
+    "autonomous SOC",
+    "Cribl-routed",
+    "Wazuh-routed",
+    "public-safe",
+    "AI-approved disposition",
+    "analyst-approved disposition",
+    "private raw evidence path"
+  ],
+  "private_evidence_references": [
+    {
+      "label": "private_splunk_lab_match",
+      "classification": "PRIVATE_LAB_SCOPE_REFERENCE",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "label": "autosoc_runner_manifest",
+      "classification": "PRIVATE_HASH_ONLY",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "label": "gpu_support_observation",
+      "classification": "PRIVATE_HASH_ONLY",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "next_promotion_gate": "Human review and separate promotion approval are required before any runtime, signal, evidence-linked public proof, public-safe, production, fleet-wide, Cribl-routed, Wazuh-routed, autonomous SOC, AI-approved, or analyst-approved claim."
+}
