@@ -1,0 +1,62 @@
+{
+  "detection_id": "AWS-DET-001",
+  "scope": "fixture_only_cloudtrail_style_events",
+  "cases": {
+    "positive": [
+      {
+        "id": "pos-001-iam-create-user-access-denied",
+        "event": {
+          "eventSource": "iam.amazonaws.com",
+          "eventName": "CreateUser",
+          "errorCode": "AccessDenied",
+          "errorMessage": "User is not authorized to perform iam:CreateUser"
+        }
+      },
+      {
+        "id": "pos-002-iam-attach-policy-unauthorized",
+        "event": {
+          "eventSource": "iam.amazonaws.com",
+          "eventName": "AttachUserPolicy",
+          "errorCode": "Client.UnauthorizedOperation",
+          "errorMessage": "You are not authorized to perform this operation"
+        }
+      },
+      {
+        "id": "pos-003-iam-put-role-policy-denied-message",
+        "event": {
+          "eventSource": "iam.amazonaws.com",
+          "eventName": "PutRolePolicy",
+          "errorMessage": "Access denied by policy boundary"
+        }
+      }
+    ],
+    "negative": [
+      {
+        "id": "neg-001-successful-iam-list-users",
+        "event": {
+          "eventSource": "iam.amazonaws.com",
+          "eventName": "ListUsers"
+        }
+      },
+      {
+        "id": "neg-002-denied-non-iam-ec2",
+        "event": {
+          "eventSource": "ec2.amazonaws.com",
+          "eventName": "RunInstances",
+          "errorCode": "UnauthorizedOperation",
+          "errorMessage": "You are not authorized to perform this operation"
+        }
+      },
+      {
+        "id": "neg-003-cloudtrail-denied-non-iam",
+        "event": {
+          "eventSource": "cloudtrail.amazonaws.com",
+          "eventName": "StartLogging",
+          "errorCode": "AccessDenied",
+          "errorMessage": "Access denied"
+        }
+      }
+    ]
+  }
+}
+

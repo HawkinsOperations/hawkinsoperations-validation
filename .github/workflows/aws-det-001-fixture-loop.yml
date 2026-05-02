@@ -1,0 +1,46 @@
+name: AWS-DET-001 Fixture Loop
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aws-det-001-fixture-loop:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    defaults:
+      run:
+        working-directory: hawkinsoperations-validation
+    steps:
+      - name: Checkout validation repository
+        uses: actions/checkout@v4
+        with:
+          path: hawkinsoperations-validation
+
+      - name: Checkout detections repository
+        uses: actions/checkout@v4
+        with:
+          repository: HawkinsOperations/hawkinsoperations-detections
+          path: hawkinsoperations-detections
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Fixture-only validation. No AWS credentials, secrets, network calls, or live AWS APIs are used.
+      - name: Run AWS-DET-001 fixture validation
+        run: python scripts/validate-aws-det-001.py
+
+      - name: Run AWS-DET-001 result parity verifier
+        run: python scripts/verify-aws-det-001-result-parity.py
+
+      - name: Run AWS-DET-001 claim-boundary scanner
+        run: python scripts/scan-aws-det-001-claim-boundaries.py
+
+      - name: Run whitespace diff check
+        run: git diff --check
