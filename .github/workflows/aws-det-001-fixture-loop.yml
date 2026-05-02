@@ -27,6 +27,12 @@ jobs:
           repository: HawkinsOperations/hawkinsoperations-detections
           path: hawkinsoperations-detections
 
+      - name: Checkout proof repository
+        uses: actions/checkout@v4
+        with:
+          repository: HawkinsOperations/hawkinsoperations-proof
+          path: hawkinsoperations-proof
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -41,6 +47,9 @@ jobs:
 
       - name: Run AWS-DET-001 claim-boundary scanner
         run: python scripts/scan-aws-det-001-claim-boundaries.py
+
+      - name: Run proof-record parity verifier
+        run: python scripts/verify-proof-record-parity.py
 
       - name: Run whitespace diff check
         run: git diff --check

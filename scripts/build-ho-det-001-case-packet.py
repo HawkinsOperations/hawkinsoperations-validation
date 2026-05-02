@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import argparse
 import sys
 from pathlib import Path
 from typing import Any
@@ -200,9 +201,32 @@ def build_case_packet() -> dict[str, Any]:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Build or check the deterministic HO-DET-001 case packet.")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Check that case-packet.json is already current without writing it.",
+    )
+    args = parser.parse_args()
+
     packet = build_case_packet()
+    expected = stable_json(packet)
+    if args.check:
+        if not CASE_PACKET.exists():
+            fail(f"missing case packet: {CASE_PACKET}")
+        existing = CASE_PACKET.read_text(encoding="utf-8")
+        if existing != expected:
+            fail("case-packet.json is out of date; run without --check to regenerate it")
+        print("STATUS=pass")
+        print("CASE_PACKET_CHECK=pass")
+        print(f"CASE_PACKET={CASE_PACKET}")
+        print(f"PROOF_LEVEL={PROOF_CEILING}")
+        print("PUBLIC_SAFE_STATUS=NO")
+        print("WRITE_SKIPPED=true")
+        return 0
+
     CASE_PACKET.parent.mkdir(parents=True, exist_ok=True)
-    CASE_PACKET.write_text(stable_json(packet), encoding="utf-8")
+    CASE_PACKET.write_text(expected, encoding="utf-8")
     print("STATUS=pass")
     print(f"WROTE={CASE_PACKET}")
     print(f"PROOF_LEVEL={PROOF_CEILING}")

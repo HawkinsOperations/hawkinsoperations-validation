@@ -17,11 +17,23 @@ SCOPED_FILES = [
     ROOT / "reports" / "aws-det-001" / "validation-result.md",
 ]
 BLOCKED_TERMS = [
+    "runtime-active",
+    "signal-observed",
+    "public-safe",
     "aws-live",
+    "cloudtrail-live",
     "aws cloudtrail live proof",
     "cloud runtime-active",
     "production proof",
     "production-ready",
+    "fleet-wide",
+    "live splunk fired",
+    "cribl-routed",
+    "wazuh-routed",
+    "ho-gpu-01 runtime-active",
+    "ai-approved disposition",
+    "analyst-approved disposition",
+    "autonomous soc",
     "public-safe runtime proof",
     "signal-observed public proof",
     "live cloudtrail",
@@ -29,15 +41,19 @@ BLOCKED_TERMS = [
 ]
 ALLOWED_CONTEXT_MARKERS = [
     "blocked",
+    "not_public_safe",
     "not supported",
+    "claims_not_supported",
+    "blocked claims",
     "not aws-live",
     "not cloudtrail live",
     "not cloud runtime-active",
     "not public-safe",
     "fixture-only",
     "synthetic fixtures only",
-    "claims_not_supported",
     "trust_boundary",
+    "does not use",
+    "does not assert",
 ]
 
 
