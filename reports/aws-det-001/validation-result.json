@@ -1,0 +1,71 @@
+{
+  "status": "pass",
+  "detection_id": "AWS-DET-001",
+  "source_file": "hawkinsoperations-detections/detections/cloud/aws/aws-det-001/rule.yml",
+  "jsonpath_file": "hawkinsoperations-detections/detections/cloud/aws/aws-det-001/cloudtrail.jsonpath",
+  "validation_cases_file": "hawkinsoperations-validation/validation/cloud/aws/aws-det-001/validation-cases.json",
+  "matched_positive_count": 3,
+  "missed_positive_cases": [],
+  "false_positive_negative_cases": [],
+  "totals": {
+    "total_cases": 6,
+    "positive_cases": 3,
+    "negative_cases": 3,
+    "pass": 6,
+    "fail": 0
+  },
+  "positive": [
+    {
+      "id": "pos-001-iam-create-user-access-denied",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-002-iam-attach-policy-unauthorized",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-003-iam-put-role-policy-denied-message",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    }
+  ],
+  "negative": [
+    {
+      "id": "neg-001-successful-iam-list-users",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-002-denied-non-iam-ec2",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-003-cloudtrail-denied-non-iam",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    }
+  ],
+  "exact_claim_supported": "AWS-DET-001 passed fixture-only validation against controlled CloudTrail-style IAM denial fixtures.",
+  "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "aws_live_status": "BLOCKED",
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "claims_not_supported": [
+    "AWS-live proof",
+    "AWS CloudTrail live proof",
+    "cloud runtime-active proof",
+    "production proof",
+    "public-safe runtime proof",
+    "signal-observed public proof"
+  ],
+  "trust_boundary": "Fixture-only CloudTrail-style validation. This is not AWS-live, CloudTrail live, cloud runtime-active, production, signal-observed, or public-safe proof.",
+  "privacy_status": "Synthetic fixtures only; no AWS credentials, account identifiers, live CloudTrail records, secrets, private hostnames, or private addresses are included."
+}

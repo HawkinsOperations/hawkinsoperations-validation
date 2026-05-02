@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/HawkinsOperations/hawkinsoperations-validation/.github/contracts/ho-det-001-offline-gpu-llm-triage-contract.schema.json",
+  "title": "HO-DET-001 Offline GPU LLM Triage Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "detection_id",
+    "proof_ceiling",
+    "source_artifact_references",
+    "private_lab_model_support",
+    "bounded_gpu_observation",
+    "ai_authority_boundary",
+    "deterministic_verifier_boundary",
+    "public_claim_boundary",
+    "privacy_boundary",
+    "private_evidence_references",
+    "next_promotion_gate"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "HO-DET-001-OFFLINE-GPU-LLM-TRIAGE-CONTRACT-001"
+    },
+    "detection_id": {
+      "const": "HO-DET-001"
+    },
+    "proof_ceiling": {
+      "const": "TEST_VALIDATED_SYNTHETIC_SCOPE"
+    },
+    "source_artifact_references": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "$ref": "#/$defs/repo_artifact_reference"
+      }
+    },
+    "private_lab_model_support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "allowed_wording", "public_proof_status"],
+      "properties": {
+        "status": {
+          "const": "PRIVATE_EVIDENCE_ONLY"
+        },
+        "allowed_wording": {
+          "const": "private lab model support completed"
+        },
+        "public_proof_status": {
+          "const": "BLOCKED"
+        }
+      }
+    },
+    "bounded_gpu_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "allowed_wording", "public_proof_status"],
+      "properties": {
+        "status": {
+          "const": "PRIVATE_EVIDENCE_ONLY"
+        },
+        "allowed_wording": {
+          "const": "private GPU activity observed during bounded model call"
+        },
+        "public_proof_status": {
+          "const": "BLOCKED"
+        }
+      }
+    },
+    "ai_authority_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ai_role",
+        "ai_decided_disposition",
+        "human_review_required",
+        "recommended_disposition",
+        "ai_may_approve",
+        "ai_may_promote",
+        "ai_may_close"
+      ],
+      "properties": {
+        "ai_role": {
+          "const": "triage_support_only"
+        },
+        "ai_decided_disposition": {
+          "const": false
+        },
+        "human_review_required": {
+          "const": true
+        },
+        "recommended_disposition": {
+          "type": "null"
+        },
+        "ai_may_approve": {
+          "const": false
+        },
+        "ai_may_promote": {
+          "const": false
+        },
+        "ai_may_close": {
+          "const": false
+        }
+      }
+    },
+    "deterministic_verifier_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "allowed_wording", "raw_private_output_required"],
+      "properties": {
+        "status": {
+          "const": "pass"
+        },
+        "allowed_wording": {
+          "const": "deterministic verifier preserved boundary"
+        },
+        "raw_private_output_required": {
+          "const": false
+        }
+      }
+    },
+    "public_claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_wording", "blocked_wording"],
+      "properties": {
+        "allowed_wording": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "private lab model support completed",
+              "private GPU activity observed during bounded model call",
+              "AI remained support-only",
+              "deterministic verifier preserved boundary",
+              "public proof ceiling remains TEST_VALIDATED_SYNTHETIC_SCOPE"
+            ]
+          },
+          "minItems": 5,
+          "uniqueItems": true
+        },
+        "blocked_wording": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "GPU triage public proof",
+              "runtime-active public proof",
+              "production AutoSOC",
+              "autonomous SOC",
+              "AI disposition approved",
+              "signal-observed public proof",
+              "evidence-linked public proof",
+              "public-safe",
+              "analyst-approved disposition",
+              "fleet-wide",
+              "Cribl-routed",
+              "Wazuh-routed",
+              "AWS-live",
+              "private raw evidence path"
+            ]
+          },
+          "minItems": 14,
+          "uniqueItems": true
+        }
+      }
+    },
+    "privacy_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_private_output_allowed", "blocked_private_terms"],
+      "properties": {
+        "raw_private_output_allowed": {
+          "const": false
+        },
+        "blocked_private_terms": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "raw prompt",
+              "raw model output",
+              "hostnames",
+              "usernames",
+              "LAN IPs",
+              "local paths",
+              "screenshots",
+              "secrets",
+              "tokens",
+              "private ZIP references",
+              "private raw evidence paths",
+              "GPU host labels"
+            ]
+          },
+          "minItems": 12,
+          "uniqueItems": true
+        }
+      }
+    },
+    "private_evidence_references": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/private_evidence_reference"
+      }
+    },
+    "next_promotion_gate": {
+      "type": "string",
+      "minLength": 20
+    }
+  },
+  "$defs": {
+    "repo_artifact_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "path", "sha256"],
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^(reports|validation|\\.github)/"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        }
+      }
+    },
+    "private_evidence_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "classification", "sha256"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "pattern": "^[a-z0-9_\\-]+$"
+        },
+        "classification": {
+          "enum": ["PRIVATE_HASH_ONLY", "PRIVATE_LAB_SCOPE_REFERENCE"]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        }
+      }
+    }
+  }
+}
