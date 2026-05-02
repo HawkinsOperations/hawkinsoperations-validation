@@ -25,6 +25,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/hawkinsoperations-detections
+          # Draft dependency: remove this ref after the AWS-DET-001 detections PR merges to main.
+          ref: sprint/aws-det-001-fixture-source
           path: hawkinsoperations-detections
 
       - name: Setup Python
