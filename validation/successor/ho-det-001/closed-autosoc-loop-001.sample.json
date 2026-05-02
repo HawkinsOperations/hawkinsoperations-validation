@@ -4,7 +4,7 @@
   "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
   "validation_pass_reference": {
     "path": "reports/ho-det-001/validation-result.json",
-    "sha256": "830f63a3966ee3050f80ce3a7465f45bc6df2da814ed7777036dcd4e76139160",
+    "sha256": "59cefce14890c190c7b3b7deecaedef0725f5a5d4ec44a2031010834f9139318",
     "status": "pass",
     "supported_claim": "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures."
   },
@@ -18,15 +18,15 @@
   },
   "case_packet_reference": {
     "path": "validation/successor/ho-det-001/case-packet.json",
-    "sha256": "7bdbcbfbfb017eabd0d3ffccf0b4417859f3854378d3b3867ea46b0a8f38d7c8"
+    "sha256": "8f12cbea552c66369323d1463197dccc5d148967e107290580d5632f79f2734e"
   },
   "autosoc_triage_reference": {
     "path": "validation/successor/ho-det-001/autosoc-triage-packet.json",
-    "sha256": "1b4679a82a4732c09581229b69beda5a0d28a03fa9ae3e0413fa9c9a8418662e"
+    "sha256": "b059b1f8ca2172ffb3c7829bf3e8ed69cb851384a351076d55e80d9538ecbedd"
   },
   "llm_summary_reference": {
     "path": "validation/successor/ho-det-001/llm-summary.json",
-    "sha256": "6344a12469b521b2fb674e90cdd14eae266ed80ba5a0d1a0ef092d30483f63d8"
+    "sha256": "deb62176350d0985f3e7b1e5178069f493f8a0ed8647be06a554d3cb2f744f52"
   },
   "authority_boundary": {
     "ai_role": "triage_support_only",
