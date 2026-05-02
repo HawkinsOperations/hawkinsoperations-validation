@@ -15,9 +15,26 @@
   "llm_role": "triage_support_only",
   "ai_decided_disposition": false,
   "analyst_review_required": true,
+  "human_validation_required": true,
   "runtime_status": "BLOCKED",
+  "runtime_active": false,
   "runtime_actions_taken": false,
+  "signal_observed": false,
   "public_safe_status": "BLOCKED",
+  "public_safe": false,
+  "claim_boundary": {
+    "schema_proves_runtime": false,
+    "schema_proves_signal": false,
+    "schema_proves_public_safe_status": false,
+    "ai_final_disposition_authority": false
+  },
+  "future_evidence_requirements": [
+    "operator-approved runtime receipt",
+    "runtime evidence hash",
+    "deterministic verifier pass",
+    "human disposition review",
+    "publication promotion review"
+  ],
   "reason": "Synthetic HO-DET-001 fixtures matched expected encoded-command positives and did not match controlled negatives.",
   "matched_positive_count": 7,
   "missed_positive_cases": [],

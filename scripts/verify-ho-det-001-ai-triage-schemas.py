@@ -9,10 +9,13 @@ runtime, host, user, LAN, or local-path evidence into the repository.
 from __future__ import annotations
 
 import hashlib
+import contextlib
+import io
 import json
 import re
 import sys
 from pathlib import Path
+from copy import deepcopy
 from typing import Any
 
 
@@ -209,12 +212,31 @@ def verify_triage_packet(schema: dict[str, Any], packet: dict[str, Any]) -> None
         fail(f"{label} ai_decided_disposition must be false")
     if packet.get("analyst_review_required") is not True:
         fail(f"{label} analyst_review_required must be true")
+    if packet.get("human_validation_required") is not True:
+        fail(f"{label} human_validation_required must be true")
     if packet.get("runtime_status") != "BLOCKED":
         fail(f"{label} runtime_status must be BLOCKED")
+    if packet.get("runtime_active") is not False:
+        fail(f"{label} runtime_active must be false")
     if packet.get("runtime_actions_taken") is not False:
         fail(f"{label} runtime_actions_taken must be false")
+    if packet.get("signal_observed") is not False:
+        fail(f"{label} signal_observed must be false")
     if packet.get("public_safe_status") != "BLOCKED":
         fail(f"{label} public_safe_status must be BLOCKED")
+    if packet.get("public_safe") is not False:
+        fail(f"{label} public_safe must be false")
+    claim_boundary = packet.get("claim_boundary")
+    if not isinstance(claim_boundary, dict):
+        fail(f"{label} claim_boundary must be an object")
+    for key in [
+        "schema_proves_runtime",
+        "schema_proves_signal",
+        "schema_proves_public_safe_status",
+        "ai_final_disposition_authority",
+    ]:
+        if claim_boundary.get(key) is not False:
+            fail(f"{label} claim_boundary.{key} must be false")
     verify_blocked_claims(label, packet.get("unsupported_claims"))
     verify_value_safety(label, packet)
 
@@ -251,12 +273,86 @@ def verify_llm_summary(schema: dict[str, Any], summary: dict[str, Any]) -> None:
         fail(f"{label} prohibited_use must be final_disposition")
     if summary.get("ai_decided_disposition") is not False:
         fail(f"{label} ai_decided_disposition must be false")
+    if summary.get("recommended_disposition") is not None:
+        fail(f"{label} recommended_disposition must be null")
+    if summary.get("final_disposition_authority") is not False:
+        fail(f"{label} final_disposition_authority must be false")
     if summary.get("public_safe_status") != "BLOCKED":
         fail(f"{label} public_safe_status must be BLOCKED")
+    if summary.get("public_safe") is not False:
+        fail(f"{label} public_safe must be false")
+    if summary.get("runtime_active") is not False:
+        fail(f"{label} runtime_active must be false")
+    if summary.get("signal_observed") is not False:
+        fail(f"{label} signal_observed must be false")
     if summary.get("analyst_review_required") is not True:
         fail(f"{label} analyst_review_required must be true")
+    if summary.get("human_validation_required") is not True:
+        fail(f"{label} human_validation_required must be true")
+    advisory_output = summary.get("advisory_output")
+    if not isinstance(advisory_output, dict):
+        fail(f"{label} advisory_output must be an object")
+    for key in ["summary", "evidence_map", "uncertainty", "recommended_next_checks"]:
+        if key not in advisory_output:
+            fail(f"{label} advisory_output missing required key: {key}")
+    claim_boundary = summary.get("claim_boundary")
+    if not isinstance(claim_boundary, dict):
+        fail(f"{label} claim_boundary must be an object")
+    for key in [
+        "schema_proves_runtime",
+        "schema_proves_signal",
+        "schema_proves_public_safe_status",
+        "ai_final_disposition_authority",
+    ]:
+        if claim_boundary.get(key) is not False:
+            fail(f"{label} claim_boundary.{key} must be false")
     verify_blocked_claims(label, summary.get("unsupported_claims"))
     verify_value_safety(label, summary)
+
+
+def verify_invalid_sample_rejected(summary: dict[str, Any]) -> None:
+    invalid_summary = deepcopy(summary)
+    invalid_summary["ai_decided_disposition"] = True
+    test_schema = {
+        "required": [
+            "detection_id",
+            "current_proof_ceiling",
+            "input_packet_ref",
+            "input_packet_hash",
+            "case_packet_ref",
+            "model_runtime_status",
+            "runtime_status",
+            "runtime_actions_taken",
+            "execution_mode",
+            "triage_authority",
+            "llm_role",
+            "allowed_use",
+            "prohibited_use",
+            "ai_decided_disposition",
+            "recommended_disposition",
+            "final_disposition_authority",
+            "public_safe_status",
+            "public_safe",
+            "runtime_active",
+            "signal_observed",
+            "summary_type",
+            "advisory_output",
+            "hypothesis",
+            "analyst_review_required",
+            "human_validation_required",
+            "unsupported_claims",
+            "claim_boundary",
+            "generated_at",
+            "privacy_status",
+        ],
+        "properties": {key: {} for key in summary.keys()},
+    }
+    try:
+        with contextlib.redirect_stderr(io.StringIO()):
+            verify_llm_summary(test_schema, invalid_summary)
+    except SystemExit:
+        return
+    fail("invalid AI authority sample was not rejected")
 
 
 def main() -> int:
@@ -268,8 +364,10 @@ def main() -> int:
     verify_schema_contract(output_schema, "ho-det-001-ai-triage-output.schema.json")
     verify_triage_packet(input_schema, triage_packet)
     verify_llm_summary(output_schema, llm_summary)
+    verify_invalid_sample_rejected(llm_summary)
     print("STATUS=pass")
     print("AI_TRIAGE_SCHEMA_CONTRACT=pass")
+    print("INVALID_AI_AUTHORITY_SAMPLE_REJECTED=pass")
     print("DETECTION_ID=HO-DET-001")
     print(f"PROOF_CEILING={PROOF_CEILING}")
     print("AI_DECIDED_DISPOSITION=false")

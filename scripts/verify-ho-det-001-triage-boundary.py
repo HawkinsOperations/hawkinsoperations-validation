@@ -162,12 +162,17 @@ def verify_triage_packet(packet: dict[str, Any]) -> None:
     if "approve" in str(packet.get("disposition", "")).lower():
         fail("autosoc-triage-packet.json disposition must not claim approval authority")
     require_false(packet, "ai_decided_disposition", "autosoc-triage-packet.json")
+    if packet.get("human_validation_required") is not True:
+        fail("autosoc-triage-packet.json human_validation_required must be true")
+    require_false(packet, "runtime_active", "autosoc-triage-packet.json")
     require_false(packet, "runtime_actions_taken", "autosoc-triage-packet.json")
+    require_false(packet, "signal_observed", "autosoc-triage-packet.json")
     require_blocked_status(packet, "runtime_status", "autosoc-triage-packet.json")
     if packet.get("public_safe_status") not in {"NO", "BLOCKED"}:
         fail("autosoc-triage-packet.json public_safe_status must be NO or BLOCKED")
     if packet.get("public_safe_status") == "APPROVED":
         fail("autosoc-triage-packet.json public_safe_status must not be APPROVED")
+    require_false(packet, "public_safe", "autosoc-triage-packet.json")
     scan_for_promoted_claims("autosoc-triage-packet.json", packet)
     verify_confidence_bounds("autosoc-triage-packet.json", packet)
     verify_no_attack_mapping("autosoc-triage-packet.json", packet)
@@ -188,12 +193,20 @@ def verify_llm_summary(summary: dict[str, Any]) -> None:
     assert_eq(summary.get("allowed_use"), "triage_support_only", "llm-summary.json allowed_use")
     assert_eq(summary.get("prohibited_use"), "final_disposition", "llm-summary.json prohibited_use")
     require_false(summary, "ai_decided_disposition", "llm-summary.json")
+    if summary.get("recommended_disposition") is not None:
+        fail("llm-summary.json recommended_disposition must be null")
+    require_false(summary, "final_disposition_authority", "llm-summary.json")
+    require_false(summary, "runtime_active", "llm-summary.json")
+    require_false(summary, "signal_observed", "llm-summary.json")
     if summary.get("public_safe_status") not in {"NO", "BLOCKED"}:
         fail("llm-summary.json public_safe_status must be NO or BLOCKED")
     if summary.get("public_safe_status") == "APPROVED":
         fail("llm-summary.json public_safe_status must not be APPROVED")
+    require_false(summary, "public_safe", "llm-summary.json")
     if summary.get("analyst_review_required") is not True:
         fail("llm-summary.json analyst_review_required must be true")
+    if summary.get("human_validation_required") is not True:
+        fail("llm-summary.json human_validation_required must be true")
     scan_for_promoted_claims("llm-summary.json", summary)
     verify_confidence_bounds("llm-summary.json", summary)
     verify_no_attack_mapping("llm-summary.json", summary)
