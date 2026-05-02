@@ -1,0 +1,310 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hawkinsoperations.local/contracts/closed-autosoc-loop-001.schema.json",
+  "title": "HawkinsOperations Closed AutoSOC Loop 001 Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "loop_id",
+    "detection_id",
+    "proof_ceiling",
+    "validation_pass_reference",
+    "synthetic_fixture_result_reference",
+    "case_packet_reference",
+    "autosoc_triage_reference",
+    "llm_summary_reference",
+    "authority_boundary",
+    "claim_boundary",
+    "blocked_claims",
+    "private_evidence_references",
+    "next_promotion_gate"
+  ],
+  "properties": {
+    "loop_id": {
+      "type": "string",
+      "const": "Closed AutoSOC Loop 001"
+    },
+    "detection_id": {
+      "type": "string",
+      "const": "HO-DET-001"
+    },
+    "proof_ceiling": {
+      "type": "string",
+      "const": "TEST_VALIDATED_SYNTHETIC_SCOPE"
+    },
+    "validation_pass_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "status",
+        "supported_claim"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "const": "reports/ho-det-001/validation-result.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "status": {
+          "type": "string",
+          "const": "pass"
+        },
+        "supported_claim": {
+          "type": "string",
+          "const": "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures."
+        }
+      }
+    },
+    "synthetic_fixture_result_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_cases",
+        "positive_cases",
+        "negative_cases",
+        "matched_positive_count",
+        "missed_positive_cases",
+        "false_positive_negative_cases"
+      ],
+      "properties": {
+        "total_cases": {
+          "type": "integer",
+          "const": 14
+        },
+        "positive_cases": {
+          "type": "integer",
+          "const": 7
+        },
+        "negative_cases": {
+          "type": "integer",
+          "const": 7
+        },
+        "matched_positive_count": {
+          "type": "integer",
+          "const": 7
+        },
+        "missed_positive_cases": {
+          "type": "array",
+          "maxItems": 0
+        },
+        "false_positive_negative_cases": {
+          "type": "array",
+          "maxItems": 0
+        }
+      }
+    },
+    "case_packet_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "const": "validation/successor/ho-det-001/case-packet.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        }
+      }
+    },
+    "autosoc_triage_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "const": "validation/successor/ho-det-001/autosoc-triage-packet.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        }
+      }
+    },
+    "llm_summary_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "const": "validation/successor/ho-det-001/llm-summary.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        }
+      }
+    },
+    "authority_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ai_role",
+        "ai_decided_disposition",
+        "human_review_required",
+        "recommended_disposition",
+        "ai_may_approve",
+        "ai_may_promote",
+        "ai_may_close"
+      ],
+      "properties": {
+        "ai_role": {
+          "type": "string",
+          "const": "triage_support_only"
+        },
+        "ai_decided_disposition": {
+          "type": "boolean",
+          "const": false
+        },
+        "human_review_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "recommended_disposition": {
+          "type": "null"
+        },
+        "ai_may_approve": {
+          "type": "boolean",
+          "const": false
+        },
+        "ai_may_promote": {
+          "type": "boolean",
+          "const": false
+        },
+        "ai_may_close": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_active_public_claim",
+        "signal_observed_public_claim",
+        "production_claim",
+        "fleet_wide_claim",
+        "autonomous_soc_claim",
+        "cribl_routed_claim",
+        "wazuh_routed_claim",
+        "public_safe_claim",
+        "public_safe_status",
+        "allowed_public_claim"
+      ],
+      "properties": {
+        "runtime_active_public_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "signal_observed_public_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "production_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "fleet_wide_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "autonomous_soc_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "cribl_routed_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "wazuh_routed_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "public_safe_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "public_safe_status": {
+          "type": "string",
+          "const": "NOT_PUBLIC_SAFE"
+        },
+        "allowed_public_claim": {
+          "type": "string",
+          "const": "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures."
+        }
+      }
+    },
+    "blocked_claims": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      },
+      "allOf": [
+        { "contains": { "const": "runtime-active public claim" } },
+        { "contains": { "const": "signal-observed public claim" } },
+        { "contains": { "const": "production" } },
+        { "contains": { "const": "fleet-wide" } },
+        { "contains": { "const": "autonomous SOC" } },
+        { "contains": { "const": "Cribl-routed" } },
+        { "contains": { "const": "Wazuh-routed" } },
+        { "contains": { "const": "public-safe" } },
+        { "contains": { "const": "AI-approved disposition" } },
+        { "contains": { "const": "analyst-approved disposition" } },
+        { "contains": { "const": "private raw evidence path" } }
+      ]
+    },
+    "private_evidence_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label",
+          "classification",
+          "sha256"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "PRIVATE_HASH_ONLY",
+              "PRIVATE_LAB_SCOPE_REFERENCE",
+              "SANITIZED_REPO_REFERENCE"
+            ]
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          }
+        }
+      }
+    },
+    "next_promotion_gate": {
+      "type": "string",
+      "const": "Human review and separate promotion approval are required before any runtime, signal, evidence-linked public proof, public-safe, production, fleet-wide, Cribl-routed, Wazuh-routed, autonomous SOC, AI-approved, or analyst-approved claim."
+    }
+  }
+}
