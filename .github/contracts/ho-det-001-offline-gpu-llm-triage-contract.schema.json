@@ -13,7 +13,7 @@
     "bounded_gpu_observation",
     "ai_authority_boundary",
     "deterministic_verifier_boundary",
-    "public_claim_boundary",
+    "bounded_claim_boundary",
     "privacy_boundary",
     "private_evidence_references",
     "next_promotion_gate"
@@ -119,13 +119,14 @@
         }
       }
     },
-    "public_claim_boundary": {
+    "bounded_claim_boundary": {
       "type": "object",
       "additionalProperties": false,
       "required": ["allowed_wording", "blocked_wording"],
       "properties": {
         "allowed_wording": {
           "type": "array",
+          "description": "Allowed only as bounded internal classification or reviewed contract language. These values are not public proof claims.",
           "items": {
             "enum": [
               "private lab model support completed",
