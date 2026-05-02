@@ -18,15 +18,15 @@
   },
   "case_packet_reference": {
     "path": "validation/successor/ho-det-001/case-packet.json",
-    "sha256": "8f12cbea552c66369323d1463197dccc5d148967e107290580d5632f79f2734e"
+    "sha256": "d4ad7c6059965d7c2a1b10e223a9a74d3a64d692ea12e2f937553e1904f98ef2"
   },
   "autosoc_triage_reference": {
     "path": "validation/successor/ho-det-001/autosoc-triage-packet.json",
-    "sha256": "b059b1f8ca2172ffb3c7829bf3e8ed69cb851384a351076d55e80d9538ecbedd"
+    "sha256": "8636080402115cc5c86789a155883d8d020d56e1db26c18fb48ccdd10f755f24"
   },
   "llm_summary_reference": {
     "path": "validation/successor/ho-det-001/llm-summary.json",
-    "sha256": "deb62176350d0985f3e7b1e5178069f493f8a0ed8647be06a554d3cb2f744f52"
+    "sha256": "1d93fb3c858b83214537bd161007fba9c928dd611f52818b24347fd75d2656f2"
   },
   "authority_boundary": {
     "ai_role": "triage_support_only",

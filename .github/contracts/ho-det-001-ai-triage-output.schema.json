@@ -19,11 +19,19 @@
     "allowed_use",
     "prohibited_use",
     "ai_decided_disposition",
+    "recommended_disposition",
+    "final_disposition_authority",
     "public_safe_status",
+    "public_safe",
+    "runtime_active",
+    "signal_observed",
     "summary_type",
+    "advisory_output",
     "hypothesis",
     "analyst_review_required",
+    "human_validation_required",
     "unsupported_claims",
+    "claim_boundary",
     "generated_at",
     "privacy_status"
   ],
@@ -83,13 +91,93 @@
       "type": "boolean",
       "const": false
     },
+    "recommended_disposition": {
+      "type": "null"
+    },
+    "final_disposition_authority": {
+      "type": "boolean",
+      "const": false
+    },
     "public_safe_status": {
       "type": "string",
       "const": "BLOCKED"
     },
+    "public_safe": {
+      "type": "boolean",
+      "const": false
+    },
+    "runtime_active": {
+      "type": "boolean",
+      "const": false
+    },
+    "signal_observed": {
+      "type": "boolean",
+      "const": false
+    },
     "summary_type": {
       "type": "string",
       "const": "hypothesis_triage_support_only"
+    },
+    "advisory_output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "evidence_map",
+        "uncertainty",
+        "recommended_next_checks"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_map": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_ref",
+              "mapped_observation",
+              "claim_supported"
+            ],
+            "properties": {
+              "source_ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "mapped_observation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "claim_supported": {
+                "type": "string",
+                "enum": [
+                  "synthetic_validation_context_only",
+                  "requires_human_review"
+                ]
+              }
+            }
+          }
+        },
+        "uncertainty": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "recommended_next_checks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        }
+      }
     },
     "hypothesis": {
       "type": "string",
@@ -99,8 +187,40 @@
       "type": "boolean",
       "const": true
     },
+    "human_validation_required": {
+      "type": "boolean",
+      "const": true
+    },
     "unsupported_claims": {
       "$ref": "#/$defs/blocked_claims"
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_proves_runtime",
+        "schema_proves_signal",
+        "schema_proves_public_safe_status",
+        "ai_final_disposition_authority"
+      ],
+      "properties": {
+        "schema_proves_runtime": {
+          "type": "boolean",
+          "const": false
+        },
+        "schema_proves_signal": {
+          "type": "boolean",
+          "const": false
+        },
+        "schema_proves_public_safe_status": {
+          "type": "boolean",
+          "const": false
+        },
+        "ai_final_disposition_authority": {
+          "type": "boolean",
+          "const": false
+        }
+      }
     },
     "generated_at": {
       "type": "string",

@@ -18,9 +18,15 @@
     "llm_role",
     "ai_decided_disposition",
     "analyst_review_required",
+    "human_validation_required",
     "runtime_status",
+    "runtime_active",
     "runtime_actions_taken",
+    "signal_observed",
     "public_safe_status",
+    "public_safe",
+    "claim_boundary",
+    "future_evidence_requirements",
     "reason",
     "matched_positive_count",
     "missed_positive_cases",
@@ -95,17 +101,76 @@
       "type": "boolean",
       "const": true
     },
+    "human_validation_required": {
+      "type": "boolean",
+      "const": true
+    },
     "runtime_status": {
       "type": "string",
       "const": "BLOCKED"
     },
+    "runtime_active": {
+      "type": "boolean",
+      "const": false
+    },
     "runtime_actions_taken": {
+      "type": "boolean",
+      "const": false
+    },
+    "signal_observed": {
       "type": "boolean",
       "const": false
     },
     "public_safe_status": {
       "type": "string",
       "const": "BLOCKED"
+    },
+    "public_safe": {
+      "type": "boolean",
+      "const": false
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_proves_runtime",
+        "schema_proves_signal",
+        "schema_proves_public_safe_status",
+        "ai_final_disposition_authority"
+      ],
+      "properties": {
+        "schema_proves_runtime": {
+          "type": "boolean",
+          "const": false
+        },
+        "schema_proves_signal": {
+          "type": "boolean",
+          "const": false
+        },
+        "schema_proves_public_safe_status": {
+          "type": "boolean",
+          "const": false
+        },
+        "ai_final_disposition_authority": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "future_evidence_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "operator-approved runtime receipt",
+          "runtime evidence hash",
+          "deterministic verifier pass",
+          "human disposition review",
+          "publication promotion review"
+        ]
+      },
+      "uniqueItems": true
     },
     "reason": {
       "type": "string",
