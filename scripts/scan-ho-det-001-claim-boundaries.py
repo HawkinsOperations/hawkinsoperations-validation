@@ -15,17 +15,22 @@ SCOPED_FILES = [
     ROOT / "validation" / "successor" / "ho-det-001" / "case-packet.json",
     ROOT / "validation" / "successor" / "ho-det-001" / "autosoc-triage-packet.json",
     ROOT / "validation" / "successor" / "ho-det-001" / "llm-summary.json",
+    ROOT / "validation" / "successor" / "ho-det-001" / "private-runtime-evidence-index.json",
+    ROOT / "validation" / "successor" / "ho-det-001" / "private-runtime-evidence-index.md",
     ROOT / "reports" / "ho-det-001" / "validation-result.json",
     ROOT / "docs" / "HO-DET-001_CLOSED_LOOP.md",
 ]
 BLOCKED_TERMS = [
     "runtime-active",
     "signal-observed",
+    "signal-observed public proof",
     "evidence-linked public proof",
     "evidence-linked",
     "public-safe",
+    "public-safe runtime proof",
     "production-ready",
     "fleet-wide",
+    "splunk-proven",
     "live splunk fired",
     "live splunk firing",
     "cloudtrail-live",
@@ -35,6 +40,7 @@ BLOCKED_TERMS = [
     "cribl-routed",
     "cribl-routed telemetry",
     "wazuh-routed",
+    "wazuh-routed public proof",
     "wazuh live collection",
     "aws-live",
     "autonomous soc",
@@ -49,10 +55,12 @@ BLOCKED_TERMS = [
 ALLOWED_JSON_PATH_PARTS = {
     "unsupported_claims",
     "blocked_claims",
+    "blocked_repo_claim",
     "claims_not_supported",
     "claim_boundary",
     "trust_boundary",
     "privacy_status",
+    "not_proven",
 }
 ALLOWED_TEXT_MARKERS = [
     "blocked",
@@ -151,6 +159,9 @@ def markdown_section(line: str, current: str) -> str:
 
 def markdown_context_allowed(section: str, line: str) -> bool:
     lower = line.lower()
+    lower_section = section.lower()
+    if "blocked" in lower_section or lower_section in {"not proven", "what this does not prove"}:
+        return True
     if section in {"blocked claims", "what this does not prove"}:
         return True
     if section == "status":

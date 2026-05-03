@@ -1,0 +1,61 @@
+{
+  "detection_id": "HO-DET-001",
+  "private_truth_label": "LOCAL_SYSMON_AND_WAZUH_EVENT_CORRELATED_PRIVATE_LAB_SPLUNK_NOT_PROVEN",
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "promotion_status": "BLOCKED",
+  "evidence_scope": "PRIVATE_LAB_ENDPOINT_SCOPED",
+  "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "proven_private": [
+    "controlled benign event generated",
+    "local Sysmon captured event",
+    "HO-DET-001 local match observed",
+    "Wazuh event identifiers correlated",
+    "private receipt files and hashes exist"
+  ],
+  "not_proven": [
+    "original event-specific Splunk proof",
+    "Cribl-routed telemetry",
+    "public-safe runtime proof",
+    "runtime-active public proof",
+    "signal-observed public proof",
+    "production-ready",
+    "fleet-wide",
+    "AWS-live",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition"
+  ],
+  "evidence_files": [
+    {
+      "label": "private_receipt_md",
+      "path": "C:\\Raylee\\Data\\evidence-staging\\HO-DET-001\\runtime-signal-001\\HO-DET-001_RUNTIME_SIGNAL_001_PRIVATE_RECEIPT.md",
+      "sha256": "2BF41780DAAEB8628CE8E4A3AFCC8A9450327FD9F9F9E4D4775D37C49370744A"
+    },
+    {
+      "label": "private_receipt_json",
+      "path": "C:\\Raylee\\Data\\evidence-staging\\HO-DET-001\\runtime-signal-001\\HO-DET-001_RUNTIME_SIGNAL_001_PRIVATE_RECEIPT.json",
+      "sha256": "D1B6ED8FF8A048DFEFFECD623962F63BBAA808AD3330CAE2195BDE2C4AB82882"
+    },
+    {
+      "label": "private_receipt_hash_manifest",
+      "path": "C:\\Raylee\\Data\\evidence-staging\\HO-DET-001\\runtime-signal-001\\HO-DET-001_RUNTIME_SIGNAL_001_PRIVATE_RECEIPT_HASHES.txt",
+      "sha256": "064316D73A07C88CC0F42ED9437105A1338DFF6F3851117E3B88A928C0217706"
+    }
+  ],
+  "allowed_repo_claim": [
+    "Private runtime receipt exists for HO-DET-001 and remains blocked from public promotion."
+  ],
+  "blocked_repo_claim": [
+    "HO-DET-001 is runtime-active",
+    "HO-DET-001 is signal-observed public proof",
+    "HO-DET-001 is public-safe",
+    "HO-DET-001 is production-ready",
+    "HO-DET-001 is fleet-wide",
+    "HO-DET-001 is Splunk-proven for Runtime Signal 001",
+    "HO-DET-001 is Cribl-routed",
+    "HO-DET-001 is Wazuh-routed public proof",
+    "HO-DET-001 is AWS-live",
+    "HO-DET-001 has AI-approved disposition",
+    "HO-DET-001 has analyst-approved disposition"
+  ]
+}
