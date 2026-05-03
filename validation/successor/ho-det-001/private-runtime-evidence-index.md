@@ -3,45 +3,72 @@
 ## Status
 
 - Detection ID: HO-DET-001
-- Private truth label: LOCAL_SYSMON_AND_WAZUH_EVENT_CORRELATED_PRIVATE_LAB_SPLUNK_NOT_PROVEN
+- Private truth label: CONTROLLED_LOCAL_LLM_SUPPORT_ONLY_PRIVATE_RECEIPT
 - Public-safe status: NOT_PUBLIC_SAFE
 - Promotion status: BLOCKED
-- Evidence scope: PRIVATE_LAB_ENDPOINT_SCOPED
-- Public proof ceiling: TEST_VALIDATED_SYNTHETIC_SCOPE
+- Evidence scope: PRIVATE_LLM_RUNTIME_RECEIPT_SCOPED
+- Verification scope: STRUCTURE_AND_BOUNDARY_ONLY
+- Public proof ceiling: CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_SYNTHETIC_PACKET_SCOPE
+- Evidence ID: gpu-runtime-receipt-001
+- Evidence store: PRIVATE_EVIDENCE_STORE
+- Evidence location public: REDACTED_PRIVATE
+- Storage class: PRIVATE_LAB_EVIDENCE
+- Trust label: CONTROLLED_LOCAL_LLM_SUPPORT_ONLY_PRIVATE_RECEIPT
+- Model: qwen2.5:14b
+- Verifier status: PASS
+- Required artifacts present: 14/14
+
+## Boundary Fields
+
+- AI_DECIDED_DISPOSITION=false
+- AI_MAY_APPROVE=false
+- AI_MAY_PROMOTE=false
+- AI_MAY_CLOSE=false
+- HUMAN_REVIEW_REQUIRED=true
+- SUPPORT_ONLY=true
+- PUBLIC_SAFE_STATUS=NOT_PUBLIC_SAFE
+- PROOF_CEILING=CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_SYNTHETIC_PACKET_SCOPE
+
+## Public Boundary
+
+- private GPU local LLM runtime receipt exists
+- raw evidence remains private
+- repo verifier checks structure and boundary only
+- repo index records hash-only receipt references
 
 ## Proven Private
 
-- controlled benign event generated
-- local Sysmon captured event
-- HO-DET-001 local match observed
-- Wazuh event identifiers correlated
-- private receipt files and hashes exist
+- controlled local Ollama invocation completed
+- qwen2.5:14b generated support-only triage output
+- sanitized synthetic HO-DET-001 case packet hash matched across transfer
+- private receipt artifacts and hashes exist
+- private verifier status is PASS
 
 ## Not Proven
 
-- original event-specific Splunk proof
-- Cribl-routed telemetry
-- public-safe runtime proof
-- runtime-active public proof
+- runtime-active detection
 - signal-observed public proof
+- live telemetry routing
+- public-safe runtime proof
 - production-ready
 - fleet-wide
-- AWS-live
 - autonomous SOC
 - AI-approved disposition
 - analyst-approved disposition
 
-## Evidence Files
+## Receipt Hashes
 
-| Label | Path | SHA256 |
-| --- | --- | --- |
-| private_receipt_md | `C:\Raylee\Data\evidence-staging\HO-DET-001\runtime-signal-001\HO-DET-001_RUNTIME_SIGNAL_001_PRIVATE_RECEIPT.md` | `2BF41780DAAEB8628CE8E4A3AFCC8A9450327FD9F9F9E4D4775D37C49370744A` |
-| private_receipt_json | `C:\Raylee\Data\evidence-staging\HO-DET-001\runtime-signal-001\HO-DET-001_RUNTIME_SIGNAL_001_PRIVATE_RECEIPT.json` | `D1B6ED8FF8A048DFEFFECD623962F63BBAA808AD3330CAE2195BDE2C4AB82882` |
-| private_receipt_hash_manifest | `C:\Raylee\Data\evidence-staging\HO-DET-001\runtime-signal-001\HO-DET-001_RUNTIME_SIGNAL_001_PRIVATE_RECEIPT_HASHES.txt` | `064316D73A07C88CC0F42ED9437105A1338DFF6F3851117E3B88A928C0217706` |
+| Artifact | SHA256 |
+| --- | --- |
+| case_packet_input | `b258feca9515aa643937929f148f87bf6ae9e9b71e4af9e45420bcc8cbcbb41e` |
+| linux_case_packet_input | `b258feca9515aa643937929f148f87bf6ae9e9b71e4af9e45420bcc8cbcbb41e` |
+| llm_output_raw | `cec879ef8827d2a0f984b553d08c91782942d4403560f92bc8a45a197db383eb` |
+| evidence_manifest | `fe2d767d69e936132dabcf12fc1b6f9a8fc24c2d22559e43f0a2ef0a31ca95e6` |
+| verifier_result | `28d0166781035523cdaa6551a12355a705930c842afeb3a09184b4f8ad61dc5f` |
 
 ## Allowed Repo Claim
 
-- Private runtime receipt exists for HO-DET-001 and remains blocked from public promotion.
+- Private support-only local LLM runtime receipt exists for HO-DET-001 and remains blocked from public promotion.
 
 ## Blocked Repo Claims
 
@@ -50,13 +77,12 @@
 - HO-DET-001 is public-safe
 - HO-DET-001 is production-ready
 - HO-DET-001 is fleet-wide
-- HO-DET-001 is Splunk-proven for Runtime Signal 001
+- HO-DET-001 has live Splunk proof
 - HO-DET-001 is Cribl-routed
-- HO-DET-001 is Wazuh-routed public proof
-- HO-DET-001 is AWS-live
+- HO-DET-001 is Wazuh-routed
 - HO-DET-001 has AI-approved disposition
 - HO-DET-001 has analyst-approved disposition
 
 ## Boundary
 
-This index records private evidence existence only. It does not copy private evidence into the repository, does not prove public-safe runtime status, and does not promote HO-DET-001 beyond TEST_VALIDATED_SYNTHETIC_SCOPE.
+This index records private evidence existence only. It does not copy private evidence into the repository, does not expose local evidence paths, does not include raw model output, does not prove public-safe runtime status, and does not promote HO-DET-001 beyond CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_SYNTHETIC_PACKET_SCOPE.
