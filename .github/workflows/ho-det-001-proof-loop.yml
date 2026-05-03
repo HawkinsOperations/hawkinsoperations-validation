@@ -71,5 +71,8 @@ jobs:
       - name: Run proof-record parity verifier
         run: python scripts/verify-proof-record-parity.py
 
+      - name: Run HO-DET-001 reproducible proof pack verifier
+        run: python scripts/verify-ho-det-001-reproducible-proof-pack.py
+
       - name: Run whitespace diff check
         run: git diff --check
