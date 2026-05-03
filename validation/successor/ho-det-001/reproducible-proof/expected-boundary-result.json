@@ -1,0 +1,33 @@
+{
+  "expected_result": "pass",
+  "detection_id": "HO-DET-001",
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "promotion_status": "BLOCKED",
+  "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "expected_false_fields": {
+    "runtime_active_public_proof": false,
+    "signal_observed_public_proof": false,
+    "production_ready": false,
+    "fleet_wide": false,
+    "cribl_routed": false,
+    "wazuh_routed_public_proof": false,
+    "aws_live": false,
+    "autonomous_soc": false,
+    "ai_approved_disposition": false,
+    "analyst_approved_disposition": false
+  },
+  "required_blocked_claims": [
+    "runtime-active",
+    "signal-observed public proof",
+    "public-safe runtime proof",
+    "production-ready",
+    "fleet-wide",
+    "Splunk-proven",
+    "Cribl-routed",
+    "Wazuh-routed public proof",
+    "AWS-live",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition"
+  ]
+}
