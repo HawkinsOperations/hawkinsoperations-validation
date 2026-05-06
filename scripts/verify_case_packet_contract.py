@@ -5,10 +5,13 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
+
+sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = ROOT / ".github" / "contracts" / "case-packet.schema.json"
@@ -147,14 +150,45 @@ def verify_builder_parity(packet: dict[str, Any]) -> None:
         fail("case-packet.json does not match deterministic builder output")
 
 
+def verify_builder_check_mode_is_non_mutating() -> None:
+    if not CASE_PACKET.exists():
+        fail(f"missing case-packet.json before check-mode regression: {CASE_PACKET}")
+    before_text = CASE_PACKET.read_text(encoding="utf-8")
+    before_mtime = CASE_PACKET.stat().st_mtime_ns
+    result = subprocess.run(
+        [sys.executable, str(BUILDER), "--check"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        fail(
+            "case-packet builder --check failed unexpectedly: "
+            f"stdout={result.stdout.strip()} stderr={result.stderr.strip()}"
+        )
+    if "WRITE_SKIPPED=true" not in result.stdout:
+        fail("case-packet builder --check did not report WRITE_SKIPPED=true")
+    if "WROTE=" in result.stdout:
+        fail("case-packet builder --check reported a write")
+    after_text = CASE_PACKET.read_text(encoding="utf-8")
+    after_mtime = CASE_PACKET.stat().st_mtime_ns
+    if after_text != before_text:
+        fail("case-packet builder --check modified case-packet.json contents")
+    if after_mtime != before_mtime:
+        fail("case-packet builder --check modified case-packet.json mtime")
+
+
 def main() -> int:
     schema = load_json(SCHEMA, "case-packet.schema.json")
     packet = load_json(CASE_PACKET, "case-packet.json")
     validate_required_from_schema(schema, packet)
     verify_boundaries(packet)
     verify_builder_parity(packet)
+    verify_builder_check_mode_is_non_mutating()
     print("STATUS=pass")
     print("CASE_PACKET_CONTRACT=pass")
+    print("CASE_PACKET_CHECK_MODE_NON_MUTATING=pass")
     print(f"CASE_PACKET={CASE_PACKET}")
     print(f"SCHEMA={SCHEMA}")
     return 0
