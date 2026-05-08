@@ -43,7 +43,10 @@ COMPONENT_REQUIRED = {
     "blocked_from_public_claim",
 }
 RAW_PATTERNS = {
-    "raw IPv4 address": re.compile(r"(?<!\d)(?:10|127|169|172|192)\.(?:\d{1,3}\.){2}\d{1,3}(?!\d)"),
+    "raw IPv4 address": re.compile(
+        r"\b(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}"
+        r"(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\b"
+    ),
     "MAC address": re.compile(r"\b[0-9a-fA-F]{2}(?::|-)[0-9a-fA-F]{2}(?::|-)[0-9a-fA-F]{2}(?::|-)[0-9a-fA-F]{2}(?::|-)[0-9a-fA-F]{2}(?::|-)[0-9a-fA-F]{2}\b"),
     "local Windows path": re.compile(r"\b[A-Za-z]:[\\/][^\s\"']+"),
     "browser URL": re.compile(r"\bhttps?://[^\s\"']+", re.IGNORECASE),
