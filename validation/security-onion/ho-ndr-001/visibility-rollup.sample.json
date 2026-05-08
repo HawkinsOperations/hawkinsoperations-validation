@@ -1,0 +1,53 @@
+{
+  "packet_id": "HO-NDR-001-SANITIZED-VISIBILITY-ROLLUP-SAMPLE",
+  "classification": "PRIVATE_INTERNAL_UI_VISIBILITY_ROLLUP_SAMPLE",
+  "public_safe_status": "NOT_APPROVED",
+  "claim_ceiling": "PRIVATE_NDR_MODULE_VISIBILITY_ROLLUP_DEFINED",
+  "observation_basis": "SANITIZED_SAMPLE_FROM_PRIVATE_UI_OBSERVATIONS",
+  "time_window": "last_24_hours",
+  "components": {
+    "temp_mirror_packet_visibility": {
+      "status": "defined_private_scope",
+      "evidence_type": "sanitized_private_packet_path_observation",
+      "count_present": false,
+      "count_value": 0,
+      "public_safe": false,
+      "blocked_from_public_claim": true
+    },
+    "zeek_index_visibility": {
+      "status": "observed_private_scope",
+      "evidence_type": "sanitized_private_ui_observation",
+      "count_present": true,
+      "count_value": 2219,
+      "public_safe": false,
+      "blocked_from_public_claim": true
+    },
+    "suricata_index_visibility": {
+      "status": "observed_private_scope",
+      "evidence_type": "sanitized_private_ui_observation",
+      "count_present": true,
+      "count_value": 163,
+      "public_safe": false,
+      "blocked_from_public_claim": true
+    }
+  },
+  "blocked_claims": [
+    "permanent_span",
+    "production_ndr",
+    "fleet_wide_visibility",
+    "public_safe_proof",
+    "durable_monitoring",
+    "pcap_availability",
+    "long_term_retention",
+    "cross_source_corroboration",
+    "zeek_coverage_completeness",
+    "suricata_detection_quality"
+  ],
+  "next_gates": [
+    "document_mirror_status_before_any_durable_visibility_claim",
+    "review_dataset_breakdown_in_private_scope",
+    "test_pcap_export_path_in_private_scope",
+    "complete_redaction_review_before_any_public_candidate",
+    "defer_repo_proof_record_until_separately_approved"
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "title": "Security Onion NDR Visibility Rollup Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "packet_id",
+    "classification",
+    "public_safe_status",
+    "claim_ceiling",
+    "observation_basis",
+    "time_window",
+    "components",
+    "blocked_claims",
+    "next_gates"
+  ],
+  "properties": {
+    "packet_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "classification": {
+      "type": "string",
+      "const": "PRIVATE_INTERNAL_UI_VISIBILITY_ROLLUP_SAMPLE"
+    },
+    "public_safe_status": {
+      "type": "string",
+      "const": "NOT_APPROVED"
+    },
+    "claim_ceiling": {
+      "type": "string",
+      "const": "PRIVATE_NDR_MODULE_VISIBILITY_ROLLUP_DEFINED"
+    },
+    "observation_basis": {
+      "type": "string",
+      "const": "SANITIZED_SAMPLE_FROM_PRIVATE_UI_OBSERVATIONS"
+    },
+    "time_window": {
+      "type": "string",
+      "minLength": 1
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "temp_mirror_packet_visibility",
+        "zeek_index_visibility",
+        "suricata_index_visibility"
+      ],
+      "properties": {
+        "temp_mirror_packet_visibility": {
+          "$ref": "#/$defs/component"
+        },
+        "zeek_index_visibility": {
+          "$ref": "#/$defs/component"
+        },
+        "suricata_index_visibility": {
+          "$ref": "#/$defs/component"
+        }
+      }
+    },
+    "blocked_claims": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "permanent_span",
+          "production_ndr",
+          "fleet_wide_visibility",
+          "public_safe_proof",
+          "durable_monitoring",
+          "pcap_availability",
+          "long_term_retention",
+          "cross_source_corroboration",
+          "zeek_coverage_completeness",
+          "suricata_detection_quality"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "next_gates": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    }
+  },
+  "$defs": {
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "evidence_type",
+        "count_present",
+        "count_value",
+        "public_safe",
+        "blocked_from_public_claim"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "defined_private_scope",
+            "observed_private_scope",
+            "blocked_pending_validation"
+          ]
+        },
+        "evidence_type": {
+          "type": "string",
+          "enum": [
+            "sanitized_private_ui_observation",
+            "sanitized_private_packet_path_observation",
+            "not_included_in_public_sample"
+          ]
+        },
+        "count_present": {
+          "type": "boolean"
+        },
+        "count_value": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "public_safe": {
+          "type": "boolean",
+          "const": false
+        },
+        "blocked_from_public_claim": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    }
+  }
+}
