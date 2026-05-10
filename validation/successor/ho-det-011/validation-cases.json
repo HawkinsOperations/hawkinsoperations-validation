@@ -1,0 +1,92 @@
+{
+  "detection_id": "HO-DET-011",
+  "case_scope": "synthetic_windows_service_creation",
+  "source_scope": [
+    "Windows System Event ID 7045 from Service Control Manager service install telemetry",
+    "Windows Security Event ID 4697 where service installation auditing is available",
+    "Sysmon Event ID 1 process creation context for service creation tooling"
+  ],
+  "cases": {
+    "positive": [
+      {
+        "id": "pos-001-system-7045-suspicious-image-path",
+        "description": "Windows System 7045 service install with suspicious service ImagePath",
+        "event": {
+          "EventID": 7045,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "WindowsCacheUpdate",
+          "ImagePath": "\\ProgramData\\WindowsCache\\svc.exe",
+          "ServiceType": "user mode service",
+          "StartType": "auto start"
+        }
+      },
+      {
+        "id": "pos-002-security-4697-servicefilename",
+        "description": "Windows Security 4697 service install with suspicious ServiceFileName path",
+        "event": {
+          "EventID": 4697,
+          "Channel": "Security",
+          "ServiceName": "UpdaterHelper",
+          "ServiceFileName": "\\Temp\\UpdaterHelper.exe",
+          "ServiceType": "user mode service",
+          "StartType": "auto start"
+        }
+      },
+      {
+        "id": "pos-003-sysmon-1-service-creation-tooling",
+        "description": "Sysmon 1 process creation showing sc.exe service creation with suspicious binary path",
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Provider_Name": "Microsoft-Windows-Sysmon",
+          "Image": "\\Windows\\System32\\sc.exe",
+          "OriginalFileName": "sc.exe",
+          "CommandLine": "sc.exe create WindowsCacheUpdate binPath= \\ProgramData\\WindowsCache\\svc.exe start= auto",
+          "ParentImage": "\\Windows\\System32\\cmd.exe"
+        }
+      }
+    ],
+    "negative": [
+      {
+        "id": "neg-001-benign-agent-service-install",
+        "description": "Benign software agent service installation from a standard program directory",
+        "event": {
+          "EventID": 7045,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "MonitoringAgent",
+          "ImagePath": "\\Program Files\\MonitoringAgent\\agent.exe",
+          "ServiceType": "user mode service",
+          "StartType": "auto start"
+        }
+      },
+      {
+        "id": "neg-002-benign-admin-service-creation",
+        "description": "Benign administrative service creation without suspicious path or creation tooling context",
+        "event": {
+          "EventID": 7045,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "AdminHelper",
+          "ImagePath": "\\Windows\\System32\\svchost.exe -k netsvcs",
+          "ServiceType": "share process",
+          "StartType": "demand start"
+        }
+      },
+      {
+        "id": "neg-003-unrelated-sysmon-process",
+        "description": "Unrelated Sysmon process creation without service creation behavior",
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Provider_Name": "Microsoft-Windows-Sysmon",
+          "Image": "\\Windows\\System32\\notepad.exe",
+          "OriginalFileName": "notepad.exe",
+          "CommandLine": "notepad.exe",
+          "ParentImage": "\\Windows\\explorer.exe"
+        }
+      }
+    ]
+  }
+}

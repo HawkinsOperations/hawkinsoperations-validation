@@ -1,0 +1,85 @@
+{
+  "status": "pass",
+  "detection_id": "HO-DET-011",
+  "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-011/validation-cases.json",
+  "source_scope": "Merged source scope from HO-DET-011 source artifacts; validation harness is self-contained synthetic fixture logic.",
+  "matched_positive_count": 3,
+  "missed_positive_cases": [],
+  "false_positive_negative_cases": [],
+  "totals": {
+    "total_cases": 6,
+    "positive_cases": 3,
+    "negative_cases": 3,
+    "pass": 6,
+    "fail": 0
+  },
+  "positive": [
+    {
+      "id": "pos-001-system-7045-suspicious-image-path",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-002-security-4697-servicefilename",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-003-sysmon-1-service-creation-tooling",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    }
+  ],
+  "negative": [
+    {
+      "id": "neg-001-benign-agent-service-install",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-002-benign-admin-service-creation",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-003-unrelated-sysmon-process",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    }
+  ],
+  "exact_claim_supported": "HO-DET-011 passed synthetic validation against controlled Windows service creation fixtures.",
+  "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "telemetry_boundary": {
+    "event_7045": "Windows System / Service Control Manager",
+    "event_4697": "Windows Security service installation auditing where available",
+    "event_1": "Sysmon process creation context"
+  },
+  "servicefilename_coverage": "Windows Security 4697 ServiceFileName is evaluated as a service path alias.",
+  "runtime_active": false,
+  "signal_observed": false,
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "production_ready": false,
+  "wazuh_routed": false,
+  "live_splunk_fired": false,
+  "fleet_wide": false,
+  "evidence_linked_public_proof": false,
+  "claims_not_supported": [
+    "runtime-active",
+    "signal-observed",
+    "public-safe",
+    "production-ready",
+    "Wazuh-routed",
+    "live Splunk fired",
+    "fleet-wide",
+    "validation-passed as runtime proof",
+    "evidence-linked public proof"
+  ],
+  "trust_boundary": "Synthetic Windows event fixture validation only. This is not runtime, signal, public-safe, production, routing, fleet, live Splunk, or evidence-linked public proof.",
+  "privacy_status": "Synthetic fixtures only; no credentials, hostnames, addresses, or live telemetry intentionally included."
+}
