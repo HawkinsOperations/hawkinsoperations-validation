@@ -1,6 +1,8 @@
 {
   "detection_id": "HO-DET-011",
   "case_scope": "synthetic_windows_service_creation",
+  "validation_scope": "synthetic fixtures only",
+  "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-011",
   "source_scope": [
     "Windows System Event ID 7045 from Service Control Manager service install telemetry",
     "Windows Security Event ID 4697 where service installation auditing is available",
@@ -9,82 +11,277 @@
   "cases": {
     "positive": [
       {
-        "id": "pos-001-system-7045-suspicious-image-path",
-        "description": "Windows System 7045 service install with suspicious service ImagePath",
+        "id": "pos-001-system-7045-appdata-imagepath",
+        "description": "Windows System 7045 service install with suspicious ImagePath under AppData",
+        "telemetry_source": "Windows System 7045",
+        "behavior": "suspicious ImagePath under user profile application data path",
+        "expected_match": true,
         "event": {
           "EventID": 7045,
           "Channel": "System",
           "Provider_Name": "Service Control Manager",
-          "ServiceName": "WindowsCacheUpdate",
-          "ImagePath": "\\ProgramData\\WindowsCache\\svc.exe",
+          "ServiceName": "CacheUpdater",
+          "ImagePath": "\\Users\\Default\\AppData\\Local\\CacheUpdater\\cacheupdater.exe",
           "ServiceType": "user mode service",
           "StartType": "auto start"
         }
       },
       {
-        "id": "pos-002-security-4697-servicefilename",
-        "description": "Windows Security 4697 service install with suspicious ServiceFileName path",
+        "id": "pos-002-system-7045-servicefilename-windows-temp",
+        "description": "Windows System 7045 service install with suspicious ServiceFileName under Windows Temp",
+        "telemetry_source": "Windows System 7045",
+        "behavior": "suspicious ServiceFileName under temporary operating system path",
+        "expected_match": true,
+        "event": {
+          "EventID": 7045,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "TempServiceLoader",
+          "ServiceFileName": "\\Windows\\Temp\\tempsvcloader.exe",
+          "ServiceType": "user mode service",
+          "StartType": "demand start"
+        }
+      },
+      {
+        "id": "pos-003-security-4697-servicefilename-users-public",
+        "description": "Windows Security 4697 service install with suspicious ServiceFileName under Users Public",
+        "telemetry_source": "Windows Security 4697",
+        "behavior": "Security event ServiceFileName alias coverage",
+        "expected_match": true,
         "event": {
           "EventID": 4697,
           "Channel": "Security",
-          "ServiceName": "UpdaterHelper",
-          "ServiceFileName": "\\Temp\\UpdaterHelper.exe",
+          "ServiceName": "PublicLibraryUpdater",
+          "ServiceFileName": "\\Users\\Public\\Libraries\\publiclibupdater.exe",
           "ServiceType": "user mode service",
-          "StartType": "auto start"
+          "StartType": "auto start",
+          "SubjectUserName": "synthetic-admin"
         }
       },
       {
-        "id": "pos-003-sysmon-1-service-creation-tooling",
-        "description": "Sysmon 1 process creation showing sc.exe service creation with suspicious binary path",
+        "id": "pos-004-sysmon-sc-create-binpath-public",
+        "description": "Sysmon Event ID 1 process context using sc.exe create with binPath pointing to a suspicious path",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "sc.exe create command with binPath service target",
+        "expected_match": true,
         "event": {
           "EventID": 1,
           "Channel": "Microsoft-Windows-Sysmon/Operational",
           "Provider_Name": "Microsoft-Windows-Sysmon",
           "Image": "\\Windows\\System32\\sc.exe",
           "OriginalFileName": "sc.exe",
-          "CommandLine": "sc.exe create WindowsCacheUpdate binPath= \\ProgramData\\WindowsCache\\svc.exe start= auto",
+          "CommandLine": "sc.exe create PublicCache binPath= \\Users\\Public\\Libraries\\publiccache.exe start= auto",
           "ParentImage": "\\Windows\\System32\\cmd.exe"
         }
-      }
-    ],
-    "negative": [
+      },
       {
-        "id": "neg-001-benign-agent-service-install",
-        "description": "Benign software agent service installation from a standard program directory",
+        "id": "pos-005-sysmon-powershell-new-service-programdata",
+        "description": "Sysmon Event ID 1 process context using PowerShell New-Service with suspicious service path",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "PowerShell New-Service command with suspicious binary path",
+        "expected_match": true,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Provider_Name": "Microsoft-Windows-Sysmon",
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "OriginalFileName": "PowerShell.EXE",
+          "CommandLine": "powershell.exe -NoProfile -Command New-Service -Name ProgramDataCache -BinaryPathName \\ProgramData\\CacheSvc\\cache.exe",
+          "ParentImage": "\\Windows\\System32\\cmd.exe"
+        }
+      },
+      {
+        "id": "pos-006-system-7045-interpreter-backed-rundll32",
+        "description": "Windows System 7045 service install with interpreter-backed service target",
+        "telemetry_source": "Windows System 7045",
+        "behavior": "interpreter-backed service image path",
+        "expected_match": true,
         "event": {
           "EventID": 7045,
           "Channel": "System",
           "Provider_Name": "Service Control Manager",
-          "ServiceName": "MonitoringAgent",
-          "ImagePath": "\\Program Files\\MonitoringAgent\\agent.exe",
+          "ServiceName": "LibraryRunner",
+          "ImagePath": "\\Windows\\System32\\rundll32.exe \\ProgramData\\LibraryRunner\\runner.dll,Start",
           "ServiceType": "user mode service",
           "StartType": "auto start"
         }
       },
       {
-        "id": "neg-002-benign-admin-service-creation",
-        "description": "Benign administrative service creation without suspicious path or creation tooling context",
+        "id": "pos-007-system-7045-script-like-ps1-target",
+        "description": "Windows System 7045 service install with script-like service target",
+        "telemetry_source": "Windows System 7045",
+        "behavior": "script-like service target",
+        "expected_match": true,
         "event": {
           "EventID": 7045,
           "Channel": "System",
           "Provider_Name": "Service Control Manager",
-          "ServiceName": "AdminHelper",
+          "ServiceName": "ScriptedService",
+          "ImagePath": "\\ProgramData\\ScriptedService\\service.ps1",
+          "ServiceType": "user mode service",
+          "StartType": "demand start"
+        }
+      }
+    ],
+    "negative": [
+      {
+        "id": "neg-001-benign-signed-vendor-installer-program-files",
+        "description": "Benign signed vendor installer service under Program Files",
+        "telemetry_source": "Windows System 7045",
+        "behavior": "benign installer service path",
+        "expected_match": false,
+        "event": {
+          "EventID": 7045,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "VendorInstallService",
+          "ImagePath": "\\Program Files\\VendorSuite\\installer-service.exe",
+          "ServiceType": "user mode service",
+          "StartType": "demand start",
+          "Signer": "Synthetic Vendor"
+        }
+      },
+      {
+        "id": "neg-002-benign-updater-program-files-x86",
+        "description": "Benign updater service under Program Files (x86)",
+        "telemetry_source": "Windows System 7045",
+        "behavior": "benign updater service path",
+        "expected_match": false,
+        "event": {
+          "EventID": 7045,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "VendorUpdater",
+          "ServiceFileName": "\\Program Files (x86)\\VendorSuite\\updater-service.exe",
+          "ServiceType": "user mode service",
+          "StartType": "auto start"
+        }
+      },
+      {
+        "id": "neg-003-benign-driver-system32-drivers",
+        "description": "Benign driver service under Windows System32 drivers",
+        "telemetry_source": "Windows System 7045",
+        "behavior": "benign driver service path",
+        "expected_match": false,
+        "event": {
+          "EventID": 7045,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "VendorDriver",
+          "ImagePath": "\\Windows\\System32\\drivers\\vendordriver.sys",
+          "ServiceType": "kernel mode driver",
+          "StartType": "system start"
+        }
+      },
+      {
+        "id": "neg-004-benign-backup-monitor-security-agent",
+        "description": "Benign backup monitoring security agent service",
+        "telemetry_source": "Windows System 7045",
+        "behavior": "benign operations agent path",
+        "expected_match": false,
+        "event": {
+          "EventID": 7045,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "BackupMonitorAgent",
+          "ImagePath": "\\Program Files\\BackupMonitor\\agent-service.exe",
+          "ServiceType": "user mode service",
+          "StartType": "auto start"
+        }
+      },
+      {
+        "id": "neg-005-benign-maintenance-window-service",
+        "description": "Benign service creation during approved maintenance window context",
+        "telemetry_source": "Windows Security 4697",
+        "behavior": "approved maintenance service path",
+        "expected_match": false,
+        "event": {
+          "EventID": 4697,
+          "Channel": "Security",
+          "ServiceName": "MaintenanceHelper",
+          "ServiceFileName": "\\Program Files\\MaintenanceTools\\maintenance-helper.exe",
+          "ServiceType": "user mode service",
+          "StartType": "demand start",
+          "ChangeWindow": "approved-maintenance"
+        }
+      },
+      {
+        "id": "neg-006-system-7045-without-suspicious-path",
+        "description": "Windows System 7045 without suspicious ImagePath or ServiceFileName",
+        "telemetry_source": "Windows System 7045",
+        "behavior": "service install without suspicious path",
+        "expected_match": false,
+        "event": {
+          "EventID": 7045,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "SharedHostService",
           "ImagePath": "\\Windows\\System32\\svchost.exe -k netsvcs",
           "ServiceType": "share process",
           "StartType": "demand start"
         }
       },
       {
-        "id": "neg-003-unrelated-sysmon-process",
-        "description": "Unrelated Sysmon process creation without service creation behavior",
+        "id": "neg-007-sysmon-sc-query-no-create",
+        "description": "Sysmon Event ID 1 service tooling without suspicious service creation command line",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "service tooling without create or binPath behavior",
+        "expected_match": false,
         "event": {
           "EventID": 1,
           "Channel": "Microsoft-Windows-Sysmon/Operational",
           "Provider_Name": "Microsoft-Windows-Sysmon",
-          "Image": "\\Windows\\System32\\notepad.exe",
-          "OriginalFileName": "notepad.exe",
-          "CommandLine": "notepad.exe",
-          "ParentImage": "\\Windows\\explorer.exe"
+          "Image": "\\Windows\\System32\\sc.exe",
+          "OriginalFileName": "sc.exe",
+          "CommandLine": "sc.exe query VendorUpdater",
+          "ParentImage": "\\Windows\\System32\\cmd.exe"
+        }
+      },
+      {
+        "id": "neg-008-suspicious-keyword-benign-service-name",
+        "description": "Suspicious-looking keyword in benign service name without suspicious path",
+        "telemetry_source": "Windows System 7045",
+        "behavior": "keyword in service name should not match without suspicious service path",
+        "expected_match": false,
+        "event": {
+          "EventID": 7045,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "PublicUpdaterService",
+          "ImagePath": "\\Program Files\\VendorSuite\\public-updater-service.exe",
+          "ServiceType": "user mode service",
+          "StartType": "auto start"
+        }
+      },
+      {
+        "id": "neg-009-managed-application-directory",
+        "description": "Service path with managed application directory and benign service naming",
+        "telemetry_source": "Windows Security 4697",
+        "behavior": "managed application service path",
+        "expected_match": false,
+        "event": {
+          "EventID": 4697,
+          "Channel": "Security",
+          "ServiceName": "ManagedApplicationService",
+          "ServiceFileName": "\\Program Files\\ManagedApplication\\managed-service.exe",
+          "ServiceType": "user mode service",
+          "StartType": "auto start"
+        }
+      },
+      {
+        "id": "neg-010-service-adjacent-command-no-create-pattern",
+        "description": "PowerShell service-adjacent command line without create, binPath, or New-Service pattern",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "service-adjacent command without creation behavior",
+        "expected_match": false,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Provider_Name": "Microsoft-Windows-Sysmon",
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "OriginalFileName": "PowerShell.EXE",
+          "CommandLine": "powershell.exe -NoProfile -Command Get-Service -Name VendorUpdater",
+          "ParentImage": "\\Windows\\System32\\cmd.exe"
         }
       }
     ]

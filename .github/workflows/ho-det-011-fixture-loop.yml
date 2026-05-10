@@ -1,0 +1,45 @@
+name: HO-DET-011 Fixture Loop
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ho-det-011-fixture-loop:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    defaults:
+      run:
+        working-directory: hawkinsoperations-validation
+    steps:
+      - name: Checkout validation repository
+        uses: actions/checkout@v4
+        with:
+          path: hawkinsoperations-validation
+
+      - name: Checkout detections repository
+        uses: actions/checkout@v4
+        with:
+          repository: HawkinsOperations/hawkinsoperations-detections
+          path: hawkinsoperations-detections
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run HO-DET-011 synthetic fixture validation
+        run: python scripts/validate-ho-det-011.py
+
+      - name: Run HO-DET-011 result parity verifier
+        run: python scripts/verify-ho-det-011-result-parity.py
+
+      - name: Run HO-DET-011 claim-boundary scanner
+        run: python scripts/scan-ho-det-011-claim-boundaries.py
+
+      - name: Run whitespace diff check
+        run: git diff --check
