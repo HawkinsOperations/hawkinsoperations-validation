@@ -2,7 +2,7 @@
 """Synthetic validation runner for HO-DET-011.
 
 This validates repository-contained fixture behavior only. It does not inspect
-runtime systems, query Splunk, or assert Wazuh routing.
+runtime systems, query Splunk, assert Wazuh routing, or claim public-safe proof.
 """
 
 from __future__ import annotations
@@ -15,22 +15,40 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
+DETECTIONS_ROOT = ROOT.parent / "hawkinsoperations-detections"
+SOURCE_DIR = DETECTIONS_ROOT / "detections" / "successor" / "ho-det-011"
+SOURCE_RULE = SOURCE_DIR / "rule.yml"
+SOURCE_STATUS = SOURCE_DIR / "status.yml"
 CASES_FILE = ROOT / "validation" / "successor" / "ho-det-011" / "validation-cases.json"
 REPORT_DIR = ROOT / "reports" / "ho-det-011"
 REPORT_JSON = REPORT_DIR / "validation-result.json"
 REPORT_MD = REPORT_DIR / "validation-result.md"
 
 SUPPORTED_CLAIM = "HO-DET-011 passed synthetic validation against controlled Windows service creation fixtures."
+PROOF_CEILING = "TEST_VALIDATED_SYNTHETIC_SCOPE"
+EXPECTED_POSITIVE_COUNT = 7
+EXPECTED_NEGATIVE_COUNT = 10
 BLOCKED_CLAIMS = [
     "runtime-active",
     "signal-observed",
     "public-safe",
-    "production-ready",
-    "Wazuh-routed",
-    "live Splunk fired",
-    "fleet-wide",
-    "validation-passed as runtime proof",
     "evidence-linked public proof",
+    "public-safe runtime proof",
+    "Splunk-fired",
+    "live Splunk fired",
+    "Wazuh-routed",
+    "Cribl-routed",
+    "Security Onion observed",
+    "Suricata observed",
+    "Zeek observed",
+    "production-ready",
+    "production triage",
+    "fleet-wide",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition",
+    "attack coverage completeness",
+    "service-creation coverage completeness",
 ]
 
 SUSPICIOUS_PATH_MARKERS = [
@@ -39,16 +57,27 @@ SUSPICIOUS_PATH_MARKERS = [
     "\\programdata\\",
     "\\public\\",
     "\\downloads\\",
+    "\\users\\public\\",
+    "\\windows\\temp\\",
+    "\\perflogs\\",
 ]
 SUSPICIOUS_BINARY_MARKERS = [
-    "powershell.exe",
-    "pwsh.exe",
+    "powershell",
+    "pwsh",
     "cmd.exe",
-    "rundll32.exe",
-    "regsvr32.exe",
-    "mshta.exe",
-    "wscript.exe",
-    "cscript.exe",
+    "rundll32",
+    "regsvr32",
+    "mshta",
+    "wscript",
+    "cscript",
+]
+SCRIPT_TARGET_MARKERS = [
+    ".ps1",
+    ".vbs",
+    ".js",
+    ".hta",
+    ".bat",
+    ".cmd",
 ]
 SERVICE_CREATION_TOOLS = [
     "\\sc.exe",
@@ -58,11 +87,33 @@ SERVICE_CREATION_TOOLS = [
 ]
 SERVICE_CREATION_COMMAND_MARKERS = [
     " create ",
+    " sc create",
     "sc.exe create",
     "new-service",
     "binpath=",
     "binpath =",
+    "-encodedcommand",
+    "frombase64string",
 ]
+REQUIRED_CASE_IDS = {
+    "pos-001-system-7045-appdata-imagepath",
+    "pos-002-system-7045-servicefilename-windows-temp",
+    "pos-003-security-4697-servicefilename-users-public",
+    "pos-004-sysmon-sc-create-binpath-public",
+    "pos-005-sysmon-powershell-new-service-programdata",
+    "pos-006-system-7045-interpreter-backed-rundll32",
+    "pos-007-system-7045-script-like-ps1-target",
+    "neg-001-benign-signed-vendor-installer-program-files",
+    "neg-002-benign-updater-program-files-x86",
+    "neg-003-benign-driver-system32-drivers",
+    "neg-004-benign-backup-monitor-security-agent",
+    "neg-005-benign-maintenance-window-service",
+    "neg-006-system-7045-without-suspicious-path",
+    "neg-007-sysmon-sc-query-no-create",
+    "neg-008-suspicious-keyword-benign-service-name",
+    "neg-009-managed-application-directory",
+    "neg-010-service-adjacent-command-no-create-pattern",
+}
 
 
 def fail(message: str) -> None:
@@ -86,6 +137,10 @@ def load_json(path: Path, label: str) -> dict[str, Any]:
     return value
 
 
+def lower_value(event: dict[str, Any], key: str) -> str:
+    return str(event.get(key, "") or "").lower()
+
+
 def event_id(event: dict[str, Any]) -> int | None:
     raw = event.get("EventID", event.get("EventCode"))
     try:
@@ -94,30 +149,33 @@ def event_id(event: dict[str, Any]) -> int | None:
         return None
 
 
-def lower_value(event: dict[str, Any], key: str) -> str:
-    return str(event.get(key, "") or "").lower()
-
-
 def channel_is(event: dict[str, Any], expected: str) -> bool:
     return lower_value(event, "Channel") == expected.lower()
 
 
 def provider_contains(event: dict[str, Any], expected: str) -> bool:
-    provider = lower_value(event, "Provider_Name")
-    if not provider:
-        provider = lower_value(event, "Provider")
+    provider = lower_value(event, "Provider_Name") or lower_value(event, "Provider")
     return expected.lower() in provider
 
 
 def suspicious_path(value: str) -> bool:
     lowered = value.lower()
-    return any(marker in lowered for marker in SUSPICIOUS_PATH_MARKERS) or any(
-        marker in lowered for marker in SUSPICIOUS_BINARY_MARKERS
+    return (
+        any(marker in lowered for marker in SUSPICIOUS_PATH_MARKERS)
+        or any(marker in lowered for marker in SUSPICIOUS_BINARY_MARKERS)
+        or any(marker in lowered for marker in SCRIPT_TARGET_MARKERS)
     )
 
 
 def service_path_values(event: dict[str, Any]) -> list[str]:
-    fields = ["ImagePath", "ServiceFileName", "ServiceFile", "param2"]
+    fields = [
+        "ImagePath",
+        "ServiceFileName",
+        "ServiceFile",
+        "param2",
+        "winlog_event_data_ImagePath",
+        "winlog_event_data_ServiceFileName",
+    ]
     return [str(event.get(field, "") or "") for field in fields if event.get(field)]
 
 
@@ -156,42 +214,77 @@ def event_matches(event: dict[str, Any]) -> bool:
     return system_7045_matches(event) or security_4697_matches(event) or service_creation_process_matches(event)
 
 
-def validate_fixture_contract(cases: dict[str, Any]) -> None:
-    positives = cases.get("cases", {}).get("positive", [])
-    negatives = cases.get("cases", {}).get("negative", [])
-    if len(positives) != 3:
-        fail("HO-DET-011 validation cases must include exactly 3 positive cases")
-    if len(negatives) != 3:
-        fail("HO-DET-011 validation cases must include exactly 3 negative cases")
+def validate_source_contract() -> None:
+    rule = read_text(SOURCE_RULE, "HO-DET-011 source rule")
+    status = read_text(SOURCE_STATUS, "HO-DET-011 source status")
+    required_rule_fragments = [
+        "detection_id: HO-DET-011",
+        "selection_system_7045:",
+        "selection_security_4697:",
+        "selection_sysmon_tooling:",
+        "selection_suspicious_image_path:",
+        "selection_suspicious_service_file_name:",
+        "selection_suspicious_command_line:",
+        "\\AppData\\",
+        "\\Windows\\Temp\\",
+        "\\Users\\Public\\",
+        "rundll32",
+        ".ps1",
+        "New-Service",
+        "binPath=",
+    ]
+    for fragment in required_rule_fragments:
+        if fragment not in rule:
+            fail(f"source rule missing tuned fragment: {fragment}")
+    required_status_fragments = [
+        "tuning_status: SOURCE_TUNING_NOTES_ADDED",
+        "fixtures_in_detections_repo: false",
+        "planned_validation_fixture_set: REQUIRED_SEPARATE_SCOPE",
+        "validation passed",
+    ]
+    for fragment in required_status_fragments:
+        if fragment not in status:
+            fail(f"source status missing expected boundary fragment: {fragment}")
 
+
+def validate_fixture_contract(cases: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if cases.get("detection_id") != "HO-DET-011":
+        fail("validation cases detection_id must be HO-DET-011")
+    if cases.get("validation_scope") != "synthetic fixtures only":
+        fail("validation_scope must be synthetic fixtures only")
+    groups = cases.get("cases")
+    if not isinstance(groups, dict):
+        fail("validation cases must include cases object")
+    positives = groups.get("positive")
+    negatives = groups.get("negative")
+    if not isinstance(positives, list) or not isinstance(negatives, list):
+        fail("positive and negative cases must be arrays")
+    if len(positives) != EXPECTED_POSITIVE_COUNT:
+        fail(f"expected {EXPECTED_POSITIVE_COUNT} positive cases, found {len(positives)}")
+    if len(negatives) != EXPECTED_NEGATIVE_COUNT:
+        fail(f"expected {EXPECTED_NEGATIVE_COUNT} negative cases, found {len(negatives)}")
+    case_ids = {str(item.get("id", "")) for item in positives + negatives}
+    missing = sorted(REQUIRED_CASE_IDS - case_ids)
+    extra = sorted(case_ids - REQUIRED_CASE_IDS)
+    if missing or extra:
+        fail(f"case id contract mismatch; missing={missing}; extra={extra}")
     for item in positives + negatives:
-        event = item.get("event", {})
+        case_id = str(item.get("id", ""))
+        event = item.get("event")
         if not isinstance(event, dict):
-            fail(f"case {item.get('id', '<missing>')} must include an event object")
+            fail(f"case {case_id} must include an event object")
+        if item.get("expected_match") not in {True, False}:
+            fail(f"case {case_id} must include expected_match boolean")
         if event_id(event) == 7045:
             if not channel_is(event, "System"):
-                fail(f"case {item.get('id')} treats Event ID 7045 outside Windows System telemetry")
+                fail(f"case {case_id} treats Event ID 7045 outside Windows System telemetry")
             if not provider_contains(event, "Service Control Manager"):
-                fail(f"case {item.get('id')} must identify Service Control Manager for Event ID 7045")
-
-    servicefilename_case = next(
-        (item for item in positives if item.get("id") == "pos-002-security-4697-servicefilename"),
-        None,
-    )
-    if servicefilename_case is None:
-        fail("missing positive case for Windows Security 4697 ServiceFileName coverage")
-    event = servicefilename_case.get("event", {})
-    if "ServiceFileName" not in event:
-        fail("Windows Security 4697 positive case must use ServiceFileName")
-    if not security_4697_matches(event):
-        fail("Windows Security 4697 ServiceFileName positive case did not match")
+                fail(f"case {case_id} must identify Service Control Manager for Event ID 7045")
+    return positives, negatives
 
 
 def evaluate_cases(cases: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[str], list[str]]:
-    validate_fixture_contract(cases)
-    positives = cases.get("cases", {}).get("positive", [])
-    negatives = cases.get("cases", {}).get("negative", [])
-
+    positives, negatives = validate_fixture_contract(cases)
     positive_results: list[dict[str, Any]] = []
     negative_results: list[dict[str, Any]] = []
     missed_positive_cases: list[str] = []
@@ -203,7 +296,16 @@ def evaluate_cases(cases: dict[str, Any]) -> tuple[list[dict[str, Any]], list[di
         passed = matched is True
         if not passed:
             missed_positive_cases.append(case_id)
-        positive_results.append({"id": case_id, "expected": True, "matched": matched, "pass": passed})
+        positive_results.append(
+            {
+                "id": case_id,
+                "telemetry_source": item.get("telemetry_source", ""),
+                "behavior": item.get("behavior", ""),
+                "expected": True,
+                "matched": matched,
+                "pass": passed,
+            }
+        )
 
     for item in negatives:
         case_id = str(item.get("id", ""))
@@ -211,53 +313,58 @@ def evaluate_cases(cases: dict[str, Any]) -> tuple[list[dict[str, Any]], list[di
         passed = matched is False
         if not passed:
             false_positive_negative_cases.append(case_id)
-        negative_results.append({"id": case_id, "expected": False, "matched": matched, "pass": passed})
+        negative_results.append(
+            {
+                "id": case_id,
+                "telemetry_source": item.get("telemetry_source", ""),
+                "behavior": item.get("behavior", ""),
+                "expected": False,
+                "matched": matched,
+                "pass": passed,
+            }
+        )
 
     return positive_results, negative_results, missed_positive_cases, false_positive_negative_cases
 
 
 def build_report(cases: dict[str, Any]) -> dict[str, Any]:
+    validate_source_contract()
     positive_results, negative_results, missed, false_positive = evaluate_cases(cases)
     all_results = positive_results + negative_results
     fail_count = len(missed) + len(false_positive)
     status = "pass" if fail_count == 0 else "fail"
-    proof_ceiling = "TEST_VALIDATED_SYNTHETIC_SCOPE" if status == "pass" else "VALIDATION_DRAFT"
+    proof_ceiling = PROOF_CEILING if status == "pass" else "VALIDATION_DRAFT"
     return {
         "status": status,
         "detection_id": "HO-DET-011",
+        "validation_scope": "synthetic fixtures only",
+        "proof_ceiling": proof_ceiling,
+        "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-011",
         "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-011/validation-cases.json",
-        "source_scope": "Merged source scope from HO-DET-011 source artifacts; validation harness is self-contained synthetic fixture logic.",
+        "total_cases": len(all_results),
+        "positive_cases": len(positive_results),
+        "negative_cases": len(negative_results),
         "matched_positive_count": sum(1 for item in positive_results if item["matched"]),
         "missed_positive_cases": missed,
         "false_positive_negative_cases": false_positive,
-        "totals": {
-            "total_cases": len(all_results),
-            "positive_cases": len(positive_results),
-            "negative_cases": len(negative_results),
-            "pass": sum(1 for item in all_results if item["pass"]),
-            "fail": fail_count,
-        },
         "positive": positive_results,
         "negative": negative_results,
         "exact_claim_supported": SUPPORTED_CLAIM if status == "pass" else "",
-        "proof_ceiling": proof_ceiling,
-        "telemetry_boundary": {
-            "event_7045": "Windows System / Service Control Manager",
-            "event_4697": "Windows Security service installation auditing where available",
-            "event_1": "Sysmon process creation context",
-        },
-        "servicefilename_coverage": "Windows Security 4697 ServiceFileName is evaluated as a service path alias.",
+        "blocked_claims": BLOCKED_CLAIMS,
         "runtime_active": False,
         "signal_observed": False,
         "public_safe_status": "NOT_PUBLIC_SAFE",
-        "production_ready": False,
+        "splunk_fired": False,
         "wazuh_routed": False,
-        "live_splunk_fired": False,
+        "cribl_routed": False,
+        "security_onion_observed": False,
+        "production_ready": False,
         "fleet_wide": False,
-        "evidence_linked_public_proof": False,
-        "claims_not_supported": BLOCKED_CLAIMS,
-        "trust_boundary": "Synthetic Windows event fixture validation only. This is not runtime, signal, public-safe, production, routing, fleet, live Splunk, or evidence-linked public proof.",
-        "privacy_status": "Synthetic fixtures only; no credentials, hostnames, addresses, or live telemetry intentionally included.",
+        "autonomous_soc": False,
+        "ai_approved_disposition": False,
+        "analyst_approved_disposition": False,
+        "trust_boundary": "Synthetic Windows service creation fixture validation only. This does not prove runtime, signal, public-safe proof, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
+        "privacy_status": "Synthetic fixtures only; no sensitive operational material or live telemetry intentionally included.",
     }
 
 
@@ -270,24 +377,33 @@ def write_reports(report: dict[str, Any]) -> None:
         "## Summary",
         f"- Status: {report['status']}",
         f"- Detection ID: {report['detection_id']}",
+        f"- Validation scope: {report['validation_scope']}",
         f"- Proof ceiling: {report['proof_ceiling']}",
-        f"- Total cases: {report['totals']['total_cases']}",
+        f"- Total cases: {report['total_cases']}",
+        f"- Positive cases: {report['positive_cases']}",
+        f"- Negative cases: {report['negative_cases']}",
         f"- Matched positive count: {report['matched_positive_count']}",
         f"- Missed positives: {', '.join(report['missed_positive_cases']) if report['missed_positive_cases'] else 'none'}",
         f"- False-positive negatives: {', '.join(report['false_positive_negative_cases']) if report['false_positive_negative_cases'] else 'none'}",
         "",
-        "## Telemetry Boundary",
-        f"- Event ID 7045: {report['telemetry_boundary']['event_7045']}",
-        f"- Event ID 4697: {report['telemetry_boundary']['event_4697']}",
-        f"- Event ID 1: {report['telemetry_boundary']['event_1']}",
-        f"- ServiceFileName coverage: {report['servicefilename_coverage']}",
+        "## Source Reference",
+        f"- {report['source_reference']}",
         "",
-        "## Supported Claim",
-        f"- {report['exact_claim_supported']}",
-        "",
-        "## Blocked Claims",
+        "## Positive Coverage",
     ]
-    lines.extend(f"- Not supported: {claim}" for claim in report["claims_not_supported"])
+    lines.extend(f"- {item['id']}: {item['behavior']} ({item['telemetry_source']})" for item in report["positive"])
+    lines.extend(["", "## Negative Coverage"])
+    lines.extend(f"- {item['id']}: {item['behavior']} ({item['telemetry_source']})" for item in report["negative"])
+    lines.extend(
+        [
+            "",
+            "## Supported Claim",
+            f"- {report['exact_claim_supported']}",
+            "",
+            "## Blocked Claims",
+        ]
+    )
+    lines.extend(f"- Not supported: {claim}" for claim in report["blocked_claims"])
     lines.extend(
         [
             "",
@@ -315,9 +431,6 @@ def main() -> int:
     args = parser.parse_args()
 
     cases = load_json(CASES_FILE, "HO-DET-011 validation cases")
-    if cases.get("detection_id") != "HO-DET-011":
-        fail("validation cases detection_id must be HO-DET-011")
-
     report = build_report(cases)
     if args.write:
         write_reports(report)
@@ -328,13 +441,16 @@ def main() -> int:
 
     print(f"STATUS={report['status']}")
     print("DETECTION_ID=HO-DET-011")
-    print(f"TOTAL_CASES={report['totals']['total_cases']}")
+    print(f"TOTAL_CASES={report['total_cases']}")
+    print(f"POSITIVE_CASES={report['positive_cases']}")
+    print(f"NEGATIVE_CASES={report['negative_cases']}")
     print(f"MATCHED_POSITIVE_COUNT={report['matched_positive_count']}")
     print(f"MISSED_POSITIVE_CASES={','.join(report['missed_positive_cases']) if report['missed_positive_cases'] else 'none'}")
     print(f"FALSE_POSITIVE_NEGATIVE_CASES={','.join(report['false_positive_negative_cases']) if report['false_positive_negative_cases'] else 'none'}")
     print(f"PROOF_CEILING={report['proof_ceiling']}")
-    print(f"SERVICEFILENAME_COVERED=true")
-    print(f"EVENT_7045_SOURCE=Windows System / Service Control Manager")
+    print("RUNTIME_ACTIVE=false")
+    print("SIGNAL_OBSERVED=false")
+    print("PUBLIC_SAFE_STATUS=NOT_PUBLIC_SAFE")
     print(f"WRITE_SKIPPED={write_skipped}")
     return 0 if report["status"] == "pass" else 1
 

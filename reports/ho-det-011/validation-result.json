@@ -1,33 +1,69 @@
 {
   "status": "pass",
   "detection_id": "HO-DET-011",
+  "validation_scope": "synthetic fixtures only",
+  "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-011",
   "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-011/validation-cases.json",
-  "source_scope": "Merged source scope from HO-DET-011 source artifacts; validation harness is self-contained synthetic fixture logic.",
-  "matched_positive_count": 3,
+  "total_cases": 17,
+  "positive_cases": 7,
+  "negative_cases": 10,
+  "matched_positive_count": 7,
   "missed_positive_cases": [],
   "false_positive_negative_cases": [],
-  "totals": {
-    "total_cases": 6,
-    "positive_cases": 3,
-    "negative_cases": 3,
-    "pass": 6,
-    "fail": 0
-  },
   "positive": [
     {
-      "id": "pos-001-system-7045-suspicious-image-path",
+      "id": "pos-001-system-7045-appdata-imagepath",
+      "telemetry_source": "Windows System 7045",
+      "behavior": "suspicious ImagePath under user profile application data path",
       "expected": true,
       "matched": true,
       "pass": true
     },
     {
-      "id": "pos-002-security-4697-servicefilename",
+      "id": "pos-002-system-7045-servicefilename-windows-temp",
+      "telemetry_source": "Windows System 7045",
+      "behavior": "suspicious ServiceFileName under temporary operating system path",
       "expected": true,
       "matched": true,
       "pass": true
     },
     {
-      "id": "pos-003-sysmon-1-service-creation-tooling",
+      "id": "pos-003-security-4697-servicefilename-users-public",
+      "telemetry_source": "Windows Security 4697",
+      "behavior": "Security event ServiceFileName alias coverage",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-004-sysmon-sc-create-binpath-public",
+      "telemetry_source": "Sysmon Event ID 1",
+      "behavior": "sc.exe create command with binPath service target",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-005-sysmon-powershell-new-service-programdata",
+      "telemetry_source": "Sysmon Event ID 1",
+      "behavior": "PowerShell New-Service command with suspicious binary path",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-006-system-7045-interpreter-backed-rundll32",
+      "telemetry_source": "Windows System 7045",
+      "behavior": "interpreter-backed service image path",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-007-system-7045-script-like-ps1-target",
+      "telemetry_source": "Windows System 7045",
+      "behavior": "script-like service target",
       "expected": true,
       "matched": true,
       "pass": true
@@ -35,51 +71,121 @@
   ],
   "negative": [
     {
-      "id": "neg-001-benign-agent-service-install",
+      "id": "neg-001-benign-signed-vendor-installer-program-files",
+      "telemetry_source": "Windows System 7045",
+      "behavior": "benign installer service path",
       "expected": false,
       "matched": false,
       "pass": true
     },
     {
-      "id": "neg-002-benign-admin-service-creation",
+      "id": "neg-002-benign-updater-program-files-x86",
+      "telemetry_source": "Windows System 7045",
+      "behavior": "benign updater service path",
       "expected": false,
       "matched": false,
       "pass": true
     },
     {
-      "id": "neg-003-unrelated-sysmon-process",
+      "id": "neg-003-benign-driver-system32-drivers",
+      "telemetry_source": "Windows System 7045",
+      "behavior": "benign driver service path",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-004-benign-backup-monitor-security-agent",
+      "telemetry_source": "Windows System 7045",
+      "behavior": "benign operations agent path",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-005-benign-maintenance-window-service",
+      "telemetry_source": "Windows Security 4697",
+      "behavior": "approved maintenance service path",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-006-system-7045-without-suspicious-path",
+      "telemetry_source": "Windows System 7045",
+      "behavior": "service install without suspicious path",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-007-sysmon-sc-query-no-create",
+      "telemetry_source": "Sysmon Event ID 1",
+      "behavior": "service tooling without create or binPath behavior",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-008-suspicious-keyword-benign-service-name",
+      "telemetry_source": "Windows System 7045",
+      "behavior": "keyword in service name should not match without suspicious service path",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-009-managed-application-directory",
+      "telemetry_source": "Windows Security 4697",
+      "behavior": "managed application service path",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-010-service-adjacent-command-no-create-pattern",
+      "telemetry_source": "Sysmon Event ID 1",
+      "behavior": "service-adjacent command without creation behavior",
       "expected": false,
       "matched": false,
       "pass": true
     }
   ],
   "exact_claim_supported": "HO-DET-011 passed synthetic validation against controlled Windows service creation fixtures.",
-  "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
-  "telemetry_boundary": {
-    "event_7045": "Windows System / Service Control Manager",
-    "event_4697": "Windows Security service installation auditing where available",
-    "event_1": "Sysmon process creation context"
-  },
-  "servicefilename_coverage": "Windows Security 4697 ServiceFileName is evaluated as a service path alias.",
-  "runtime_active": false,
-  "signal_observed": false,
-  "public_safe_status": "NOT_PUBLIC_SAFE",
-  "production_ready": false,
-  "wazuh_routed": false,
-  "live_splunk_fired": false,
-  "fleet_wide": false,
-  "evidence_linked_public_proof": false,
-  "claims_not_supported": [
+  "blocked_claims": [
     "runtime-active",
     "signal-observed",
     "public-safe",
-    "production-ready",
-    "Wazuh-routed",
+    "evidence-linked public proof",
+    "public-safe runtime proof",
+    "Splunk-fired",
     "live Splunk fired",
+    "Wazuh-routed",
+    "Cribl-routed",
+    "Security Onion observed",
+    "Suricata observed",
+    "Zeek observed",
+    "production-ready",
+    "production triage",
     "fleet-wide",
-    "validation-passed as runtime proof",
-    "evidence-linked public proof"
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition",
+    "attack coverage completeness",
+    "service-creation coverage completeness"
   ],
-  "trust_boundary": "Synthetic Windows event fixture validation only. This is not runtime, signal, public-safe, production, routing, fleet, live Splunk, or evidence-linked public proof.",
-  "privacy_status": "Synthetic fixtures only; no credentials, hostnames, addresses, or live telemetry intentionally included."
+  "runtime_active": false,
+  "signal_observed": false,
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "splunk_fired": false,
+  "wazuh_routed": false,
+  "cribl_routed": false,
+  "security_onion_observed": false,
+  "production_ready": false,
+  "fleet_wide": false,
+  "autonomous_soc": false,
+  "ai_approved_disposition": false,
+  "analyst_approved_disposition": false,
+  "trust_boundary": "Synthetic Windows service creation fixture validation only. This does not prove runtime, signal, public-safe proof, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
+  "privacy_status": "Synthetic fixtures only; no sensitive operational material or live telemetry intentionally included."
 }
