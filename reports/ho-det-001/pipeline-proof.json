@@ -1,0 +1,51 @@
+{
+  "detection_id": "HO-DET-001",
+  "public_label": "CONTROLLED_TEST_VALIDATED",
+  "status": "ready_for_public_pipeline_route",
+  "claim_allowed": "HO-DET-001 is CONTROLLED_TEST_VALIDATED through a public proof-loop workflow with controlled positive and negative test cases, deterministic pass/fail output, and blocked-claim enforcement.",
+  "proof_loop_workflow_count": 1,
+  "workflow": {
+    "path": ".github/workflows/ho-det-001-proof-loop.yml",
+    "triggers": [
+      "pull_request",
+      "workflow_dispatch"
+    ],
+    "runner": "self-hosted Linux X64 ho-runner-01",
+    "repositories_checked_out": 3,
+    "verifier_check_run_steps": 13,
+    "referenced_python_scripts": 11,
+    "missing_referenced_scripts": 0
+  },
+  "validation": {
+    "case_file": "validation/successor/ho-det-001/validation-cases.json",
+    "report_file": "reports/ho-det-001/validation-result.md",
+    "controlled_test_case_count": 14,
+    "positive_case_count": 7,
+    "negative_case_count": 7,
+    "matched_positive_count": 7,
+    "missed_positive_count": 0,
+    "false_positive_negative_count": 0,
+    "passed_case_count": 14,
+    "failed_case_count": 0
+  },
+  "public_routes": {
+    "validation_report": "https://github.com/HawkinsOperations/hawkinsoperations-validation/blob/main/reports/ho-det-001/validation-result.md",
+    "proof_loop_workflow": "https://github.com/HawkinsOperations/hawkinsoperations-validation/blob/main/.github/workflows/ho-det-001-proof-loop.yml",
+    "detection_source": "https://github.com/HawkinsOperations/hawkinsoperations-detections/blob/main/detections/successor/ho-det-001/rule.yml",
+    "splunk_source": "https://github.com/HawkinsOperations/hawkinsoperations-detections/blob/main/detections/successor/ho-det-001/splunk.spl",
+    "proof_record": "https://github.com/HawkinsOperations/hawkinsoperations-proof/blob/main/proof/records/HO-DET-001.md"
+  },
+  "blocked_claim_categories": [
+    "runtime-active",
+    "production-ready",
+    "fleet-wide",
+    "public-safe runtime evidence",
+    "live Splunk firing",
+    "Cribl-routed telemetry",
+    "Wazuh live collection",
+    "autonomous disposition",
+    "analyst-approved disposition",
+    "evidence-linked public runtime proof"
+  ],
+  "boundary": "This public packet proves only controlled-test validation and public proof-loop routing. It does not prove runtime, production, fleet, public-safe runtime evidence, live Splunk, Cribl routing, Wazuh collection, autonomous disposition, or analyst-approved disposition."
+}
