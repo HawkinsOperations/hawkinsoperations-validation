@@ -60,4 +60,4 @@ This public packet does not claim:
 
 ## Boundary
 
-This packet is a public route into controlled-test validation and proof-loop enforcement. It does not publish private runtime evidence, does not convert private/internal lab evidence into public-safe evidence, and does not promote HO-DET-001 beyond CONTROLLED_TEST_VALIDATED.
+This packet is a public route into controlled-test validation and proof-loop enforcement. It does not publish private runtime evidence, does not convert private/internal lab evidence into public runtime evidence, and does not promote HO-DET-001 beyond CONTROLLED_TEST_VALIDATED.

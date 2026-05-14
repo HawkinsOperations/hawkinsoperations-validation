@@ -16,6 +16,8 @@ SCOPED_FILES = [
     ROOT / "validation" / "successor" / "ho-det-001" / "autosoc-triage-packet.json",
     ROOT / "validation" / "successor" / "ho-det-001" / "llm-summary.json",
     ROOT / "reports" / "ho-det-001" / "validation-result.json",
+    ROOT / "reports" / "ho-det-001" / "pipeline-proof.md",
+    ROOT / "reports" / "ho-det-001" / "pipeline-proof.json",
     ROOT / "docs" / "HO-DET-001_CLOSED_LOOP.md",
 ]
 BLOCKED_TERMS = [
@@ -49,6 +51,7 @@ BLOCKED_TERMS = [
 ALLOWED_JSON_PATH_PARTS = {
     "unsupported_claims",
     "blocked_claims",
+    "blocked_claim_categories",
     "claims_not_supported",
     "claim_boundary",
     "trust_boundary",
