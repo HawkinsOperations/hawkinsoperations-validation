@@ -62,7 +62,7 @@ jobs:
       - name: Run AutoSOC runner evidence manifest verifier
         run: python scripts/verify-autosoc-runner-evidence-manifest.py
 
-      - name: Run synthetic validation in check mode
+      - name: Run controlled-test validation in check mode
         run: python scripts/validate-ho-det-001.py
 
       - name: Run Closed AutoSOC Loop 001 verifier

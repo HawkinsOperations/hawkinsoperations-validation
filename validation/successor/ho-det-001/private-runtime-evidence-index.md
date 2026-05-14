@@ -8,7 +8,7 @@
 - Promotion status: BLOCKED
 - Evidence scope: PRIVATE_LLM_RUNTIME_RECEIPT_SCOPED
 - Verification scope: STRUCTURE_AND_BOUNDARY_ONLY
-- Public proof ceiling: CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_SYNTHETIC_PACKET_SCOPE
+- Public proof ceiling: CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_PACKET_SCOPE
 - Evidence ID: gpu-runtime-receipt-001
 - Evidence store: PRIVATE_EVIDENCE_STORE
 - Evidence location public: REDACTED_PRIVATE
@@ -27,7 +27,7 @@
 - HUMAN_REVIEW_REQUIRED=true
 - SUPPORT_ONLY=true
 - PUBLIC_SAFE_STATUS=NOT_PUBLIC_SAFE
-- PROOF_CEILING=CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_SYNTHETIC_PACKET_SCOPE
+- PROOF_CEILING=CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_PACKET_SCOPE
 
 ## Public Boundary
 
@@ -40,7 +40,7 @@
 
 - controlled local Ollama invocation completed
 - qwen2.5:14b generated support-only triage output
-- sanitized synthetic HO-DET-001 case packet hash matched across transfer
+- sanitized controlled-test HO-DET-001 case packet hash matched across transfer
 - private receipt artifacts and hashes exist
 - private verifier status is PASS
 
@@ -85,4 +85,4 @@
 
 ## Boundary
 
-This index records private evidence existence only. It does not copy private evidence into the repository, does not expose local evidence paths, does not include raw model output, does not prove public-safe runtime status, and does not promote HO-DET-001 beyond CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_SYNTHETIC_PACKET_SCOPE.
+This index records private evidence existence only. It does not copy private evidence into the repository, does not expose local evidence paths, does not include raw model output, does not prove public-safe runtime status, and does not promote HO-DET-001 beyond CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_PACKET_SCOPE.

@@ -1,0 +1,96 @@
+{
+  "packet_id": "HO-NDR-001-CROSS-SOURCE-CORROBORATION-SAMPLE",
+  "classification": "PRIVATE_INTERNAL_CROSS_SOURCE_CORROBORATION_SAMPLE",
+  "public_safe_status": "NOT_APPROVED",
+  "achieved_status": "NOT_CAPTURED_SAMPLE_ONLY",
+  "current_claim_ceiling": "CROSS_SOURCE_CORROBORATION_CONTRACT_DEFINED",
+  "planned_post_runtime_claim_ceiling": "PRIVATE_CROSS_SOURCE_CORROBORATION_CAPTURED",
+  "observation_basis": "SANITIZED_SAMPLE_CONTRACT_NO_RUNTIME_EVIDENCE",
+  "controlled_test_event": {
+    "event_status": "PLANNED_NOT_EXECUTED",
+    "correlation_id_format": "HO-NDR-001-CSC-YYYYMMDD-HHMMSS-RANDOM",
+    "event_family": "BENIGN_CONTROLLED_HTTP_REQUEST",
+    "execution_approval_required": true
+  },
+  "telemetry_planes": {
+    "security_onion_suricata": {
+      "status": "planned_required_not_captured",
+      "evidence_type": "sanitized_security_onion_event_summary",
+      "event_specific": false,
+      "required_for_corrob": true,
+      "public_safe": false,
+      "blocked_from_public_claim": true
+    },
+    "endpoint_telemetry": {
+      "status": "planned_required_not_captured",
+      "evidence_type": "sanitized_endpoint_event_summary",
+      "event_specific": false,
+      "required_for_corrob": true,
+      "public_safe": false,
+      "blocked_from_public_claim": true
+    },
+    "splunk_correlation": {
+      "status": "planned_required_not_captured",
+      "evidence_type": "sanitized_splunk_correlation_summary",
+      "event_specific": false,
+      "required_for_corrob": true,
+      "public_safe": false,
+      "blocked_from_public_claim": true
+    },
+    "optional_cribl_route": {
+      "status": "planned_optional_not_captured",
+      "evidence_type": "sanitized_cribl_route_receipt_optional",
+      "event_specific": false,
+      "required_for_corrob": false,
+      "public_safe": false,
+      "blocked_from_public_claim": true
+    }
+  },
+  "correlation_requirements": [
+    "one_unique_controlled-test_correlation_id",
+    "same_time_window_across_required_planes",
+    "security_onion_event_summary_without_raw_private_identifiers",
+    "endpoint_or_wazuh_event_summary_without_raw_private_identifiers",
+    "splunk_correlation_summary_without_forwarding_full_security_onion_telemetry",
+    "verifier_output_preserved_before_any_proof_record_promotion"
+  ],
+  "redaction_required_fields": [
+    "private_ip",
+    "hostname",
+    "username",
+    "internal_url",
+    "raw_command_line",
+    "raw_payload",
+    "browser_context",
+    "token_or_secret",
+    "raw_screenshot"
+  ],
+  "blocked_claims": [
+    "public_safe_proof",
+    "production_ndr",
+    "permanent_span",
+    "fleet_wide_visibility",
+    "durable_monitoring",
+    "pcap_availability",
+    "long_term_retention",
+    "security_onion_3_feature_claims",
+    "ja4_support",
+    "strelka_yara_workflow",
+    "suricata_detection_quality",
+    "dynamic_zeek_plugin_claims",
+    "security_onion_telemetry_forwarded_to_splunk",
+    "splunk_search_executed",
+    "cribl_route_proven",
+    "wazuh_routed_public_proof",
+    "runtime_active_production_monitoring"
+  ],
+  "next_gates": [
+    "approve_runtime_event_generation_before_capture",
+    "capture_security_onion_event_specific_summary",
+    "capture_endpoint_or_wazuh_event_specific_summary",
+    "capture_splunk_correlation_summary_without_full_security_onion_forwarding",
+    "capture_optional_cribl_route_receipt_only_if_event_specific",
+    "complete_redaction_review_before_public_candidate",
+    "update_proof_record_only_after_private_evidence_review"
+  ]
+}

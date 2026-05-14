@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the deterministic HO-DET-001 validation case packet.
 
-This script uses committed synthetic validation artifacts only. It does not
+This script uses committed controlled-test validation artifacts only. It does not
 query runtime systems, Splunk, Cribl, Wazuh, AWS, or model runtimes.
 """
 
@@ -22,9 +22,9 @@ VALIDATION_RESULT = ROOT / "reports" / "ho-det-001" / "validation-result.json"
 AUTOSOC_PACKET = ROOT / "validation" / "successor" / "ho-det-001" / "autosoc-triage-packet.json"
 LLM_SUMMARY = ROOT / "validation" / "successor" / "ho-det-001" / "llm-summary.json"
 
-PROOF_CEILING = "TEST_VALIDATED_SYNTHETIC_SCOPE"
+PROOF_CEILING = "CONTROLLED_TEST_VALIDATED"
 SUPPORTED_CLAIM = (
-    "HO-DET-001 passed synthetic validation against controlled positive and "
+    "HO-DET-001 passed controlled-test validation against controlled positive and "
     "negative process-creation fixtures."
 )
 BLOCKED_CLAIMS = [
@@ -85,7 +85,7 @@ def require_keys(value: dict[str, Any], keys: list[str], label: str) -> None:
         fail(f"{label} missing required keys: {', '.join(missing)}")
 
 
-def pick_synthetic_event(validation_cases: dict[str, Any]) -> dict[str, Any]:
+def pick_controlled_test_event(validation_cases: dict[str, Any]) -> dict[str, Any]:
     cases = validation_cases.get("cases")
     if not isinstance(cases, dict):
         fail("validation-cases.json cases must be an object")
@@ -98,8 +98,8 @@ def pick_synthetic_event(validation_cases: dict[str, Any]) -> dict[str, Any]:
     event = first["event"]
     return {
         "event_time": "2026-04-29T15:00:21Z",
-        "host": "HO-SYNTHETIC-ENDPOINT-001",
-        "user": "HO_SYNTHETIC_USER",
+        "host": "HO-CONTROLLED-TEST-ENDPOINT-001",
+        "user": "HO_CONTROLLED_TEST_USER",
         "image": str(event.get("Image", "")),
         "original_file_name": str(event.get("OriginalFileName", "")),
         "command_line": str(event.get("CommandLine", "")),
@@ -107,7 +107,7 @@ def pick_synthetic_event(validation_cases: dict[str, Any]) -> dict[str, Any]:
         "event_id": int(event.get("EventID", 1)),
         "source": "WinEventLog:Microsoft-Windows-Sysmon/Operational",
         "sourcetype": "XmlWinEventLog:Microsoft-Windows-Sysmon/Operational",
-        "index": "hawkinsoperations_synthetic_validation",
+        "index": "hawkinsoperations_controlled_test_validation",
     }
 
 
@@ -136,22 +136,22 @@ def validate_inputs(validation_cases: dict[str, Any], validation_result: dict[st
     if validation_result.get("proof_level_after") != PROOF_CEILING:
         fail(f"validation-result.json proof_level_after must be {PROOF_CEILING}")
     if validation_result.get("exact_claim_supported") != SUPPORTED_CLAIM:
-        fail("validation-result.json exact_claim_supported is not the approved synthetic claim")
+        fail("validation-result.json exact_claim_supported is not the approved controlled-test claim")
 
 
 def build_case_packet() -> dict[str, Any]:
     validation_cases = load_json(VALIDATION_CASES, "validation-cases.json")
     validation_result = load_json(VALIDATION_RESULT, "validation-result.json")
     validate_inputs(validation_cases, validation_result)
-    event = pick_synthetic_event(validation_cases)
+    event = pick_controlled_test_event(validation_cases)
     totals = validation_result.get("totals", {})
     return {
         "case_id": "HO-DET-001-CASE-PACKET-001",
         "detection_id": "HO-DET-001",
-        "detection_title": "Encoded PowerShell process creation synthetic validation",
+        "detection_title": "Encoded PowerShell process creation controlled-test validation",
         "truth_surface": "repo truth",
         "proof_level": PROOF_CEILING,
-        "allowed_scope": "Synthetic validation using controlled process-creation fixtures only.",
+        "allowed_scope": "Controlled-test validation using controlled process-creation fixtures only.",
         "public_safe_status": "NO",
         "blocked_claims": BLOCKED_CLAIMS,
         "event": event,
@@ -170,7 +170,7 @@ def build_case_packet() -> dict[str, Any]:
         "validation_references": [
             source_ref("validation cases", VALIDATION_CASES),
             source_ref("validation result", VALIDATION_RESULT),
-            source_ref("autosoc synthetic packet", AUTOSOC_PACKET),
+            source_ref("autosoc controlled-test packet", AUTOSOC_PACKET),
             source_ref("blocked-runtime LLM stub", LLM_SUMMARY),
         ],
         "triage_boundary": {
@@ -194,8 +194,8 @@ def build_case_packet() -> dict[str, Any]:
         },
         "determinism": {
             "generated_by": "scripts/build-ho-det-001-case-packet.py",
-            "source_mode": "committed_local_synthetic_validation_artifacts",
-            "synthetic_fallback_used": False,
+            "source_mode": "committed_local_controlled_test_validation_artifacts",
+            "controlled_test_fallback_used": False,
         },
     }
 

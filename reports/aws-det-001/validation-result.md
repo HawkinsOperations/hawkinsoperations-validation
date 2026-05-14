@@ -3,7 +3,7 @@
 ## Summary
 - Status: pass
 - Detection ID: AWS-DET-001
-- Proof ceiling: TEST_VALIDATED_SYNTHETIC_SCOPE
+- Proof ceiling: CONTROLLED_TEST_VALIDATED
 - AWS live status: BLOCKED
 - Public-safe status: NOT_PUBLIC_SAFE
 - Total cases: 6

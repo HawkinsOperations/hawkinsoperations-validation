@@ -8,7 +8,7 @@
     "packet_id",
     "detection_id",
     "current_proof_ceiling",
-    "synthetic_case_refs",
+    "controlled_test_case_refs",
     "validation_result_ref",
     "validation_result_hash",
     "case_packet_ref",
@@ -38,7 +38,7 @@
   "properties": {
     "packet_id": {
       "type": "string",
-      "const": "HO-DET-001-SYNTHETIC-TRIAGE-001"
+      "const": "HO-DET-001-CONTROLLED-TEST-TRIAGE-001"
     },
     "detection_id": {
       "type": "string",
@@ -46,9 +46,9 @@
     },
     "current_proof_ceiling": {
       "type": "string",
-      "const": "TEST_VALIDATED_SYNTHETIC_SCOPE"
+      "const": "CONTROLLED_TEST_VALIDATED"
     },
-    "synthetic_case_refs": {
+    "controlled_test_case_refs": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -79,11 +79,11 @@
     },
     "disposition": {
       "type": "string",
-      "const": "REVIEW_SYNTHETIC_DETECTION"
+      "const": "REVIEW_CONTROLLED_TEST_DETECTION"
     },
     "disposition_basis": {
       "type": "string",
-      "const": "deterministic synthetic validation result only"
+      "const": "deterministic controlled-test validation result only"
     },
     "triage_authority": {
       "type": "string",

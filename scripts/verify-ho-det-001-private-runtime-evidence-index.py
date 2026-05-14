@@ -23,7 +23,7 @@ PUBLIC_SAFE_STATUS = "NOT_PUBLIC_SAFE"
 PROMOTION_STATUS = "BLOCKED"
 EVIDENCE_SCOPE = "PRIVATE_LLM_RUNTIME_RECEIPT_SCOPED"
 VERIFICATION_SCOPE = "STRUCTURE_AND_BOUNDARY_ONLY"
-PROOF_CEILING = "CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_SYNTHETIC_PACKET_SCOPE"
+PROOF_CEILING = "CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_PACKET_SCOPE"
 EVIDENCE_ID = "gpu-runtime-receipt-001"
 EVIDENCE_STORE = "PRIVATE_EVIDENCE_STORE"
 EVIDENCE_LOCATION_PUBLIC = "REDACTED_PRIVATE"
@@ -47,7 +47,7 @@ REQUIRED_BOUNDARY_FIELDS = {
 REQUIRED_PROVEN_PRIVATE = [
     "controlled local Ollama invocation completed",
     "qwen2.5:14b generated support-only triage output",
-    "sanitized synthetic HO-DET-001 case packet hash matched across transfer",
+    "sanitized controlled-test HO-DET-001 case packet hash matched across transfer",
     "private receipt artifacts and hashes exist",
     "private verifier status is PASS",
 ]

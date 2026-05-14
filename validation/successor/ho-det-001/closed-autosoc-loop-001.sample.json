@@ -1,14 +1,14 @@
 {
   "loop_id": "Closed AutoSOC Loop 001",
   "detection_id": "HO-DET-001",
-  "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
   "validation_pass_reference": {
     "path": "reports/ho-det-001/validation-result.json",
-    "sha256": "59cefce14890c190c7b3b7deecaedef0725f5a5d4ec44a2031010834f9139318",
+    "sha256": "d5aa74d59b2f32ce85cc438a4e7178e7aee1110ada2c648d9ed5208b8f3b9b14",
     "status": "pass",
-    "supported_claim": "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures."
+    "supported_claim": "HO-DET-001 passed controlled-test validation against controlled positive and negative process-creation fixtures."
   },
-  "synthetic_fixture_result_reference": {
+  "controlled_test_fixture_result_reference": {
     "total_cases": 14,
     "positive_cases": 7,
     "negative_cases": 7,
@@ -18,15 +18,15 @@
   },
   "case_packet_reference": {
     "path": "validation/successor/ho-det-001/case-packet.json",
-    "sha256": "d4ad7c6059965d7c2a1b10e223a9a74d3a64d692ea12e2f937553e1904f98ef2"
+    "sha256": "6fe181cce32e113e7ed5a5b9eaf4d33f8c353b7edec06f04571c79463da7503f"
   },
   "autosoc_triage_reference": {
     "path": "validation/successor/ho-det-001/autosoc-triage-packet.json",
-    "sha256": "8636080402115cc5c86789a155883d8d020d56e1db26c18fb48ccdd10f755f24"
+    "sha256": "c78127f9413a1303dbd9d55747daf3850015c29d1e5c3fc1305ace1370209994"
   },
   "llm_summary_reference": {
     "path": "validation/successor/ho-det-001/llm-summary.json",
-    "sha256": "1d93fb3c858b83214537bd161007fba9c928dd611f52818b24347fd75d2656f2"
+    "sha256": "cfe50a003b76f009c1c96f359b29c55d522d16e97639de2d2e20aa4aaa002e38"
   },
   "authority_boundary": {
     "ai_role": "triage_support_only",
@@ -47,7 +47,7 @@
     "wazuh_routed_claim": false,
     "public_safe_claim": false,
     "public_safe_status": "NOT_PUBLIC_SAFE",
-    "allowed_public_claim": "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures."
+    "allowed_public_claim": "HO-DET-001 passed controlled-test validation against controlled positive and negative process-creation fixtures."
   },
   "blocked_claims": [
     "runtime-active public claim",

@@ -19,15 +19,15 @@ CASE_PACKET_PATH = ROOT / "validation" / "successor" / "ho-det-001" / "case-pack
 TRIAGE_PACKET_PATH = ROOT / "validation" / "successor" / "ho-det-001" / "autosoc-triage-packet.json"
 LLM_SUMMARY_PATH = ROOT / "validation" / "successor" / "ho-det-001" / "llm-summary.json"
 
-PROOF_CEILING = "TEST_VALIDATED_SYNTHETIC_SCOPE"
-SUPPORTED_CLAIM = "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures."
+PROOF_CEILING = "CONTROLLED_TEST_VALIDATED"
+SUPPORTED_CLAIM = "HO-DET-001 passed controlled-test validation against controlled positive and negative process-creation fixtures."
 
 REQUIRED_TOP_LEVEL_FIELDS = [
     "loop_id",
     "detection_id",
     "proof_ceiling",
     "validation_pass_reference",
-    "synthetic_fixture_result_reference",
+    "controlled_test_fixture_result_reference",
     "case_packet_reference",
     "autosoc_triage_reference",
     "llm_summary_reference",
@@ -203,9 +203,9 @@ def verify_validation_pass(sample: dict[str, Any], validation_result: dict[str, 
 
 
 def verify_fixture_counts(sample: dict[str, Any], validation_result: dict[str, Any]) -> None:
-    fixture = sample.get("synthetic_fixture_result_reference")
+    fixture = sample.get("controlled_test_fixture_result_reference")
     if not isinstance(fixture, dict):
-        fail("synthetic_fixture_result_reference must be an object")
+        fail("controlled_test_fixture_result_reference must be an object")
     totals = validation_result.get("totals")
     if not isinstance(totals, dict):
         fail("validation-result.json totals must be an object")
@@ -217,9 +217,9 @@ def verify_fixture_counts(sample: dict[str, Any], validation_result: dict[str, A
     }
     for field, expected_value in expected.items():
         if fixture.get(field) != expected_value:
-            fail(f"synthetic_fixture_result_reference.{field} must be {expected_value}")
+            fail(f"controlled_test_fixture_result_reference.{field} must be {expected_value}")
     if totals.get("total_cases") != 14 or totals.get("positive_cases") != 7 or totals.get("negative_cases") != 7:
-        fail("validation-result.json must preserve 7 positive / 7 negative synthetic fixture results")
+        fail("validation-result.json must preserve 7 positive / 7 negative controlled-test fixture results")
     if validation_result.get("matched_positive_count") != 7:
         fail("validation-result.json matched_positive_count must be 7")
     if fixture.get("missed_positive_cases") != [] or validation_result.get("missed_positive_cases") != []:
@@ -354,7 +354,7 @@ def main() -> int:
     print("DETECTION_ID=HO-DET-001")
     print(f"PROOF_CEILING={PROOF_CEILING}")
     print("VALIDATION_REFERENCE=pass")
-    print("SYNTHETIC_FIXTURES=7_positive_7_negative")
+    print("CONTROLLED_TEST_FIXTURES=7_positive_7_negative")
     print("AI_DECIDED_DISPOSITION=false")
     print("HUMAN_REVIEW_REQUIRED=true")
     print("RECOMMENDED_DISPOSITION=null")

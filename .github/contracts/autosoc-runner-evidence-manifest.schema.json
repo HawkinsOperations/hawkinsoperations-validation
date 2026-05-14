@@ -36,7 +36,7 @@
     },
     "proof_ceiling": {
       "type": "string",
-      "const": "TEST_VALIDATED_SYNTHETIC_SCOPE"
+      "const": "CONTROLLED_TEST_VALIDATED"
     },
     "local_runner_completed": {
       "type": "boolean",

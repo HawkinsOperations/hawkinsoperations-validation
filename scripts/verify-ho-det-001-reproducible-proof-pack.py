@@ -23,7 +23,7 @@ EXPECTED_RESULT = PACK_ROOT / "expected-boundary-result.json"
 
 PUBLIC_SAFE_STATUS = "NOT_PUBLIC_SAFE"
 PROMOTION_STATUS = "BLOCKED"
-PROOF_CEILING = "TEST_VALIDATED_SYNTHETIC_SCOPE"
+PROOF_CEILING = "CONTROLLED_TEST_VALIDATED"
 FALSE_FIELDS = [
     "runtime_active_public_proof",
     "signal_observed_public_proof",

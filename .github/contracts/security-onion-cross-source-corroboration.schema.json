@@ -1,0 +1,213 @@
+{
+  "title": "Security Onion Cross-Source Corroboration Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "packet_id",
+    "classification",
+    "public_safe_status",
+    "achieved_status",
+    "current_claim_ceiling",
+    "planned_post_runtime_claim_ceiling",
+    "observation_basis",
+    "controlled_test_event",
+    "telemetry_planes",
+    "correlation_requirements",
+    "redaction_required_fields",
+    "blocked_claims",
+    "next_gates"
+  ],
+  "properties": {
+    "packet_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "classification": {
+      "type": "string",
+      "const": "PRIVATE_INTERNAL_CROSS_SOURCE_CORROBORATION_SAMPLE"
+    },
+    "public_safe_status": {
+      "type": "string",
+      "const": "NOT_APPROVED"
+    },
+    "achieved_status": {
+      "type": "string",
+      "const": "NOT_CAPTURED_SAMPLE_ONLY"
+    },
+    "current_claim_ceiling": {
+      "type": "string",
+      "const": "CROSS_SOURCE_CORROBORATION_CONTRACT_DEFINED"
+    },
+    "planned_post_runtime_claim_ceiling": {
+      "type": "string",
+      "const": "PRIVATE_CROSS_SOURCE_CORROBORATION_CAPTURED"
+    },
+    "observation_basis": {
+      "type": "string",
+      "const": "SANITIZED_SAMPLE_CONTRACT_NO_RUNTIME_EVIDENCE"
+    },
+    "controlled_test_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_status",
+        "correlation_id_format",
+        "event_family",
+        "execution_approval_required"
+      ],
+      "properties": {
+        "event_status": {
+          "type": "string",
+          "const": "PLANNED_NOT_EXECUTED"
+        },
+        "correlation_id_format": {
+          "type": "string",
+          "minLength": 1
+        },
+        "event_family": {
+          "type": "string",
+          "const": "BENIGN_CONTROLLED_HTTP_REQUEST"
+        },
+        "execution_approval_required": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "telemetry_planes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "security_onion_suricata",
+        "endpoint_telemetry",
+        "splunk_correlation",
+        "optional_cribl_route"
+      ],
+      "properties": {
+        "security_onion_suricata": {
+          "$ref": "#/$defs/telemetry_plane"
+        },
+        "endpoint_telemetry": {
+          "$ref": "#/$defs/telemetry_plane"
+        },
+        "splunk_correlation": {
+          "$ref": "#/$defs/telemetry_plane"
+        },
+        "optional_cribl_route": {
+          "$ref": "#/$defs/telemetry_plane"
+        }
+      }
+    },
+    "correlation_requirements": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "redaction_required_fields": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "private_ip",
+          "hostname",
+          "username",
+          "internal_url",
+          "raw_command_line",
+          "raw_payload",
+          "browser_context",
+          "token_or_secret",
+          "raw_screenshot"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "blocked_claims": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "public_safe_proof",
+          "production_ndr",
+          "permanent_span",
+          "fleet_wide_visibility",
+          "durable_monitoring",
+          "pcap_availability",
+          "long_term_retention",
+          "security_onion_3_feature_claims",
+          "ja4_support",
+          "strelka_yara_workflow",
+          "suricata_detection_quality",
+          "dynamic_zeek_plugin_claims",
+          "security_onion_telemetry_forwarded_to_splunk",
+          "splunk_search_executed",
+          "cribl_route_proven",
+          "wazuh_routed_public_proof",
+          "runtime_active_production_monitoring"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "next_gates": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "telemetry_plane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "evidence_type",
+        "event_specific",
+        "required_for_corrob",
+        "public_safe",
+        "blocked_from_public_claim"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "planned_required_not_captured",
+            "planned_optional_not_captured"
+          ]
+        },
+        "evidence_type": {
+          "type": "string",
+          "enum": [
+            "sanitized_security_onion_event_summary",
+            "sanitized_endpoint_event_summary",
+            "sanitized_splunk_correlation_summary",
+            "sanitized_cribl_route_receipt_optional"
+          ]
+        },
+        "event_specific": {
+          "type": "boolean",
+          "const": false
+        },
+        "required_for_corrob": {
+          "type": "boolean"
+        },
+        "public_safe": {
+          "type": "boolean",
+          "const": false
+        },
+        "blocked_from_public_claim": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    }
+  }
+}

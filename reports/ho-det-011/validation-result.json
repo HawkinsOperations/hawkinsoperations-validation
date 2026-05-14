@@ -1,8 +1,8 @@
 {
   "status": "pass",
   "detection_id": "HO-DET-011",
-  "validation_scope": "synthetic fixtures only",
-  "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "validation_scope": "controlled-test fixtures only",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
   "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-011",
   "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-011/validation-cases.json",
   "total_cases": 17,
@@ -151,7 +151,7 @@
       "pass": true
     }
   ],
-  "exact_claim_supported": "HO-DET-011 passed synthetic validation against controlled Windows service creation fixtures.",
+  "exact_claim_supported": "HO-DET-011 passed controlled-test validation against controlled Windows service creation fixtures.",
   "blocked_claims": [
     "runtime-active",
     "signal-observed",
@@ -186,6 +186,6 @@
   "autonomous_soc": false,
   "ai_approved_disposition": false,
   "analyst_approved_disposition": false,
-  "trust_boundary": "Synthetic Windows service creation fixture validation only. This does not prove runtime, signal, public-safe proof, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
-  "privacy_status": "Synthetic fixtures only; no sensitive operational material or live telemetry intentionally included."
+  "trust_boundary": "Controlled-test Windows service creation fixture validation only. This does not prove runtime, signal, public-safe proof, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
+  "privacy_status": "Controlled-test fixtures only; no sensitive operational material or live telemetry intentionally included."
 }

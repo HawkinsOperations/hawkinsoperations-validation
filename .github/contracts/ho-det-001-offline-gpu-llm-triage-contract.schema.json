@@ -26,7 +26,7 @@
       "const": "HO-DET-001"
     },
     "proof_ceiling": {
-      "const": "TEST_VALIDATED_SYNTHETIC_SCOPE"
+      "const": "CONTROLLED_TEST_VALIDATED"
     },
     "source_artifact_references": {
       "type": "array",
@@ -133,7 +133,7 @@
               "private GPU activity observed during bounded model call",
               "AI remained support-only",
               "deterministic verifier preserved boundary",
-              "public proof ceiling remains TEST_VALIDATED_SYNTHETIC_SCOPE"
+              "public proof ceiling remains CONTROLLED_TEST_VALIDATED"
             ]
           },
           "minItems": 5,

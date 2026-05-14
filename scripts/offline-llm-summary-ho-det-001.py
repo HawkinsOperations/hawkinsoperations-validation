@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic offline LLM support stub for HO-DET-001 synthetic triage."""
+"""Deterministic offline LLM support stub for HO-DET-001 controlled-test triage."""
 
 from __future__ import annotations
 
@@ -85,13 +85,13 @@ def main() -> int:
         "execution_mode": "deterministic_stub_no_model_call",
         "summary_type": "hypothesis_triage_support_only",
         "hypothesis": (
-            "The synthetic packet is consistent with encoded-command process creation behavior. "
+            "The controlled-test packet is consistent with encoded-command process creation behavior. "
             "Analyst review would focus on command intent, parent process, user context, and environment-specific allowlisting."
         ),
         "analyst_review_required": True,
         "unsupported_claims": UNSUPPORTED_CLAIMS,
         "generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-        "privacy_status": "Synthetic packet only; no live telemetry, secrets, private hostnames, or private addresses intentionally included.",
+        "privacy_status": "Controlled-test packet only; no live telemetry, secrets, private hostnames, or private addresses intentionally included.",
     }
 
     if args.write:

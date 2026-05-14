@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic synthetic AutoSOC triage packet generator for HO-DET-001."""
+"""Deterministic controlled-test AutoSOC triage packet generator for HO-DET-001."""
 
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ def comparable_packet(packet: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate HO-DET-001 synthetic AutoSOC triage packet.")
+    parser = argparse.ArgumentParser(description="Generate HO-DET-001 controlled-test AutoSOC triage packet.")
     parser.add_argument("--input", required=True, type=Path, help="Path to validation-result.json")
     parser.add_argument(
         "--write",
@@ -81,29 +81,29 @@ def main() -> int:
     matched = int(result.get("matched_positive_count", 0))
     missed = list(result.get("missed_positive_cases", []))
     false_positive = list(result.get("false_positive_negative_cases", []))
-    disposition = "REVIEW_SYNTHETIC_DETECTION"
+    disposition = "REVIEW_CONTROLLED_TEST_DETECTION"
     reason = (
-        "Synthetic HO-DET-001 fixtures matched expected encoded-command positives "
+        "Controlled-test HO-DET-001 fixtures matched expected encoded-command positives "
         "and did not match controlled negatives."
     )
 
     packet = {
-        "packet_id": "HO-DET-001-SYNTHETIC-TRIAGE-001",
+        "packet_id": "HO-DET-001-CONTROLLED-TEST-TRIAGE-001",
         "detection_id": "HO-DET-001",
-        "synthetic_case_refs": {
+        "controlled_test_case_refs": {
             "positive_count": int(result.get("totals", {}).get("positive_cases", 0)),
             "negative_count": int(result.get("totals", {}).get("negative_cases", 0)),
         },
         "validation_result_ref": "hawkinsoperations-validation/reports/ho-det-001/validation-result.json",
         "validation_result_hash": sha256_repo_text_file(result_path),
         "disposition": disposition,
-        "disposition_basis": "deterministic synthetic validation result only",
+        "disposition_basis": "deterministic controlled-test validation result only",
         "reason": reason,
         "matched_positive_count": matched,
         "missed_positive_cases": missed,
         "false_positive_negative_cases": false_positive,
         "unsupported_claims": UNSUPPORTED_CLAIMS,
-        "privacy_status": "Synthetic validation output only; no live telemetry, secrets, private hostnames, or private addresses intentionally included.",
+        "privacy_status": "Controlled-test validation output only; no live telemetry, secrets, private hostnames, or private addresses intentionally included.",
         "generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
     }
 

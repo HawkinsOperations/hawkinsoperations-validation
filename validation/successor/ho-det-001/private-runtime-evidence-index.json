@@ -5,7 +5,7 @@
   "promotion_status": "BLOCKED",
   "evidence_scope": "PRIVATE_LLM_RUNTIME_RECEIPT_SCOPED",
   "verification_scope": "STRUCTURE_AND_BOUNDARY_ONLY",
-  "proof_ceiling": "CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_SYNTHETIC_PACKET_SCOPE",
+  "proof_ceiling": "CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_PACKET_SCOPE",
   "evidence_id": "gpu-runtime-receipt-001",
   "evidence_store": "PRIVATE_EVIDENCE_STORE",
   "evidence_location_public": "REDACTED_PRIVATE",
@@ -22,12 +22,12 @@
     "HUMAN_REVIEW_REQUIRED": true,
     "SUPPORT_ONLY": true,
     "PUBLIC_SAFE_STATUS": "NOT_PUBLIC_SAFE",
-    "PROOF_CEILING": "CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_SYNTHETIC_PACKET_SCOPE"
+    "PROOF_CEILING": "CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_PACKET_SCOPE"
   },
   "proven_private": [
     "controlled local Ollama invocation completed",
     "qwen2.5:14b generated support-only triage output",
-    "sanitized synthetic HO-DET-001 case packet hash matched across transfer",
+    "sanitized controlled-test HO-DET-001 case packet hash matched across transfer",
     "private receipt artifacts and hashes exist",
     "private verifier status is PASS"
   ],

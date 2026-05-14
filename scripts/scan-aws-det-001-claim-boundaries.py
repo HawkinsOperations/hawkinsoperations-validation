@@ -50,7 +50,7 @@ ALLOWED_CONTEXT_MARKERS = [
     "not cloud runtime-active",
     "not public-safe",
     "fixture-only",
-    "synthetic fixtures only",
+    "controlled-test fixtures only",
     "trust_boundary",
     "does not use",
     "does not assert",

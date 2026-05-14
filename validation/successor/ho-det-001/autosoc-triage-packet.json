@@ -1,16 +1,16 @@
 {
-  "packet_id": "HO-DET-001-SYNTHETIC-TRIAGE-001",
+  "packet_id": "HO-DET-001-CONTROLLED-TEST-TRIAGE-001",
   "detection_id": "HO-DET-001",
-  "current_proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
-  "synthetic_case_refs": {
+  "current_proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "controlled_test_case_refs": {
     "positive_count": 7,
     "negative_count": 7
   },
   "validation_result_ref": "hawkinsoperations-validation/reports/ho-det-001/validation-result.json",
-  "validation_result_hash": "59cefce14890c190c7b3b7deecaedef0725f5a5d4ec44a2031010834f9139318",
+  "validation_result_hash": "d5aa74d59b2f32ce85cc438a4e7178e7aee1110ada2c648d9ed5208b8f3b9b14",
   "case_packet_ref": "hawkinsoperations-validation/validation/successor/ho-det-001/case-packet.json",
-  "disposition": "REVIEW_SYNTHETIC_DETECTION",
-  "disposition_basis": "deterministic synthetic validation result only",
+  "disposition": "REVIEW_CONTROLLED_TEST_DETECTION",
+  "disposition_basis": "deterministic controlled-test validation result only",
   "triage_authority": "deterministic_verifier_and_human_review",
   "llm_role": "triage_support_only",
   "ai_decided_disposition": false,
@@ -35,7 +35,7 @@
     "human disposition review",
     "publication promotion review"
   ],
-  "reason": "Synthetic HO-DET-001 fixtures matched expected encoded-command positives and did not match controlled negatives.",
+  "reason": "Controlled-test HO-DET-001 fixtures matched expected encoded-command positives and did not match controlled negatives.",
   "matched_positive_count": 7,
   "missed_positive_cases": [],
   "false_positive_negative_cases": [],
@@ -56,6 +56,6 @@
     "fleet-wide deployment",
     "AI-approved disposition"
   ],
-  "privacy_status": "Synthetic validation output only; no live telemetry, secrets, private hostnames, or private addresses intentionally included.",
+  "privacy_status": "Controlled-test validation output only; no live telemetry, secrets, private hostnames, or private addresses intentionally included.",
   "generated_at": "2026-04-29T15:48:44Z"
 }

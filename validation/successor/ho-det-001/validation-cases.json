@@ -1,6 +1,6 @@
 {
   "detection_id": "HO-DET-001",
-  "case_scope": "synthetic_process_creation",
+  "case_scope": "controlled_test_process_creation",
   "cases": {
     "positive": [
       {

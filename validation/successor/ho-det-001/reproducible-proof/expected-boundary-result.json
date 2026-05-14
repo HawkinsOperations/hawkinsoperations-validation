@@ -3,7 +3,7 @@
   "detection_id": "HO-DET-001",
   "public_safe_status": "NOT_PUBLIC_SAFE",
   "promotion_status": "BLOCKED",
-  "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
   "expected_false_fields": {
     "runtime_active_public_proof": false,
     "signal_observed_public_proof": false,

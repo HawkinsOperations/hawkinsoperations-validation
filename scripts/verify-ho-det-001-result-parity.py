@@ -14,9 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 VALIDATION_CASES = ROOT / "validation" / "successor" / "ho-det-001" / "validation-cases.json"
 VALIDATION_RESULT = ROOT / "reports" / "ho-det-001" / "validation-result.json"
 
-PROOF_CEILING = "TEST_VALIDATED_SYNTHETIC_SCOPE"
+PROOF_CEILING = "CONTROLLED_TEST_VALIDATED"
 SUPPORTED_CLAIM = (
-    "HO-DET-001 passed synthetic validation against controlled positive and "
+    "HO-DET-001 passed controlled-test validation against controlled positive and "
     "negative process-creation fixtures."
 )
 REQUIRED_PATHS = [VALIDATION_CASES, VALIDATION_RESULT]
@@ -131,8 +131,8 @@ def evaluate(cases: dict[str, Any]) -> dict[str, Any]:
         ],
         "proof_level_before": "SOURCE_EXISTS",
         "proof_level_after": PROOF_CEILING if status == "pass" else "SOURCE_EXISTS",
-        "trust_boundary": "Synthetic process-creation fixture validation only. This is not runtime, signal, evidence-linked, public-safe, production, or live SOC proof.",
-        "privacy_status": "Synthetic fixtures only; no secrets, private hostnames, private addresses, or live telemetry intentionally included.",
+        "trust_boundary": "Controlled-test process-creation fixture validation only. This is not runtime, signal, evidence-linked, public-safe, production, or live SOC proof.",
+        "privacy_status": "Controlled-test fixtures only; no secrets, private hostnames, private addresses, or live telemetry intentionally included.",
     }
 
 

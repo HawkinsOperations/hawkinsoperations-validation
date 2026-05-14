@@ -1,8 +1,8 @@
 {
   "detection_id": "HO-DET-001",
-  "current_proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "current_proof_ceiling": "CONTROLLED_TEST_VALIDATED",
   "input_packet_ref": "hawkinsoperations-validation/validation/successor/ho-det-001/autosoc-triage-packet.json",
-  "input_packet_hash": "8636080402115cc5c86789a155883d8d020d56e1db26c18fb48ccdd10f755f24",
+  "input_packet_hash": "c78127f9413a1303dbd9d55747daf3850015c29d1e5c3fc1305ace1370209994",
   "case_packet_ref": "hawkinsoperations-validation/validation/successor/ho-det-001/case-packet.json",
   "model_runtime_status": "BLOCKED",
   "runtime_status": "BLOCKED",
@@ -21,12 +21,12 @@
   "signal_observed": false,
   "summary_type": "hypothesis_triage_support_only",
   "advisory_output": {
-    "summary": "Synthetic HO-DET-001 validation supports triage review context only.",
+    "summary": "Controlled-test HO-DET-001 validation supports triage review context only.",
     "evidence_map": [
       {
         "source_ref": "hawkinsoperations-validation/reports/ho-det-001/validation-result.json",
-        "mapped_observation": "Synthetic positives and negatives matched the expected deterministic validation outcome.",
-        "claim_supported": "synthetic_validation_context_only"
+        "mapped_observation": "Controlled-test positives and negatives matched the expected deterministic validation outcome.",
+        "claim_supported": "controlled_test_validation_context_only"
       }
     ],
     "uncertainty": [
@@ -35,11 +35,11 @@
       "Publication safety classification remains blocked by this schema and sample."
     ],
     "recommended_next_checks": [
-      "Human reviewer validates any disposition outside synthetic validation context.",
+      "Human reviewer validates any disposition outside controlled-test validation context.",
       "Operator-approved runtime receipt is required before any runtime evidence discussion."
     ]
   },
-  "hypothesis": "The synthetic packet is consistent with encoded-command process creation behavior. Analyst review would focus on command intent, parent process, user context, and environment-specific allowlisting.",
+  "hypothesis": "The controlled-test packet is consistent with encoded-command process creation behavior. Analyst review would focus on command intent, parent process, user context, and environment-specific allowlisting.",
   "analyst_review_required": true,
   "human_validation_required": true,
   "unsupported_claims": [
@@ -67,5 +67,5 @@
     "ai_final_disposition_authority": false
   },
   "generated_at": "2026-04-29T15:48:59Z",
-  "privacy_status": "Synthetic packet only; no live telemetry, secrets, private hostnames, or private addresses intentionally included."
+  "privacy_status": "Controlled-test packet only; no live telemetry, secrets, private hostnames, or private addresses intentionally included."
 }
