@@ -12,13 +12,13 @@ This repository verifies that detection logic behaves as intended against contro
 
 ## HO-DET-001 Enforcement Boundary
 
-- Current HO-DET-001 ceiling: TEST_VALIDATED_SYNTHETIC_SCOPE.
-- Validation enforcement status: CI_ENFORCED_FOR_SYNTHETIC_SCOPE.
+- Current HO-DET-001 public label: CONTROLLED_TEST_VALIDATED.
+- Validation enforcement status: CI_ENFORCED_FOR_CONTROLLED_TEST_SCOPE.
 - Validation enforcement PR: `HawkinsOperations/hawkinsoperations-validation#10`.
 - Validation enforcement merge commit: `8b48500d2ebbaacd93ac88e77a31dccf1d3b4e25`.
 - Proof-loop workflow: `.github/workflows/ho-det-001-proof-loop.yml`.
 - Truth surface: validation truth. This repository proves test inputs, harnesses, validation methodology, validation checks, and recorded validation outputs only.
-- Control boundary: proof-loop CI is a real control only for the exact checked synthetic validation scope.
+- Control boundary: proof-loop CI is a real control only for the exact checked controlled-test validation scope.
 
 This repository does not claim runtime-active, signal-observed, evidence-linked public proof, public-safe, live Splunk fired as public proof, production-ready, fleet-wide, enterprise deployed, Cribl-routed, Wazuh-routed, AWS-live, HO-GPU-01 runtime-active, autonomous SOC, AI-approved disposition, AI-decided disposition, analyst-approved disposition, or production AutoSOC triage status.
 
