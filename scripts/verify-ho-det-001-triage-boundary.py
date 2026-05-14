@@ -2,7 +2,7 @@
 """Verify the HO-DET-001 deterministic triage boundary.
 
 This verifier blocks AI authority drift and runtime/public claim promotion in
-the synthetic AutoSOC and LLM support artifacts.
+the controlled-test AutoSOC and LLM support artifacts.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ TRIAGE_PACKET = ROOT / "validation" / "successor" / "ho-det-001" / "autosoc-tria
 LLM_SUMMARY = ROOT / "validation" / "successor" / "ho-det-001" / "llm-summary.json"
 CASE_PACKET = ROOT / "validation" / "successor" / "ho-det-001" / "case-packet.json"
 
-PROOF_CEILING = "TEST_VALIDATED_SYNTHETIC_SCOPE"
+PROOF_CEILING = "CONTROLLED_TEST_VALIDATED"
 VALIDATION_RESULT_REF = "hawkinsoperations-validation/reports/ho-det-001/validation-result.json"
 TRIAGE_PACKET_REF = "hawkinsoperations-validation/validation/successor/ho-det-001/autosoc-triage-packet.json"
 CASE_PACKET_REF = "hawkinsoperations-validation/validation/successor/ho-det-001/case-packet.json"
@@ -158,7 +158,7 @@ def verify_triage_packet(packet: dict[str, Any]) -> None:
     assert_eq(packet.get("case_packet_ref"), CASE_PACKET_REF, "autosoc-triage-packet.json case_packet_ref")
     assert_eq(packet.get("triage_authority"), "deterministic_verifier_and_human_review", "autosoc-triage-packet.json triage_authority")
     assert_eq(packet.get("llm_role"), "triage_support_only", "autosoc-triage-packet.json llm_role")
-    assert_eq(packet.get("disposition"), "REVIEW_SYNTHETIC_DETECTION", "autosoc-triage-packet.json disposition")
+    assert_eq(packet.get("disposition"), "REVIEW_CONTROLLED_TEST_DETECTION", "autosoc-triage-packet.json disposition")
     if "approve" in str(packet.get("disposition", "")).lower():
         fail("autosoc-triage-packet.json disposition must not claim approval authority")
     require_false(packet, "ai_decided_disposition", "autosoc-triage-packet.json")

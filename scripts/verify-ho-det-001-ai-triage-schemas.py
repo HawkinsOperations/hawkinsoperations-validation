@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify HO-DET-001 AI triage input/output schema boundaries.
 
-This verifier checks the committed synthetic AI-triage support artifacts
+This verifier checks the committed controlled-test AI-triage support artifacts
 against validation-owned schema contracts without importing raw private model,
 runtime, host, user, LAN, or local-path evidence into the repository.
 """
@@ -26,7 +26,7 @@ TRIAGE_PACKET = ROOT / "validation" / "successor" / "ho-det-001" / "autosoc-tria
 LLM_SUMMARY = ROOT / "validation" / "successor" / "ho-det-001" / "llm-summary.json"
 VALIDATION_RESULT = ROOT / "reports" / "ho-det-001" / "validation-result.json"
 
-PROOF_CEILING = "TEST_VALIDATED_SYNTHETIC_SCOPE"
+PROOF_CEILING = "CONTROLLED_TEST_VALIDATED"
 TRIAGE_PACKET_REF = "hawkinsoperations-validation/validation/successor/ho-det-001/autosoc-triage-packet.json"
 CASE_PACKET_REF = "hawkinsoperations-validation/validation/successor/ho-det-001/case-packet.json"
 VALIDATION_RESULT_REF = "hawkinsoperations-validation/reports/ho-det-001/validation-result.json"

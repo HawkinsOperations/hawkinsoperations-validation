@@ -1,10 +1,10 @@
-# HO-DET-011 Synthetic Validation Result
+# HO-DET-011 Controlled-test Validation Result
 
 ## Summary
 - Status: pass
 - Detection ID: HO-DET-011
-- Validation scope: synthetic fixtures only
-- Proof ceiling: TEST_VALIDATED_SYNTHETIC_SCOPE
+- Validation scope: controlled-test fixtures only
+- Proof ceiling: CONTROLLED_TEST_VALIDATED
 - Total cases: 17
 - Positive cases: 7
 - Negative cases: 10
@@ -37,7 +37,7 @@
 - neg-010-service-adjacent-command-no-create-pattern: service-adjacent command without creation behavior (Sysmon Event ID 1)
 
 ## Supported Claim
-- HO-DET-011 passed synthetic validation against controlled Windows service creation fixtures.
+- HO-DET-011 passed controlled-test validation against controlled Windows service creation fixtures.
 
 ## Blocked Claims
 - Not supported: runtime-active
@@ -62,7 +62,7 @@
 - Not supported: service-creation coverage completeness
 
 ## Boundary
-Synthetic Windows service creation fixture validation only. This does not prove runtime, signal, public-safe proof, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.
+Controlled-test Windows service creation fixture validation only. This does not prove runtime, signal, public-safe proof, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.
 
 ## Reproduction Command
 - From the validation repository root, run: `python scripts/validate-ho-det-011.py`

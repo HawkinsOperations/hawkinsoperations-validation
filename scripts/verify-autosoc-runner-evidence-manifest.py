@@ -148,7 +148,7 @@ def verify_fixed_values(manifest: dict[str, Any]) -> None:
     expected = {
         "run_id": "HO-DET-001-AUTOSOC-RUNNER-001",
         "detection_id": "HO-DET-001",
-        "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+        "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
         "verifier_status": "PASS",
         "hash_verification_status": "PASS",
         "public_safe_status": "NOT_PUBLIC_SAFE",

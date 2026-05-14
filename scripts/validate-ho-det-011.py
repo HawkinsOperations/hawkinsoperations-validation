@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synthetic validation runner for HO-DET-011.
+"""Controlled-test validation runner for HO-DET-011.
 
 This validates repository-contained fixture behavior only. It does not inspect
 runtime systems, query Splunk, assert Wazuh routing, or claim public-safe proof.
@@ -24,8 +24,8 @@ REPORT_DIR = ROOT / "reports" / "ho-det-011"
 REPORT_JSON = REPORT_DIR / "validation-result.json"
 REPORT_MD = REPORT_DIR / "validation-result.md"
 
-SUPPORTED_CLAIM = "HO-DET-011 passed synthetic validation against controlled Windows service creation fixtures."
-PROOF_CEILING = "TEST_VALIDATED_SYNTHETIC_SCOPE"
+SUPPORTED_CLAIM = "HO-DET-011 passed controlled-test validation against controlled Windows service creation fixtures."
+PROOF_CEILING = "CONTROLLED_TEST_VALIDATED"
 EXPECTED_POSITIVE_COUNT = 7
 EXPECTED_NEGATIVE_COUNT = 10
 BLOCKED_CLAIMS = [
@@ -250,8 +250,8 @@ def validate_source_contract() -> None:
 def validate_fixture_contract(cases: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     if cases.get("detection_id") != "HO-DET-011":
         fail("validation cases detection_id must be HO-DET-011")
-    if cases.get("validation_scope") != "synthetic fixtures only":
-        fail("validation_scope must be synthetic fixtures only")
+    if cases.get("validation_scope") != "controlled-test fixtures only":
+        fail("validation_scope must be controlled-test fixtures only")
     groups = cases.get("cases")
     if not isinstance(groups, dict):
         fail("validation cases must include cases object")
@@ -337,7 +337,7 @@ def build_report(cases: dict[str, Any]) -> dict[str, Any]:
     return {
         "status": status,
         "detection_id": "HO-DET-011",
-        "validation_scope": "synthetic fixtures only",
+        "validation_scope": "controlled-test fixtures only",
         "proof_ceiling": proof_ceiling,
         "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-011",
         "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-011/validation-cases.json",
@@ -363,8 +363,8 @@ def build_report(cases: dict[str, Any]) -> dict[str, Any]:
         "autonomous_soc": False,
         "ai_approved_disposition": False,
         "analyst_approved_disposition": False,
-        "trust_boundary": "Synthetic Windows service creation fixture validation only. This does not prove runtime, signal, public-safe proof, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
-        "privacy_status": "Synthetic fixtures only; no sensitive operational material or live telemetry intentionally included.",
+        "trust_boundary": "Controlled-test Windows service creation fixture validation only. This does not prove runtime, signal, public-safe proof, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
+        "privacy_status": "Controlled-test fixtures only; no sensitive operational material or live telemetry intentionally included.",
     }
 
 
@@ -372,7 +372,7 @@ def write_reports(report: dict[str, Any]) -> None:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     REPORT_JSON.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     lines = [
-        "# HO-DET-011 Synthetic Validation Result",
+        "# HO-DET-011 Controlled-test Validation Result",
         "",
         "## Summary",
         f"- Status: {report['status']}",
@@ -426,7 +426,7 @@ def verify_report_matches(report: dict[str, Any]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate HO-DET-011 synthetic Windows service creation cases.")
+    parser = argparse.ArgumentParser(description="Validate HO-DET-011 controlled-test Windows service creation cases.")
     parser.add_argument("--write", action="store_true", help="Regenerate report artifacts.")
     args = parser.parse_args()
 

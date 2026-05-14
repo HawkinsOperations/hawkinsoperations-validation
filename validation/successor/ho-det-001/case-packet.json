@@ -1,10 +1,10 @@
 {
   "case_id": "HO-DET-001-CASE-PACKET-001",
   "detection_id": "HO-DET-001",
-  "detection_title": "Encoded PowerShell process creation synthetic validation",
+  "detection_title": "Encoded PowerShell process creation controlled-test validation",
   "truth_surface": "repo truth",
-  "proof_level": "TEST_VALIDATED_SYNTHETIC_SCOPE",
-  "allowed_scope": "Synthetic validation using controlled process-creation fixtures only.",
+  "proof_level": "CONTROLLED_TEST_VALIDATED",
+  "allowed_scope": "Controlled-test validation using controlled process-creation fixtures only.",
   "public_safe_status": "NO",
   "blocked_claims": [
     "runtime-active",
@@ -25,8 +25,8 @@
   ],
   "event": {
     "event_time": "2026-04-29T15:00:21Z",
-    "host": "HO-SYNTHETIC-ENDPOINT-001",
-    "user": "HO_SYNTHETIC_USER",
+    "host": "HO-CONTROLLED-TEST-ENDPOINT-001",
+    "user": "HO_CONTROLLED_TEST_USER",
     "image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
     "original_file_name": "PowerShell.EXE",
     "command_line": "powershell.exe -NoProfile -enc SQBFAFgA",
@@ -34,7 +34,7 @@
     "event_id": 1,
     "source": "WinEventLog:Microsoft-Windows-Sysmon/Operational",
     "sourcetype": "XmlWinEventLog:Microsoft-Windows-Sysmon/Operational",
-    "index": "hawkinsoperations_synthetic_validation"
+    "index": "hawkinsoperations_controlled_test_validation"
   },
   "detection_references": [
     {
@@ -52,22 +52,22 @@
     {
       "name": "validation cases",
       "path": "hawkinsoperations-validation/validation/successor/ho-det-001/validation-cases.json",
-      "sha256": "8dc245873ab1e5a429af5ca872c8a78343f7e27256016e31eaa21c4e41d3ba93"
+      "sha256": "01bc080beb49e6b240d6823fff20a932ed25dd8ee0a0eff7d91bb81babcd6d41"
     },
     {
       "name": "validation result",
       "path": "hawkinsoperations-validation/reports/ho-det-001/validation-result.json",
-      "sha256": "59cefce14890c190c7b3b7deecaedef0725f5a5d4ec44a2031010834f9139318"
+      "sha256": "d5aa74d59b2f32ce85cc438a4e7178e7aee1110ada2c648d9ed5208b8f3b9b14"
     },
     {
-      "name": "autosoc synthetic packet",
+      "name": "autosoc controlled-test packet",
       "path": "hawkinsoperations-validation/validation/successor/ho-det-001/autosoc-triage-packet.json",
-      "sha256": "8636080402115cc5c86789a155883d8d020d56e1db26c18fb48ccdd10f755f24"
+      "sha256": "c78127f9413a1303dbd9d55747daf3850015c29d1e5c3fc1305ace1370209994"
     },
     {
       "name": "blocked-runtime LLM stub",
       "path": "hawkinsoperations-validation/validation/successor/ho-det-001/llm-summary.json",
-      "sha256": "1d93fb3c858b83214537bd161007fba9c928dd611f52818b24347fd75d2656f2"
+      "sha256": "cfe50a003b76f009c1c96f359b29c55d522d16e97639de2d2e20aa4aaa002e38"
     }
   ],
   "triage_boundary": {
@@ -77,7 +77,7 @@
   },
   "public_claim_boundary": {
     "public_safe_status": "NO",
-    "supported_claim": "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures.",
+    "supported_claim": "HO-DET-001 passed controlled-test validation against controlled positive and negative process-creation fixtures.",
     "blocked_claims": [
       "runtime-active",
       "signal-observed",
@@ -107,7 +107,7 @@
   },
   "determinism": {
     "generated_by": "scripts/build-ho-det-001-case-packet.py",
-    "source_mode": "committed_local_synthetic_validation_artifacts",
-    "synthetic_fallback_used": false
+    "source_mode": "committed_local_controlled_test_validation_artifacts",
+    "controlled_test_fallback_used": false
   }
 }

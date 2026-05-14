@@ -103,7 +103,7 @@
       "pass": true
     }
   ],
-  "exact_claim_supported": "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures.",
+  "exact_claim_supported": "HO-DET-001 passed controlled-test validation against controlled positive and negative process-creation fixtures.",
   "claims_not_supported": [
     "runtime-active",
     "signal-observed",
@@ -117,7 +117,7 @@
     "analyst-approved disposition"
   ],
   "proof_level_before": "SOURCE_EXISTS",
-  "proof_level_after": "TEST_VALIDATED_SYNTHETIC_SCOPE",
-  "trust_boundary": "Synthetic process-creation fixture validation only. This is not runtime, signal, evidence-linked, public-safe, production, or live SOC proof.",
-  "privacy_status": "Synthetic fixtures only; no secrets, private hostnames, private addresses, or live telemetry intentionally included."
+  "proof_level_after": "CONTROLLED_TEST_VALIDATED",
+  "trust_boundary": "Controlled-test process-creation fixture validation only. This is not runtime, signal, evidence-linked, public-safe, production, or live SOC proof.",
+  "privacy_status": "Controlled-test fixtures only; no secrets, private hostnames, private addresses, or live telemetry intentionally included."
 }

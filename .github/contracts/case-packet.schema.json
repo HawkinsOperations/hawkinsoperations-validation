@@ -38,7 +38,7 @@
     },
     "proof_level": {
       "type": "string",
-      "const": "TEST_VALIDATED_SYNTHETIC_SCOPE"
+      "const": "CONTROLLED_TEST_VALIDATED"
     },
     "allowed_scope": {
       "type": "string",

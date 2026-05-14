@@ -20,11 +20,11 @@ HO_VALIDATION_RESULT = ROOT / "reports" / "ho-det-001" / "validation-result.json
 AWS_VALIDATION_RESULT = ROOT / "reports" / "aws-det-001" / "validation-result.json"
 HO_PROOF_MD = PROOF_ROOT / "proof" / "records" / "HO-DET-001.md"
 AWS_PROOF_MD = PROOF_ROOT / "proof" / "records" / "AWS-DET-001.md"
-HO_PROOF_JSON = PROOF_ROOT / "proof" / "records" / "HO-DET-001-SYNTHETIC-VALIDATION-001.json"
+HO_PROOF_JSON = PROOF_ROOT / "proof" / "records" / "HO-DET-001-CONTROLLED-TEST-VALIDATION-001.json"
 
-PROOF_CEILING = "TEST_VALIDATED_SYNTHETIC_SCOPE"
+PROOF_CEILING = "CONTROLLED_TEST_VALIDATED"
 HO_SUPPORTED_CLAIM = (
-    "HO-DET-001 passed synthetic validation against controlled positive and "
+    "HO-DET-001 passed controlled-test validation against controlled positive and "
     "negative process-creation fixtures."
 )
 AWS_SUPPORTED_CLAIM = (
@@ -79,8 +79,8 @@ def require_validation_report(report: dict[str, Any], detection_id: str, claim: 
 def verify_ho_markdown(report: dict[str, Any], text: str) -> None:
     totals = report["totals"]
     required = [
-        "- Current proof level: TEST_VALIDATED_SYNTHETIC_SCOPE",
-        "- Current trust class: TEST_VALIDATED_SYNTHETIC_SCOPE",
+        "- Current proof level: CONTROLLED_TEST_VALIDATED",
+        "- Current trust class: CONTROLLED_TEST_VALIDATED",
         "- Public-safe status: NOT_PUBLIC_SAFE",
         "- Approval status: NOT_APPROVED",
         f'"{HO_SUPPORTED_CLAIM}"',
@@ -99,8 +99,8 @@ def verify_ho_markdown(report: dict[str, Any], text: str) -> None:
 def verify_aws_markdown(report: dict[str, Any], text: str) -> None:
     totals = report["totals"]
     required = [
-        "- Current proof level: TEST_VALIDATED_SYNTHETIC_SCOPE",
-        "- Current trust class: TEST_VALIDATED_SYNTHETIC_SCOPE",
+        "- Current proof level: CONTROLLED_TEST_VALIDATED",
+        "- Current trust class: CONTROLLED_TEST_VALIDATED",
         "- Public-safe status: NOT_PUBLIC_SAFE",
         "- Approval status: NOT_APPROVED",
         f'"{AWS_SUPPORTED_CLAIM}"',
@@ -112,7 +112,7 @@ def verify_aws_markdown(report: dict[str, Any], text: str) -> None:
         "- AWS-live status: BLOCKED.",
         "- AWS CloudTrail live status: BLOCKED.",
         "- Signal-observed status: BLOCKED.",
-        "TEST_VALIDATED_SYNTHETIC_SCOPE",
+        "CONTROLLED_TEST_VALIDATED",
     ]
     for item in required:
         require_in(text, item, "AWS-DET-001.md")
@@ -122,7 +122,7 @@ def verify_ho_json(report: dict[str, Any], proof: dict[str, Any]) -> None:
     totals = report["totals"]
     validation_summary = proof.get("validation_summary")
     if not isinstance(validation_summary, dict):
-        fail("HO-DET-001 synthetic proof JSON missing validation_summary object")
+        fail("HO-DET-001 controlled-test proof JSON missing validation_summary object")
     require_equal(proof.get("detection_id"), "HO-DET-001", "HO proof JSON detection_id")
     require_equal(proof.get("status"), PROOF_CEILING, "HO proof JSON status")
     require_equal(proof.get("supported_claim"), HO_SUPPORTED_CLAIM, "HO proof JSON supported_claim")
@@ -159,7 +159,7 @@ def main() -> int:
 
     verify_ho_markdown(ho_report, read_text(HO_PROOF_MD, "HO-DET-001 proof markdown"))
     verify_aws_markdown(aws_report, read_text(AWS_PROOF_MD, "AWS-DET-001 proof markdown"))
-    verify_ho_json(ho_report, load_json(HO_PROOF_JSON, "HO-DET-001 synthetic proof JSON"))
+    verify_ho_json(ho_report, load_json(HO_PROOF_JSON, "HO-DET-001 controlled-test proof JSON"))
 
     print("STATUS=pass")
     print("PROOF_RECORD_PARITY=pass")

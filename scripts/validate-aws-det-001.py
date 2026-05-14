@@ -125,7 +125,7 @@ def build_report(cases: dict[str, Any]) -> dict[str, Any]:
     all_results = positive_results + negative_results
     fail_count = len(missed) + len(false_positive)
     status = "pass" if fail_count == 0 else "fail"
-    proof_ceiling = "TEST_VALIDATED_SYNTHETIC_SCOPE" if status == "pass" else "TEST_DEFINED"
+    proof_ceiling = "CONTROLLED_TEST_VALIDATED" if status == "pass" else "TEST_DEFINED"
     return {
         "status": status,
         "detection_id": "AWS-DET-001",
@@ -150,7 +150,7 @@ def build_report(cases: dict[str, Any]) -> dict[str, Any]:
         "public_safe_status": "NOT_PUBLIC_SAFE",
         "claims_not_supported": BLOCKED_CLAIMS,
         "trust_boundary": "Fixture-only CloudTrail-style validation. This is not AWS-live, CloudTrail live, cloud runtime-active, production, signal-observed, or public-safe proof.",
-        "privacy_status": "Synthetic fixtures only; no AWS credentials, account identifiers, live CloudTrail records, secrets, private hostnames, or private addresses are included.",
+        "privacy_status": "Controlled-test fixtures only; no AWS credentials, account identifiers, live CloudTrail records, secrets, private hostnames, or private addresses are included.",
     }
 
 

@@ -4,7 +4,7 @@
   "proof_pack_type": "PUBLIC_CLONE_RUNNABLE_BOUNDARY_STUB",
   "public_safe_status": "NOT_PUBLIC_SAFE",
   "promotion_status": "BLOCKED",
-  "proof_ceiling": "TEST_VALIDATED_SYNTHETIC_SCOPE",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
   "private_runtime_evidence_status": "PRIVATE_OUTSIDE_REPO",
   "private_runtime_evidence_required_for_clone_run": false,
   "raw_private_evidence_exposed": false,

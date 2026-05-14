@@ -42,7 +42,7 @@
     },
     "current_proof_ceiling": {
       "type": "string",
-      "const": "TEST_VALIDATED_SYNTHETIC_SCOPE"
+      "const": "CONTROLLED_TEST_VALIDATED"
     },
     "input_packet_ref": {
       "type": "string",
@@ -154,7 +154,7 @@
               "claim_supported": {
                 "type": "string",
                 "enum": [
-                  "synthetic_validation_context_only",
+                  "controlled_test_validation_context_only",
                   "requires_human_review"
                 ]
               }

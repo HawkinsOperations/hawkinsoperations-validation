@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synthetic validation runner for HO-DET-001.
+"""Controlled-test validation runner for HO-DET-001.
 
 This script validates deterministic fixture behavior only. It does not inspect
 runtime systems, query Splunk, or produce signal evidence.
@@ -25,7 +25,7 @@ REPORT_DIR = ROOT / "reports" / "ho-det-001"
 REPORT_JSON = REPORT_DIR / "validation-result.json"
 REPORT_MD = REPORT_DIR / "validation-result.md"
 
-CLAIM_SUPPORTED = "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures."
+CLAIM_SUPPORTED = "HO-DET-001 passed controlled-test validation against controlled positive and negative process-creation fixtures."
 CLAIMS_NOT_SUPPORTED = [
     "runtime-active",
     "signal-observed",
@@ -168,7 +168,7 @@ def write_reports(report: dict[str, Any]) -> None:
     REPORT_JSON.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
     lines = [
-        "# HO-DET-001 Synthetic Validation Result",
+        "# HO-DET-001 Controlled-test Validation Result",
         "",
         "## Summary",
         f"- Status: {report['status']}",
@@ -210,7 +210,7 @@ def write_reports(report: dict[str, Any]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate HO-DET-001 synthetic process-creation fixtures.")
+    parser = argparse.ArgumentParser(description="Validate HO-DET-001 controlled-test process-creation fixtures.")
     parser.add_argument(
         "--write",
         action="store_true",
@@ -258,9 +258,9 @@ def main() -> int:
         "exact_claim_supported": CLAIM_SUPPORTED if status == "pass" else "",
         "claims_not_supported": CLAIMS_NOT_SUPPORTED,
         "proof_level_before": "SOURCE_EXISTS",
-        "proof_level_after": "TEST_VALIDATED_SYNTHETIC_SCOPE" if status == "pass" else "SOURCE_EXISTS",
-        "trust_boundary": "Synthetic process-creation fixture validation only. This is not runtime, signal, evidence-linked, public-safe, production, or live SOC proof.",
-        "privacy_status": "Synthetic fixtures only; no secrets, private hostnames, private addresses, or live telemetry intentionally included.",
+        "proof_level_after": "CONTROLLED_TEST_VALIDATED" if status == "pass" else "SOURCE_EXISTS",
+        "trust_boundary": "Controlled-test process-creation fixture validation only. This is not runtime, signal, evidence-linked, public-safe, production, or live SOC proof.",
+        "privacy_status": "Controlled-test fixtures only; no secrets, private hostnames, private addresses, or live telemetry intentionally included.",
     }
     if args.write:
         write_reports(report)

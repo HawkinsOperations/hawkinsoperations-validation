@@ -52,8 +52,8 @@ ALLOWED_TEXT_MARKERS = [
     "does not prove",
     "do not prove",
     "not_public_safe",
-    "synthetic fixtures only",
-    "synthetic validation only",
+    "controlled-test fixtures only",
+    "controlled-test validation only",
     "not runtime",
 ]
 

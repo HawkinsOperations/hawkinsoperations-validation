@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Run HO-DET-011 synthetic fixture validation
+      - name: Run HO-DET-011 controlled-test fixture validation
         run: python scripts/validate-ho-det-011.py
 
       - name: Run HO-DET-011 result parity verifier

@@ -1,4 +1,4 @@
-# HO-DET-001 Synthetic Validation Result
+# HO-DET-001 Controlled-test Validation Result
 
 ## Summary
 - Status: pass
@@ -21,7 +21,7 @@
 - Failed cases: 0
 
 ## Supported Claim
-- HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures.
+- HO-DET-001 passed controlled-test validation against controlled positive and negative process-creation fixtures.
 
 ## Blocked Claims
 - Not supported: runtime-active

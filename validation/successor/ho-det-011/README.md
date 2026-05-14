@@ -1,8 +1,8 @@
-# HO-DET-011 Synthetic Validation
+# HO-DET-011 Controlled-test Validation
 
 ## Purpose
 
-This fixture set validates HO-DET-011 service creation source behavior against controlled synthetic Windows event shapes.
+This fixture set validates HO-DET-011 service creation source behavior against controlled controlled-test Windows event shapes.
 
 ## Scope
 
@@ -35,7 +35,7 @@ This fixture set validates HO-DET-011 service creation source behavior against c
 
 ## Validation Boundary
 
-This validates synthetic fixture behavior only. It does not inspect runtime systems, live telemetry, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production deployment, fleet status, public-safe status, or evidence-linked public proof.
+This validates controlled-test fixture behavior only. It does not inspect runtime systems, live telemetry, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production deployment, fleet status, public-safe status, or evidence-linked public proof.
 
 ## Reproduction
 

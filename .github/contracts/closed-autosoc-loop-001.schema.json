@@ -9,7 +9,7 @@
     "detection_id",
     "proof_ceiling",
     "validation_pass_reference",
-    "synthetic_fixture_result_reference",
+    "controlled_test_fixture_result_reference",
     "case_packet_reference",
     "autosoc_triage_reference",
     "llm_summary_reference",
@@ -30,7 +30,7 @@
     },
     "proof_ceiling": {
       "type": "string",
-      "const": "TEST_VALIDATED_SYNTHETIC_SCOPE"
+      "const": "CONTROLLED_TEST_VALIDATED"
     },
     "validation_pass_reference": {
       "type": "object",
@@ -56,11 +56,11 @@
         },
         "supported_claim": {
           "type": "string",
-          "const": "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures."
+          "const": "HO-DET-001 passed controlled-test validation against controlled positive and negative process-creation fixtures."
         }
       }
     },
-    "synthetic_fixture_result_reference": {
+    "controlled_test_fixture_result_reference": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -248,7 +248,7 @@
         },
         "allowed_public_claim": {
           "type": "string",
-          "const": "HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures."
+          "const": "HO-DET-001 passed controlled-test validation against controlled positive and negative process-creation fixtures."
         }
       }
     },

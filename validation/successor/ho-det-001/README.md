@@ -1,10 +1,10 @@
-# HO-DET-001 Closed-Loop Synthetic Validation
+# HO-DET-001 Closed-Loop Controlled-test Validation
 
 ## Scope
 
-This directory owns the HawkinsOperations V2 synthetic validation slice for HO-DET-001. It validates controlled process-creation fixtures against the HO-DET-001 source semantics and produces deterministic downstream artifacts for triage and offline LLM-support review.
+This directory owns the HawkinsOperations V2 controlled-test validation slice for HO-DET-001. It validates controlled process-creation fixtures against the HO-DET-001 source semantics and produces deterministic downstream artifacts for triage and offline LLM-support review.
 
-This is synthetic validation only. It does not query live systems, deploy detections, observe signals, link evidence, approve public wording, or prove production behavior.
+This is controlled-test validation only. It does not query live systems, deploy detections, observe signals, link evidence, approve public wording, or prove production behavior.
 
 ## Reproduction Commands
 
@@ -29,11 +29,11 @@ python scripts/offline-llm-summary-ho-det-001.py --input validation/successor/ho
 | Artifact | Purpose |
 |---|---|
 | `validation/successor/ho-det-001/validation-cases.json` | Controlled positive and negative process-creation fixtures |
-| `scripts/validate-ho-det-001.py` | Source contract and synthetic fixture validator |
-| `reports/ho-det-001/validation-result.json` | Machine-readable synthetic validation result |
-| `reports/ho-det-001/validation-result.md` | Human-readable synthetic validation result |
+| `scripts/validate-ho-det-001.py` | Source contract and controlled-test fixture validator |
+| `reports/ho-det-001/validation-result.json` | Machine-readable controlled-test validation result |
+| `reports/ho-det-001/validation-result.md` | Human-readable controlled-test validation result |
 | `scripts/autosoc-triage-ho-det-001.py` | Deterministic triage packet generator from the validation result |
-| `validation/successor/ho-det-001/autosoc-triage-packet.json` | Synthetic triage packet |
+| `validation/successor/ho-det-001/autosoc-triage-packet.json` | Controlled-test triage packet |
 | `scripts/offline-llm-summary-ho-det-001.py` | Deterministic offline LLM-support stub |
 | `validation/successor/ho-det-001/llm-summary.json` | Hypothesis support summary or blocked local-runtime stub |
 
@@ -41,9 +41,9 @@ python scripts/offline-llm-summary-ho-det-001.py --input validation/successor/ho
 
 Supported after all commands pass:
 
-- HO-DET-001 passed synthetic validation against controlled positive and negative process-creation fixtures.
-- A deterministic triage packet was generated from the HO-DET-001 synthetic validation result.
-- An offline LLM-support summary artifact or blocked local-runtime stub was generated from a known synthetic triage packet.
+- HO-DET-001 passed controlled-test validation against controlled positive and negative process-creation fixtures.
+- A deterministic triage packet was generated from the HO-DET-001 controlled-test validation result.
+- An offline LLM-support summary artifact or blocked local-runtime stub was generated from a known controlled-test triage packet.
 
 Blocked:
 
@@ -64,8 +64,8 @@ Blocked:
 
 | Phase | Result if passing | Boundary |
 |---|---|---|
-| Phase 1 | `TEST_VALIDATED_SYNTHETIC_SCOPE` | Synthetic process-creation fixtures only |
-| Phase 2 | Deterministic triage packet generated | Derived from synthetic validation output only |
+| Phase 1 | `CONTROLLED_TEST_VALIDATED` | Controlled-test process-creation fixtures only |
+| Phase 2 | Deterministic triage packet generated | Derived from controlled-test validation output only |
 | Phase 3 | LLM-support stub generated | Hypothesis support only; local model runtime remains blocked unless separately approved and proven |
 
 ## What Is Supported

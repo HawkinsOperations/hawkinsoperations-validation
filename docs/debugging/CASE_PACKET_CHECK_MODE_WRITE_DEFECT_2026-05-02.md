@@ -18,7 +18,7 @@ HO-DET-001 case packet builder wrote tracked output during `--check` mode before
 
 Expected behavior:
 
-- build the expected packet in memory from committed synthetic validation inputs;
+- build the expected packet in memory from committed controlled-test validation inputs;
 - read the existing `validation/successor/ho-det-001/case-packet.json`;
 - fail if the existing packet is missing or out of date;
 - pass if the existing packet exactly matches the deterministic builder output;
@@ -89,7 +89,7 @@ This defect record does not promote HO-DET-001.
 
 Claim boundary remains:
 
-- current ceiling: `TEST_VALIDATED_SYNTHETIC_SCOPE`;
+- current ceiling: `CONTROLLED_TEST_VALIDATED`;
 - public safe status remains `NO`;
 - this artifact does not prove runtime-active status;
 - this artifact does not prove signal-observed status;

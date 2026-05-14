@@ -66,8 +66,8 @@ ALLOWED_TEXT_MARKERS = [
     "do not prove",
     "remain blocked",
     "remains blocked",
-    "synthetic scope only",
-    "synthetic validation only",
+    "controlled-test scope only",
+    "controlled-test validation only",
     "not runtime",
     "not public",
 ]
@@ -157,7 +157,7 @@ def markdown_context_allowed(section: str, line: str) -> bool:
     if section in {"blocked claims", "what this does not prove"}:
         return True
     if section == "status":
-        if any(marker in lower for marker in ["blocked", "not_public_safe", "not_proven", "does not prove", "do not prove", "synthetic scope only"]):
+        if any(marker in lower for marker in ["blocked", "not_public_safe", "not_proven", "does not prove", "do not prove", "controlled-test scope only"]):
             return True
     if any(marker in lower for marker in ALLOWED_TEXT_MARKERS):
         return True

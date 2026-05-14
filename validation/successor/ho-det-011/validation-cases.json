@@ -1,7 +1,7 @@
 {
   "detection_id": "HO-DET-011",
-  "case_scope": "synthetic_windows_service_creation",
-  "validation_scope": "synthetic fixtures only",
+  "case_scope": "controlled-test_windows_service_creation",
+  "validation_scope": "controlled-test fixtures only",
   "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-011",
   "source_scope": [
     "Windows System Event ID 7045 from Service Control Manager service install telemetry",
@@ -55,7 +55,7 @@
           "ServiceFileName": "\\Users\\Public\\Libraries\\publiclibupdater.exe",
           "ServiceType": "user mode service",
           "StartType": "auto start",
-          "SubjectUserName": "synthetic-admin"
+          "SubjectUserName": "controlled-test-admin"
         }
       },
       {
@@ -138,7 +138,7 @@
           "ImagePath": "\\Program Files\\VendorSuite\\installer-service.exe",
           "ServiceType": "user mode service",
           "StartType": "demand start",
-          "Signer": "Synthetic Vendor"
+          "Signer": "Controlled-test Vendor"
         }
       },
       {
