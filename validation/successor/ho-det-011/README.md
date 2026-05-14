@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This fixture set validates HO-DET-011 service creation source behavior against controlled controlled-test Windows event shapes.
+This fixture set validates HO-DET-011 service creation source behavior against controlled-test Windows event shapes.
 
 ## Scope
 
