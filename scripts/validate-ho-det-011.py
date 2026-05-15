@@ -239,8 +239,18 @@ def validate_source_contract() -> None:
     required_status_fragments = [
         "tuning_status: SOURCE_TUNING_NOTES_ADDED",
         "fixtures_in_detections_repo: false",
-        "planned_validation_fixture_set: REQUIRED_SEPARATE_SCOPE",
-        "validation passed",
+        "validation_status: CONTROLLED_TEST_VALIDATED",
+        "validation_total_cases: 17",
+        "validation_positive_cases: 7",
+        "validation_negative_cases: 10",
+        "proof_level: PRIVATE_RUNTIME_EVIDENCE_CAPTURED",
+        "runtime_evidence_status: PRIVATE_RUNTIME_EVIDENCE_CAPTURED_LOCAL_WINDOWS_ONLY",
+        "wazuh_status: NOT_PROVEN",
+        "splunk_status: NOT_PROVEN",
+        "cribl_status: NOT_PROVEN",
+        "public_safe_status: NOT_PUBLIC_SAFE",
+        "HO-DET-011 passed controlled-test validation against 17 controlled Windows service creation fixtures.",
+        "HO-DET-011 is capped at PRIVATE_RUNTIME_EVIDENCE_CAPTURED for private evidence and NOT_PUBLIC_SAFE for public use.",
     ]
     for fragment in required_status_fragments:
         if fragment not in status:
