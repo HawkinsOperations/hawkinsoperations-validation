@@ -1,0 +1,112 @@
+{
+  "detection_id": "HO-DET-001",
+  "adapter_scope": "controlled_backend_adapter_fixture",
+  "source_backend": "splunk_xml_sysmon",
+  "sanitized_source_shape": "private_level2_reference",
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "promotion_status": "BLOCKED",
+  "controlled_test_marker": "HO-LAB-AUTO-001-L2-SANITIZED",
+  "claim_boundary": "Deterministic backend adapter validation only. This does not prove runtime-active status, signal-observed public proof, production readiness, public approval, AI-approved disposition, or analyst-approved disposition.",
+  "cases": [
+    {
+      "id": "adapter-pos-001-strict-child-powershell-encodedcommand",
+      "description": "Sanitized Windows PowerShell child process with EncodedCommand marker.",
+      "expected": {
+        "behavior_family_match": true,
+        "strict_child_candidate": true,
+        "parent_launcher_noise": false,
+        "marker_only_noise": false,
+        "required_fields_present": true
+      },
+      "row": {
+        "index": "ho_v2_sysmon",
+        "host": "LAB-HOST",
+        "source": "WinEventLog:Microsoft-Windows-Sysmon/Operational",
+        "sourcetype": "XmlWinEventLog:Microsoft-Windows-Sysmon/Operational",
+        "_raw": "<Event><System><EventID>1</EventID></System><EventData><Data Name='Image'>C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe</Data><Data Name='OriginalFileName'>PowerShell.EXE</Data><Data Name='CommandLine'>powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand SANITIZED HO-LAB-AUTO-001-L2-SANITIZED</Data><Data Name='ParentImage'>C:\\Program Files\\PowerShell\\7\\pwsh.exe</Data><Data Name='ParentCommandLine'>pwsh.exe -NoProfile -Command Start-Process powershell.exe</Data><Data Name='ProcessGuid'>{11111111-1111-1111-1111-111111111111}</Data><Data Name='ParentProcessGuid'>{22222222-2222-2222-2222-222222222222}</Data><Data Name='User'>LAB-HOST\\Analyst</Data></EventData></Event>"
+      }
+    },
+    {
+      "id": "adapter-noise-001-parent-launcher-contained-child-command",
+      "description": "Parent pwsh launcher includes marker and EncodedCommand text but is not the strict child event.",
+      "expected": {
+        "behavior_family_match": true,
+        "strict_child_candidate": false,
+        "parent_launcher_noise": true,
+        "marker_only_noise": false,
+        "required_fields_present": true
+      },
+      "row": {
+        "index": "ho_v2_sysmon",
+        "host": "LAB-HOST",
+        "source": "WinEventLog:Microsoft-Windows-Sysmon/Operational",
+        "sourcetype": "XmlWinEventLog:Microsoft-Windows-Sysmon/Operational",
+        "_raw": "<Event><System><EventID>1</EventID></System><EventData><Data Name='Image'>C:\\Program Files\\PowerShell\\7\\pwsh.exe</Data><Data Name='OriginalFileName'>pwsh.dll</Data><Data Name='CommandLine'>pwsh.exe -NoProfile -Command powershell.exe -EncodedCommand SANITIZED HO-LAB-AUTO-001-L2-SANITIZED</Data><Data Name='ParentImage'>C:\\Tools\\orchestrator.exe</Data><Data Name='ParentCommandLine'>orchestrator.exe run controlled-test</Data><Data Name='ProcessGuid'>{33333333-3333-3333-3333-333333333333}</Data><Data Name='ParentProcessGuid'>{44444444-4444-4444-4444-444444444444}</Data><Data Name='User'>LAB-HOST\\Analyst</Data></EventData></Event>"
+      }
+    },
+    {
+      "id": "adapter-neg-001-marker-only-without-encodedcommand",
+      "description": "Marker-only process creation should not satisfy encoded-command behavior.",
+      "expected": {
+        "behavior_family_match": false,
+        "strict_child_candidate": false,
+        "parent_launcher_noise": false,
+        "marker_only_noise": true,
+        "required_fields_present": true
+      },
+      "row": {
+        "index": "ho_v2_sysmon",
+        "host": "LAB-HOST",
+        "source": "WinEventLog:Microsoft-Windows-Sysmon/Operational",
+        "sourcetype": "XmlWinEventLog:Microsoft-Windows-Sysmon/Operational",
+        "_raw": "<Event><System><EventID>1</EventID></System><EventData><Data Name='Image'>C:\\Program Files\\PowerShell\\7\\pwsh.exe</Data><Data Name='OriginalFileName'>pwsh.dll</Data><Data Name='CommandLine'>pwsh.exe -NoProfile -Command Write-Output HO-LAB-AUTO-001-L2-SANITIZED</Data><Data Name='ParentImage'>C:\\Tools\\orchestrator.exe</Data><Data Name='ParentCommandLine'>orchestrator.exe run controlled-test</Data><Data Name='ProcessGuid'>{55555555-5555-5555-5555-555555555555}</Data><Data Name='ParentProcessGuid'>{66666666-6666-6666-6666-666666666666}</Data><Data Name='User'>LAB-HOST\\Analyst</Data></EventData></Event>"
+      }
+    },
+    {
+      "id": "adapter-neg-002-missing-command-line",
+      "description": "PowerShell identity without CommandLine must not match.",
+      "expected": {
+        "behavior_family_match": false,
+        "strict_child_candidate": false,
+        "parent_launcher_noise": false,
+        "marker_only_noise": false,
+        "required_fields_present": false
+      },
+      "row": {
+        "index": "ho_v2_sysmon",
+        "host": "LAB-HOST",
+        "source": "WinEventLog:Microsoft-Windows-Sysmon/Operational",
+        "sourcetype": "XmlWinEventLog:Microsoft-Windows-Sysmon/Operational",
+        "_raw": "<Event><System><EventID>1</EventID></System><EventData><Data Name='Image'>C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe</Data><Data Name='OriginalFileName'>PowerShell.EXE</Data><Data Name='ParentImage'>C:\\Program Files\\PowerShell\\7\\pwsh.exe</Data><Data Name='ProcessGuid'>{77777777-7777-7777-7777-777777777777}</Data><Data Name='ParentProcessGuid'>{88888888-8888-8888-8888-888888888888}</Data><Data Name='User'>LAB-HOST\\Analyst</Data></EventData></Event>"
+      }
+    },
+    {
+      "id": "adapter-neg-003-missing-process-identity",
+      "description": "Encoded-looking command without PowerShell identity must not match.",
+      "expected": {
+        "behavior_family_match": false,
+        "strict_child_candidate": false,
+        "parent_launcher_noise": false,
+        "marker_only_noise": false,
+        "required_fields_present": false
+      },
+      "row": {
+        "index": "ho_v2_sysmon",
+        "host": "LAB-HOST",
+        "source": "WinEventLog:Microsoft-Windows-Sysmon/Operational",
+        "sourcetype": "XmlWinEventLog:Microsoft-Windows-Sysmon/Operational",
+        "_raw": "<Event><System><EventID>1</EventID></System><EventData><Data Name='CommandLine'>unknown.exe -EncodedCommand SANITIZED HO-LAB-AUTO-001-L2-SANITIZED</Data><Data Name='ParentImage'>C:\\Tools\\orchestrator.exe</Data><Data Name='ParentCommandLine'>orchestrator.exe run controlled-test</Data><Data Name='ProcessGuid'>{99999999-9999-9999-9999-999999999999}</Data><Data Name='ParentProcessGuid'>{AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA}</Data><Data Name='User'>LAB-HOST\\Analyst</Data></EventData></Event>"
+      }
+    }
+  ],
+  "blocked_claims": [
+    "runtime-active",
+    "signal-observed public proof",
+    "evidence-linked public proof",
+    "public-safe proof",
+    "production-ready",
+    "fleet-wide",
+    "AI-approved disposition",
+    "analyst-approved disposition"
+  ]
+}
