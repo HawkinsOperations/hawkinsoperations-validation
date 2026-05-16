@@ -1,0 +1,105 @@
+{
+  "detection_id": "HO-DET-001",
+  "source_contract": "sanitized_normalized_adapter_facts",
+  "adapter_scope": "controlled_backend_adapter_fixture",
+  "sanitization": {
+    "raw_event_data_included": false,
+    "private_hostnames_included": false,
+    "private_addresses_included": false,
+    "secrets_included": false,
+    "local_paths_included": false
+  },
+  "facts": [
+    {
+      "id": "adapter-pos-001-strict-child-powershell-encodedcommand",
+      "event_id": 1,
+      "process_image": "powershell.exe",
+      "original_file_name": "PowerShell.EXE",
+      "command_line_features": [
+        "encoded_command",
+        "controlled_test_marker_present"
+      ],
+      "parent_image": "pwsh.exe",
+      "parent_command_line_features": [
+        "launches_powershell"
+      ],
+      "behavior_family_match": true,
+      "strict_child_candidate": true,
+      "parent_launcher_noise": false,
+      "marker_only_noise": false,
+      "required_fields_present": true
+    },
+    {
+      "id": "adapter-noise-001-parent-launcher-contained-child-command",
+      "event_id": 1,
+      "process_image": "pwsh.exe",
+      "original_file_name": "pwsh.dll",
+      "command_line_features": [
+        "encoded_command",
+        "controlled_test_marker_present",
+        "launcher_invokes_child"
+      ],
+      "parent_image": "orchestrator.exe",
+      "parent_command_line_features": [
+        "controlled_test_launcher"
+      ],
+      "behavior_family_match": true,
+      "strict_child_candidate": false,
+      "parent_launcher_noise": true,
+      "marker_only_noise": false,
+      "required_fields_present": true
+    },
+    {
+      "id": "adapter-neg-001-marker-only-without-encodedcommand",
+      "event_id": 1,
+      "process_image": "pwsh.exe",
+      "original_file_name": "pwsh.dll",
+      "command_line_features": [
+        "controlled_test_marker_present"
+      ],
+      "parent_image": "orchestrator.exe",
+      "parent_command_line_features": [
+        "controlled_test_launcher"
+      ],
+      "behavior_family_match": false,
+      "strict_child_candidate": false,
+      "parent_launcher_noise": false,
+      "marker_only_noise": true,
+      "required_fields_present": true
+    },
+    {
+      "id": "adapter-neg-002-missing-command-line",
+      "event_id": 1,
+      "process_image": "powershell.exe",
+      "original_file_name": "PowerShell.EXE",
+      "command_line_features": [],
+      "parent_image": "pwsh.exe",
+      "parent_command_line_features": [],
+      "behavior_family_match": false,
+      "strict_child_candidate": false,
+      "parent_launcher_noise": false,
+      "marker_only_noise": false,
+      "required_fields_present": false
+    },
+    {
+      "id": "adapter-neg-003-missing-process-identity",
+      "event_id": 1,
+      "process_image": null,
+      "original_file_name": null,
+      "command_line_features": [
+        "encoded_command",
+        "controlled_test_marker_present"
+      ],
+      "parent_image": "orchestrator.exe",
+      "parent_command_line_features": [
+        "controlled_test_launcher"
+      ],
+      "behavior_family_match": false,
+      "strict_child_candidate": false,
+      "parent_launcher_noise": false,
+      "marker_only_noise": false,
+      "required_fields_present": false
+    }
+  ],
+  "claim_boundary": "Deterministic adapter-fact support contract only. This does not establish runtime status, signal status, incident outcome, publication approval, or disposition authority."
+}

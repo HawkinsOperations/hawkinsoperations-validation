@@ -1,0 +1,50 @@
+{
+  "summary": "Sanitized adapter facts identify one strict child PowerShell encoded-command candidate, one parent-launcher noise case, one marker-only noise case, and two incomplete-field non-candidates.",
+  "relevant_fields": [
+    "event_id",
+    "process_image",
+    "original_file_name",
+    "command_line_features",
+    "parent_image",
+    "parent_command_line_features",
+    "behavior_family_match",
+    "strict_child_candidate",
+    "parent_launcher_noise",
+    "marker_only_noise",
+    "required_fields_present"
+  ],
+  "missing_fields": [
+    "runtime_evidence_ref",
+    "signal_evidence_ref",
+    "human_disposition_review",
+    "publication_approval_record"
+  ],
+  "attck_context": {
+    "technique_id": "T1059.001",
+    "technique_name": "PowerShell",
+    "context_basis": "Sanitized process identity and command-line feature facts only.",
+    "limitations": [
+      "No incident outcome is established.",
+      "No environment-wide conclusion is established.",
+      "No disposition authority is assigned to AI."
+    ]
+  },
+  "analyst_next_steps": [
+    "Review the strict child candidate against normalized process identity and command-line feature facts.",
+    "Separate parent-launcher and marker-only noise before any human disposition review.",
+    "Confirm whether missing runtime_evidence_ref and signal_evidence_ref are expected for this controlled contract.",
+    "Keep any disposition decision with a human reviewer outside this support output."
+  ],
+  "ai_decided_disposition": false,
+  "recommended_disposition": null,
+  "human_review_required": true,
+  "public_safe": false,
+  "claim_boundary": {
+    "input_scope": "sanitized_normalized_adapter_facts_only",
+    "output_scope": "triage_support_only",
+    "runtime_status_established": false,
+    "signal_status_established": false,
+    "publication_status_established": false,
+    "disposition_authority": "human_review_only"
+  }
+}
