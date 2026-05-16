@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -137,6 +138,12 @@ def load_json(path: Path, label: str) -> dict[str, Any]:
     return value
 
 
+def require_yaml_scalar(text: str, key: str, expected: str) -> None:
+    pattern = rf"(?m)^\s*{re.escape(key)}\s*:\s*{re.escape(expected)}\s*(?:#.*)?$"
+    if not re.search(pattern, text):
+        fail(f"source status missing expected scalar: {key}: {expected}")
+
+
 def lower_value(event: dict[str, Any], key: str) -> str:
     return str(event.get(key, "") or "").lower()
 
@@ -236,19 +243,23 @@ def validate_source_contract() -> None:
     for fragment in required_rule_fragments:
         if fragment not in rule:
             fail(f"source rule missing tuned fragment: {fragment}")
+    required_status_scalars = {
+        "tuning_status": "SOURCE_TUNING_NOTES_ADDED",
+        "fixtures_in_detections_repo": "false",
+        "validation_status": "CONTROLLED_TEST_VALIDATED",
+        "validation_total_cases": "17",
+        "validation_positive_cases": "7",
+        "validation_negative_cases": "10",
+        "proof_level": "PRIVATE_RUNTIME_EVIDENCE_CAPTURED",
+        "runtime_evidence_status": "PRIVATE_RUNTIME_EVIDENCE_CAPTURED_LOCAL_WINDOWS_ONLY",
+        "wazuh_status": "NOT_PROVEN",
+        "splunk_status": "NOT_PROVEN",
+        "cribl_status": "NOT_PROVEN",
+        "public_safe_status": "NOT_PUBLIC_SAFE",
+    }
+    for key, expected in required_status_scalars.items():
+        require_yaml_scalar(status, key, expected)
     required_status_fragments = [
-        "tuning_status: SOURCE_TUNING_NOTES_ADDED",
-        "fixtures_in_detections_repo: false",
-        "validation_status: CONTROLLED_TEST_VALIDATED",
-        "validation_total_cases: 17",
-        "validation_positive_cases: 7",
-        "validation_negative_cases: 10",
-        "proof_level: PRIVATE_RUNTIME_EVIDENCE_CAPTURED",
-        "runtime_evidence_status: PRIVATE_RUNTIME_EVIDENCE_CAPTURED_LOCAL_WINDOWS_ONLY",
-        "wazuh_status: NOT_PROVEN",
-        "splunk_status: NOT_PROVEN",
-        "cribl_status: NOT_PROVEN",
-        "public_safe_status: NOT_PUBLIC_SAFE",
         "HO-DET-011 passed controlled-test validation against 17 controlled Windows service creation fixtures.",
         "HO-DET-011 is capped at PRIVATE_RUNTIME_EVIDENCE_CAPTURED for private evidence and NOT_PUBLIC_SAFE for public use.",
     ]
