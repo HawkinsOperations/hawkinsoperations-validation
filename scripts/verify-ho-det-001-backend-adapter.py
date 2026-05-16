@@ -175,6 +175,46 @@ def verify_case_results(data: dict[str, Any]) -> tuple[int, int, int]:
     return strict_child_count, parent_noise_count, marker_only_noise_count
 
 
+def verify_mapped_process_image_support(data: dict[str, Any]) -> None:
+    normalizer = load_normalizer()
+    controlled_test_marker = str(data.get("controlled_test_marker", "") or "")
+    mapped_row = {
+        "index": EXPECTED_BACKEND_METADATA["index"],
+        "host": "LAB-HOST",
+        "source": EXPECTED_BACKEND_METADATA["source"],
+        "sourcetype": EXPECTED_BACKEND_METADATA["sourcetype"],
+        "event_id": "1",
+        "process_image": r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
+        "original_file_name": "PowerShell.EXE",
+        "command_line": (
+            "powershell.exe -NoProfile -EncodedCommand SANITIZED "
+            f"{controlled_test_marker}"
+        ),
+        "parent_process_image": r"C:\Program Files\PowerShell\7\pwsh.exe",
+        "parent_command_line": "pwsh.exe -NoProfile -Command Start-Process powershell.exe",
+    }
+    actual = normalizer.normalize_row(mapped_row, controlled_test_marker)
+    for field, expected_value in EXPECTED_BACKEND_METADATA.items():
+        if actual.get(field) != expected_value:
+            fail(f"mapped-process-image: {field} expected {expected_value} got {actual.get(field)}")
+    if actual.get("image") != mapped_row["process_image"]:
+        fail("mapped-process-image: process_image was not normalized as image")
+    if actual.get("parent_image") != mapped_row["parent_process_image"]:
+        fail("mapped-process-image: parent_process_image was not normalized as parent_image")
+    for field in ["behavior_family_match", "strict_child_candidate", "required_fields_present"]:
+        if actual.get(field) is not True:
+            fail(f"mapped-process-image: {field} expected True got {actual.get(field)}")
+    renamed_row = dict(mapped_row)
+    renamed_row["process_image"] = r"C:\Temp\renamed.exe"
+    renamed_row["original_file_name"] = "PowerShell.EXE"
+    renamed_actual = normalizer.normalize_row(renamed_row, controlled_test_marker)
+    if renamed_actual.get("original_file_name") != renamed_row["original_file_name"]:
+        fail("mapped-process-image: original_file_name was not normalized")
+    for field in ["behavior_family_match", "required_fields_present"]:
+        if renamed_actual.get(field) is not True:
+            fail(f"mapped-process-image-renamed: {field} expected True got {renamed_actual.get(field)}")
+
+
 def main() -> int:
     verify_mapping_contract()
     text = read_text(CASES_FILE, "runtime backend adapter cases")
@@ -186,6 +226,7 @@ def main() -> int:
         fail("adapter_scope must be controlled_backend_adapter_fixture")
     verify_claim_boundary(data)
     strict_child_count, parent_noise_count, marker_only_noise_count = verify_case_results(data)
+    verify_mapped_process_image_support(data)
     print("STATUS=pass")
     print("DETECTION_ID=HO-DET-001")
     print("RESULT=ADAPTER_CONTRACT_PASS")
