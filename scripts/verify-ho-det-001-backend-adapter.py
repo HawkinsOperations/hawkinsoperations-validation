@@ -204,6 +204,15 @@ def verify_mapped_process_image_support(data: dict[str, Any]) -> None:
     for field in ["behavior_family_match", "strict_child_candidate", "required_fields_present"]:
         if actual.get(field) is not True:
             fail(f"mapped-process-image: {field} expected True got {actual.get(field)}")
+    renamed_row = dict(mapped_row)
+    renamed_row["process_image"] = r"C:\Temp\renamed.exe"
+    renamed_row["original_file_name"] = "PowerShell.EXE"
+    renamed_actual = normalizer.normalize_row(renamed_row, controlled_test_marker)
+    if renamed_actual.get("original_file_name") != renamed_row["original_file_name"]:
+        fail("mapped-process-image: original_file_name was not normalized")
+    for field in ["behavior_family_match", "required_fields_present"]:
+        if renamed_actual.get(field) is not True:
+            fail(f"mapped-process-image-renamed: {field} expected True got {renamed_actual.get(field)}")
 
 
 def main() -> int:

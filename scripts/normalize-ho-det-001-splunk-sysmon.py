@@ -124,9 +124,9 @@ def normalize_row(row: dict[str, Any], controlled_test_marker: str) -> dict[str,
     image = first_value(
         row, "Image", "process_image", "process_path", "winlog_event_data_Image"
     ) or xml_data(raw, "Image")
-    original_file_name = first_value(row, "OriginalFileName", "winlog_event_data_OriginalFileName") or xml_data(
-        raw, "OriginalFileName"
-    )
+    original_file_name = first_value(
+        row, "OriginalFileName", "original_file_name", "winlog_event_data_OriginalFileName"
+    ) or xml_data(raw, "OriginalFileName")
     command_line = first_value(row, "CommandLine", "ProcessCommandLine", "command_line", "winlog_event_data_CommandLine") or xml_data(
         raw, "CommandLine"
     )
