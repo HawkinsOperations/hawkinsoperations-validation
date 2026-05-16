@@ -83,32 +83,42 @@ def cli_matches(command_line: str) -> bool:
     return bool(ENCODED_COMMAND_RE.search(command_line)) or "frombase64string(" in lower_cli
 
 
-def strict_child_candidate(event_id: str, image: str, command_line: str, marker: str) -> bool:
+def strict_child_candidate(
+    event_id: str, image: str, command_line: str, controlled_test_marker: str
+) -> bool:
     normalized_image = lower_path(image)
     return (
         event_id == "1"
         and normalized_image.endswith("\\windowspowershell\\v1.0\\powershell.exe")
-        and marker in command_line
+        and controlled_test_marker in command_line
         and cli_matches(command_line)
     )
 
 
-def parent_launcher_noise(event_id: str, image: str, command_line: str, marker: str) -> bool:
+def parent_launcher_noise(
+    event_id: str, image: str, command_line: str, controlled_test_marker: str
+) -> bool:
     normalized_image = lower_path(image)
     return (
         event_id == "1"
         and normalized_image.endswith("\\pwsh.exe")
-        and marker in command_line
+        and controlled_test_marker in command_line
         and cli_matches(command_line)
-        and not strict_child_candidate(event_id, image, command_line, marker)
+        and not strict_child_candidate(event_id, image, command_line, controlled_test_marker)
     )
 
 
-def marker_only_noise(event_id: str, command_line: str, marker: str) -> bool:
-    return event_id == "1" and marker in command_line and not cli_matches(command_line)
+def marker_only_noise(
+    event_id: str, command_line: str, controlled_test_marker: str
+) -> bool:
+    return (
+        event_id == "1"
+        and controlled_test_marker in command_line
+        and not cli_matches(command_line)
+    )
 
 
-def normalize_row(row: dict[str, Any], marker: str) -> dict[str, Any]:
+def normalize_row(row: dict[str, Any], controlled_test_marker: str) -> dict[str, Any]:
     raw = str(row.get("_raw", "") or "")
     event_id = first_value(row, "EventCode", "EventID", "event_id") or xml_event_id(raw)
     image = first_value(row, "Image", "process_path", "winlog_event_data_Image") or xml_data(raw, "Image")
@@ -136,6 +146,7 @@ def normalize_row(row: dict[str, Any], marker: str) -> dict[str, Any]:
     has_command_line = bool(command_line)
     behavior_match = event_id == "1" and has_process_identity and cli_matches(command_line)
 
+    # Fixture metadata only: evaluated inside command_line, not as a Sysmon field.
     return {
         "index": first_value(row, "index"),
         "host": first_value(row, "host", "Computer"),
@@ -150,21 +161,27 @@ def normalize_row(row: dict[str, Any], marker: str) -> dict[str, Any]:
         "process_guid": process_guid,
         "parent_process_guid": parent_process_guid,
         "user": user,
-        "marker": marker,
-        "has_marker": marker in command_line,
+        "controlled_test_marker": controlled_test_marker,
+        "has_marker": controlled_test_marker in command_line,
         "behavior_family_match": behavior_match,
-        "strict_child_candidate": strict_child_candidate(event_id, image, command_line, marker),
-        "parent_launcher_noise": parent_launcher_noise(event_id, image, command_line, marker),
-        "marker_only_noise": marker_only_noise(event_id, command_line, marker),
+        "strict_child_candidate": strict_child_candidate(
+            event_id, image, command_line, controlled_test_marker
+        ),
+        "parent_launcher_noise": parent_launcher_noise(
+            event_id, image, command_line, controlled_test_marker
+        ),
+        "marker_only_noise": marker_only_noise(
+            event_id, command_line, controlled_test_marker
+        ),
         "required_fields_present": event_id == "1" and has_process_identity and has_command_line,
         "claim_boundary": "backend adapter fixture only; not runtime-active or public proof",
     }
 
 
 def normalize_cases(data: dict[str, Any]) -> list[dict[str, Any]]:
-    marker = str(data.get("marker", "") or "")
-    if not marker:
-        fail("input marker is required")
+    controlled_test_marker = str(data.get("controlled_test_marker", "") or "")
+    if not controlled_test_marker:
+        fail("input controlled_test_marker is required")
     cases = data.get("cases")
     if not isinstance(cases, list) or not cases:
         fail("input cases must be a non-empty list")
@@ -175,7 +192,7 @@ def normalize_cases(data: dict[str, Any]) -> list[dict[str, Any]]:
         row = case.get("row")
         if not isinstance(row, dict):
             fail(f"{case.get('id', '<unknown>')}: row must be a JSON object")
-        item = normalize_row(row, marker)
+        item = normalize_row(row, controlled_test_marker)
         item["id"] = str(case.get("id", ""))
         item["description"] = str(case.get("description", ""))
         normalized.append(item)

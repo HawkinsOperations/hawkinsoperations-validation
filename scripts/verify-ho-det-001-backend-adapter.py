@@ -32,6 +32,11 @@ BLOCKED_CLAIMS = [
     "AI-approved disposition",
     "analyst-approved disposition",
 ]
+EXPECTED_BACKEND_METADATA = {
+    "index": "ho_v2_sysmon",
+    "source": "WinEventLog:Microsoft-Windows-Sysmon/Operational",
+    "sourcetype": "XmlWinEventLog:Microsoft-Windows-Sysmon/Operational",
+}
 
 
 def fail(message: str) -> None:
@@ -95,6 +100,14 @@ def verify_sanitization(text: str) -> None:
 
 
 def verify_claim_boundary(data: dict[str, Any]) -> None:
+    if "private_runtime_source" in data:
+        fail("private_runtime_source must not be used in sanitized adapter cases")
+    if data.get("sanitized_source_shape") != "private_level2_reference":
+        fail("sanitized_source_shape must be private_level2_reference")
+    if "marker" in data:
+        fail("fixture metadata must use controlled_test_marker, not marker")
+    if not data.get("controlled_test_marker"):
+        fail("controlled_test_marker must be present")
     blocked_claims = data.get("blocked_claims")
     if not isinstance(blocked_claims, list):
         fail("blocked_claims must be present")
@@ -115,6 +128,7 @@ def verify_case_results(data: dict[str, Any]) -> tuple[int, int, int]:
     if len(normalized) != len(cases):
         fail("normalized case count does not match input case count")
 
+    controlled_test_marker = str(data.get("controlled_test_marker", "") or "")
     strict_child_count = 0
     parent_noise_count = 0
     marker_only_noise_count = 0
@@ -127,6 +141,18 @@ def verify_case_results(data: dict[str, Any]) -> tuple[int, int, int]:
         actual = by_id.get(case_id)
         if actual is None:
             fail(f"{case_id}: missing normalized result")
+        if "marker" in actual:
+            fail(f"{case_id}: normalized result must not expose marker field")
+        if actual.get("controlled_test_marker") != controlled_test_marker:
+            fail(f"{case_id}: controlled_test_marker was not preserved")
+        command_line = str(actual.get("command_line", "") or "")
+        if actual.get("has_marker") is not (controlled_test_marker in command_line):
+            fail(f"{case_id}: has_marker does not match command_line marker containment")
+        for field, expected_value in EXPECTED_BACKEND_METADATA.items():
+            if actual.get(field) != expected_value:
+                fail(
+                    f"{case_id}: {field} expected {expected_value} got {actual.get(field)}"
+                )
         for field in [
             "behavior_family_match",
             "strict_child_candidate",

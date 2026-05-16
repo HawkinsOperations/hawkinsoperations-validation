@@ -2,10 +2,10 @@
   "detection_id": "HO-DET-001",
   "adapter_scope": "controlled_backend_adapter_fixture",
   "source_backend": "splunk_xml_sysmon",
-  "private_runtime_source": "sanitized_from_private_level2_shape",
+  "sanitized_source_shape": "private_level2_reference",
   "public_safe_status": "NOT_PUBLIC_SAFE",
   "promotion_status": "BLOCKED",
-  "marker": "HO-LAB-AUTO-001-L2-SANITIZED",
+  "controlled_test_marker": "HO-LAB-AUTO-001-L2-SANITIZED",
   "claim_boundary": "Deterministic backend adapter validation only. This does not prove runtime-active status, signal-observed public proof, production readiness, public approval, AI-approved disposition, or analyst-approved disposition.",
   "cases": [
     {
