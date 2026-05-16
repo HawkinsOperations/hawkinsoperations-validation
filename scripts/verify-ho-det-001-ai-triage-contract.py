@@ -35,6 +35,14 @@ REQUIRED_OUTPUT_FIELDS = [
     "claim_boundary",
 ]
 ALLOWED_OUTPUT_FIELDS = set(REQUIRED_OUTPUT_FIELDS)
+ALLOWED_INPUT_FIELDS = {
+    "detection_id",
+    "source_contract",
+    "adapter_scope",
+    "sanitization",
+    "facts",
+    "claim_boundary",
+}
 REQUIRED_FACT_FIELDS = {
     "id",
     "event_id",
@@ -115,6 +123,23 @@ RAW_INPUT_KEYS = {
     "token",
     "password",
 }
+RAW_INPUT_KEY_VARIANTS = {
+    "api_key",
+    "apikey",
+    "access_key",
+    "access_token",
+    "auth_token",
+    "authorization",
+    "credential",
+    "credentials",
+    "host",
+    "host_name",
+    "hostname",
+    "private_hostname",
+    "private_host_name",
+    "user_name",
+    "username",
+}
 PRIVATE_VALUE_PATTERNS = [
     re.compile(r"\b[A-Za-z]:\\"),
     re.compile(r"\b(?:10|127|169\.254|172\.(?:1[6-9]|2\d|3[0-1])|192\.168)\.\d{1,3}\.\d{1,3}\b"),
@@ -160,11 +185,18 @@ def normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip().lower()
 
 
+def normalize_key(value: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", value.lower())
+
+
+RAW_INPUT_KEY_NORMALIZED = {normalize_key(key) for key in RAW_INPUT_KEYS | RAW_INPUT_KEY_VARIANTS}
+
+
 def verify_no_raw_or_private(label: str, value: dict[str, Any]) -> None:
     for path, item in iter_items(value):
         if path:
             key = path.split(".")[-1].split("[")[0].lower()
-            if key in RAW_INPUT_KEYS:
+            if key in RAW_INPUT_KEYS or normalize_key(key) in RAW_INPUT_KEY_NORMALIZED:
                 fail(f"{label} contains raw/private field key at {path}")
         if isinstance(item, str):
             for pattern in PRIVATE_VALUE_PATTERNS:
@@ -189,6 +221,12 @@ def verify_no_placeholders(label: str, value: dict[str, Any]) -> None:
 
 
 def verify_input_contract(data: dict[str, Any]) -> None:
+    extra = sorted(set(data.keys()) - ALLOWED_INPUT_FIELDS)
+    missing = sorted(ALLOWED_INPUT_FIELDS - set(data.keys()))
+    if missing:
+        fail(f"ai-triage-input.json missing required top-level fields: {', '.join(missing)}")
+    if extra:
+        fail(f"ai-triage-input.json contains fields outside contract: {', '.join(extra)}")
     if data.get("detection_id") != "HO-DET-001":
         fail("ai-triage-input.json detection_id must be HO-DET-001")
     if data.get("source_contract") != "sanitized_normalized_adapter_facts":
@@ -349,6 +387,16 @@ def verify_negative_samples(input_data: dict[str, Any], output_data: dict[str, A
     raw_dump_input = copy.deepcopy(input_data)
     raw_dump_input["facts"][0]["_raw"] = "<Event>raw</Event>"
     cases.append(("raw input dump field", raw_dump_input, output_data))
+
+    for key in ["api_key", "username", "user_name", "host_name"]:
+        private_key_input = copy.deepcopy(input_data)
+        private_key_input[key] = "redacted"
+        cases.append((f"private top-level key variant: {key}", private_key_input, output_data))
+
+    for key in ["apiKey", "access-token", "privateHostname", "credentials"]:
+        private_key_output = copy.deepcopy(output_data)
+        private_key_output["claim_boundary"][key] = "redacted"
+        cases.append((f"private nested output key variant: {key}", input_data, private_key_output))
 
     for label, case_input, case_output in cases:
         assert_rejected(label, copy.deepcopy(case_input), copy.deepcopy(case_output))
