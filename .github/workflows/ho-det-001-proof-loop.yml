@@ -65,6 +65,9 @@ jobs:
       - name: Run controlled-test validation in check mode
         run: python scripts/validate-ho-det-001.py
 
+      - name: Run HO-DET-001 backend adapter verifier
+        run: python scripts/verify-ho-det-001-backend-adapter.py
+
       - name: Run Closed AutoSOC Loop 001 verifier
         run: python scripts/verify-closed-autosoc-loop-001.py
 
