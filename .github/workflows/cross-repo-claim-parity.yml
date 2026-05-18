@@ -1,0 +1,59 @@
+name: Cross Repo Claim Parity
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  cross-repo-claim-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout validation repo
+        uses: actions/checkout@v4
+        with:
+          path: hawkinsoperations-validation
+
+      - name: Checkout detections repo
+        uses: actions/checkout@v4
+        with:
+          repository: HawkinsOperations/hawkinsoperations-detections
+          path: hawkinsoperations-detections
+
+      - name: Checkout proof repo
+        uses: actions/checkout@v4
+        with:
+          repository: HawkinsOperations/hawkinsoperations-proof
+          path: hawkinsoperations-proof
+
+      - name: Checkout website repo
+        uses: actions/checkout@v4
+        with:
+          repository: HawkinsOperations/hawkinsoperations-website
+          path: hawkinsoperations-website
+
+      - name: Checkout org front door repo
+        uses: actions/checkout@v4
+        with:
+          repository: HawkinsOperations/.github
+          path: .github
+
+      - name: Checkout platform repo
+        uses: actions/checkout@v4
+        with:
+          repository: HawkinsOperations/hawkinsoperations-platform
+          path: hawkinsoperations-platform
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run report-only scanner
+        working-directory: hawkinsoperations-validation
+        run: |
+          python -B scripts/verify_cross_repo_claim_parity.py --repo-root "$GITHUB_WORKSPACE" --report-only
