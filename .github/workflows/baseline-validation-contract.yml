@@ -2,26 +2,34 @@ name: baseline-validation-contract
 
 on:
   pull_request:
+    paths:
+      - 'scripts/verify_validation_contract.py'
+      - 'scripts/validation_lib.py'
+      - 'validation/hero/001-powershell-encoded-command/**'
+      - '.github/contracts/validation-report.schema.json'
+      - '.github/workflows/baseline-validation-contract.yml'
+      - 'tests/**'
   push:
     branches: [main]
-
-permissions:
-  contents: read
+    paths:
+      - 'scripts/verify_validation_contract.py'
+      - 'scripts/validation_lib.py'
+      - 'validation/hero/001-powershell-encoded-command/**'
+      - '.github/contracts/validation-report.schema.json'
+      - '.github/workflows/baseline-validation-contract.yml'
+      - 'tests/**'
 
 jobs:
-  baseline-hero-validation-contract:
+  baseline-contract:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: Self-test Baseline Hero Validation Contract Checker
-        run: python3 ./scripts/verify_validation_contract.py --self-test
-      - name: Validate Baseline Hero Validation Contract
-        # Scope is intentionally narrow right now:
-        # - validates HOD-001 baseline validation report schema shape
-        # - validates current baseline hero validation artifact paths
-        # - does not yet validate non-hero families or cross-repo linkage
-        run: python3 ./scripts/verify_validation_contract.py
+          python-version: '3.11'
+      - name: Self-test Baseline Validation Contract Checker
+        run: python -B scripts/verify_validation_contract.py --self-test
+      - name: Validate Baseline Validation Contract
+        run: python -B scripts/verify_validation_contract.py
+      - name: Unit Tests
+        run: python -B -m unittest discover -s tests

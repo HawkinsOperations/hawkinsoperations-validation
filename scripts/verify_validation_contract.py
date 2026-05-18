@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
-"""
-Baseline validation contract check.
+"""Baseline validation contract check."""
 
-Current scope:
-- Validates baseline hero validation artifacts for HOD-001 only
-- Validates schema shape for reports/hero001-validation-report.json
-- Validates required baseline validation artifact paths that exist today
+from __future__ import annotations
 
-Not covered yet:
-- Non-hero validation families
-- Semantic validation beyond the current baseline harness/report contract
-- Cross-repository linkage into proof
-"""
-import json
 import sys
 from argparse import ArgumentParser
 from copy import deepcopy
 from pathlib import Path
 
+from validation_lib import (
+    ContractFailure,
+    ensure_check_mode,
+    load_json,
+    validate_report_case_parity,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / ".github" / "contracts" / "validation-report.schema.json"
@@ -31,21 +27,8 @@ BASELINE_REQUIRED = [
 ]
 
 
-class ContractFailure(Exception):
-    """Raised when the validation contract is internally inconsistent."""
-
-
 def fail(msg: str) -> None:
     raise ContractFailure(msg)
-
-
-def load_json(path: Path, label: str) -> dict:
-    if not path.exists():
-        fail(f"missing {label}: {path.relative_to(ROOT).as_posix()}")
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        fail(f"invalid JSON in {label} ({path.relative_to(ROOT).as_posix()}): {exc}")
 
 
 def validate_schema_shape(report: dict, schema: dict) -> None:
@@ -139,18 +122,8 @@ def validate_case_report_consistency(cases: dict, report: dict) -> None:
     actual_positive_ids = {result["id"] for result in positive_results}
     actual_negative_ids = {result["id"] for result in negative_results}
 
-    if actual_positive_ids != expected_positive_ids:
-        fail(
-            "positive report IDs do not match validation cases: "
-            f"missing={sorted(expected_positive_ids - actual_positive_ids)}, "
-            f"extra={sorted(actual_positive_ids - expected_positive_ids)}"
-        )
-    if actual_negative_ids != expected_negative_ids:
-        fail(
-            "negative report IDs do not match validation cases: "
-            f"missing={sorted(expected_negative_ids - actual_negative_ids)}, "
-            f"extra={sorted(actual_negative_ids - expected_negative_ids)}"
-        )
+    validate_report_case_parity(expected_positive_ids, actual_positive_ids, side="positive")
+    validate_report_case_parity(expected_negative_ids, actual_negative_ids, side="negative")
 
     total_results = len(positive_results) + len(negative_results)
     pass_count = sum(1 for result in positive_results + negative_results if result["pass"])
@@ -168,10 +141,11 @@ def validate_case_report_consistency(cases: dict, report: dict) -> None:
 
 
 def run_live_contract() -> None:
+    ensure_check_mode(write=False)
     print("Scope: baseline hero validation artifacts for HOD-001 only.")
-    schema = load_json(SCHEMA_PATH, "validation contract schema")
-    report = load_json(REPORT_JSON, "baseline validation report")
-    cases = load_json(VALIDATION_CASES_JSON, "baseline validation cases")
+    schema = load_json(SCHEMA_PATH, "validation contract schema", root=ROOT)
+    report = load_json(REPORT_JSON, "baseline validation report", root=ROOT)
+    cases = load_json(VALIDATION_CASES_JSON, "baseline validation cases", root=ROOT)
     validate_schema_shape(report, schema)
     validate_live_artifacts()
     validate_case_report_consistency(cases, report)
