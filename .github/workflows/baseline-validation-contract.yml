@@ -5,7 +5,10 @@ on:
     paths:
       - 'scripts/verify_validation_contract.py'
       - 'scripts/validation_lib.py'
+      - 'scripts/validate-hero001.ps1'
       - 'validation/hero/001-powershell-encoded-command/**'
+      - 'reports/hero001-validation-report.json'
+      - 'reports/hero001-validation-report.md'
       - '.github/contracts/validation-report.schema.json'
       - '.github/workflows/baseline-validation-contract.yml'
       - 'tests/**'
@@ -14,13 +17,16 @@ on:
     paths:
       - 'scripts/verify_validation_contract.py'
       - 'scripts/validation_lib.py'
+      - 'scripts/validate-hero001.ps1'
       - 'validation/hero/001-powershell-encoded-command/**'
+      - 'reports/hero001-validation-report.json'
+      - 'reports/hero001-validation-report.md'
       - '.github/contracts/validation-report.schema.json'
       - '.github/workflows/baseline-validation-contract.yml'
       - 'tests/**'
 
 jobs:
-  baseline-contract:
+  baseline-hero-validation-contract:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
