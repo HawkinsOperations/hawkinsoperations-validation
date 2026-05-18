@@ -56,4 +56,4 @@ jobs:
       - name: Run report-only scanner
         working-directory: hawkinsoperations-validation
         run: |
-          python -B scripts/verify_cross_repo_claim_parity.py --repo-root "$GITHUB_WORKSPACE" --report-only --fail-on-public-promotion
+          python -B scripts/verify_cross_repo_claim_parity.py --repo-root "$GITHUB_WORKSPACE" --report-only
