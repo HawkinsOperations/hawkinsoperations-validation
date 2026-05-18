@@ -17,6 +17,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Self-test Baseline Hero Validation Contract Checker
+        run: python3 ./scripts/verify_validation_contract.py --self-test
       - name: Validate Baseline Hero Validation Contract
         # Scope is intentionally narrow right now:
         # - validates HOD-001 baseline validation report schema shape
