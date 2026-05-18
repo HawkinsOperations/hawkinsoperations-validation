@@ -59,6 +59,7 @@ jobs:
         with:
           name: ho-det-001-controlled-test-report
           if-no-files-found: error
+          retention-days: 14
           path: |
             hawkinsoperations-validation/reports/ho-det-001/pipeline-proof.md
             hawkinsoperations-validation/reports/ho-det-001/pipeline-proof.json
