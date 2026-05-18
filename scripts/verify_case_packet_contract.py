@@ -48,6 +48,28 @@ BLOCKED_CLAIMS = [
     "fleet-wide deployment",
     "AI-approved disposition",
 ]
+CASE_FACTORY_REQUIRED_LABELS = [
+    "autosoc:case",
+    "autosoc:sanitized",
+    "autosoc:validated",
+    "autosoc:needs-human-review",
+    "autosoc:blocked-close",
+    "proof:controlled-test",
+    "publication:not-approved",
+    "ai:support-only",
+    "det:ho-det-001",
+]
+PROHIBITED_CASE_FACTORY_LABEL_PARTS = [
+    "approved-disposition",
+    "ai-approved",
+    "ai-decided",
+    "autonomous",
+    "close-approved",
+    "production",
+    "public-safe:approved",
+    "runtime-active",
+    "signal-observed",
+]
 
 
 def fail(message: str) -> None:
@@ -139,6 +161,66 @@ def verify_boundaries(packet: dict[str, Any]) -> None:
             fail(f"blocked claim used as supported claim: {claim}")
 
 
+def verify_case_factory(packet: dict[str, Any]) -> None:
+    case_factory = get_path(packet, ["case_factory"])
+    if not isinstance(case_factory, dict):
+        fail("case_factory must be object")
+    if case_factory.get("factory_version") != "AUTOSOC_CASE_FACTORY_V0":
+        fail("case_factory.factory_version must be AUTOSOC_CASE_FACTORY_V0")
+    if case_factory.get("case_state") != "DETERMINISTIC_RULE_EVALUATED":
+        fail("case_factory.case_state must be DETERMINISTIC_RULE_EVALUATED")
+
+    issue_plan = get_path(packet, ["case_factory", "github_issue_plan"])
+    if issue_plan.get("mode") != "dry_run_only":
+        fail("case_factory.github_issue_plan.mode must be dry_run_only")
+    if issue_plan.get("mutation_allowed") is not False:
+        fail("case_factory.github_issue_plan.mutation_allowed must be false")
+    if issue_plan.get("close_action_allowed") is not False:
+        fail("case_factory.github_issue_plan.close_action_allowed must be false")
+
+    labels = issue_plan.get("labels_to_add")
+    if not isinstance(labels, list):
+        fail("case_factory.github_issue_plan.labels_to_add must be list")
+    normalized_labels = {normalize(label) for label in labels}
+    for label in CASE_FACTORY_REQUIRED_LABELS:
+        if normalize(label) not in normalized_labels:
+            fail(f"case_factory missing required dry-run issue label: {label}")
+    for label in normalized_labels:
+        for blocked in PROHIBITED_CASE_FACTORY_LABEL_PARTS:
+            if blocked in label:
+                fail(f"case_factory label implies blocked authority or proof state: {label}")
+
+    close_rule = get_path(packet, ["case_factory", "deterministic_close_rule"])
+    if close_rule.get("evaluated") is not True:
+        fail("case_factory.deterministic_close_rule.evaluated must be true")
+    if close_rule.get("close_eligible") is not False:
+        fail("case_factory.deterministic_close_rule.close_eligible must be false")
+    if close_rule.get("deterministic_close_eligible") is not False:
+        fail("case_factory.deterministic_close_rule.deterministic_close_eligible must be false")
+    if close_rule.get("result") != "BLOCKED_HUMAN_REVIEW_REQUIRED":
+        fail("case_factory.deterministic_close_rule.result must be BLOCKED_HUMAN_REVIEW_REQUIRED")
+    for key in ("ai_authority_granted", "proof_promotion_allowed", "public_safe_promotion_allowed"):
+        if close_rule.get(key) is not False:
+            fail(f"case_factory.deterministic_close_rule.{key} must be false")
+    blockers = {normalize(item) for item in close_rule.get("blockers", [])}
+    for blocker in (
+        "human_review_required=true",
+        "github_issue_mutation_allowed=false",
+        "close_action_allowed=false",
+        "deterministic_close_eligible=false",
+    ):
+        if normalize(blocker) not in blockers:
+            fail(f"case_factory close blockers missing: {blocker}")
+
+    ai_support = get_path(packet, ["case_factory", "optional_ai_support"])
+    if ai_support.get("allowed_role") != "AI_SUPPORT_ONLY":
+        fail("case_factory.optional_ai_support.allowed_role must be AI_SUPPORT_ONLY")
+    if ai_support.get("ai_decided_disposition") is not False:
+        fail("case_factory.optional_ai_support.ai_decided_disposition must be false")
+    if ai_support.get("recommended_disposition") is not None:
+        fail("case_factory.optional_ai_support.recommended_disposition must be null")
+
+
 def verify_builder_parity(packet: dict[str, Any]) -> None:
     spec = importlib.util.spec_from_file_location("case_packet_builder", BUILDER)
     if spec is None or spec.loader is None:
@@ -184,6 +266,7 @@ def main() -> int:
     packet = load_json(CASE_PACKET, "case-packet.json")
     validate_required_from_schema(schema, packet)
     verify_boundaries(packet)
+    verify_case_factory(packet)
     verify_builder_parity(packet)
     verify_builder_check_mode_is_non_mutating()
     print("STATUS=pass")

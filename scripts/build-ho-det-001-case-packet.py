@@ -45,6 +45,18 @@ BLOCKED_CLAIMS = [
     "AI-approved disposition",
 ]
 
+CASE_FACTORY_LABELS = [
+    "autosoc:case",
+    "autosoc:sanitized",
+    "autosoc:validated",
+    "autosoc:needs-human-review",
+    "autosoc:blocked-close",
+    "proof:controlled-test",
+    "publication:not-approved",
+    "ai:support-only",
+    "det:ho-det-001",
+]
+
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
@@ -196,6 +208,65 @@ def build_case_packet() -> dict[str, Any]:
             "generated_by": "scripts/build-ho-det-001-case-packet.py",
             "source_mode": "committed_local_controlled_test_validation_artifacts",
             "controlled_test_fallback_used": False,
+        },
+        "case_factory": {
+            "factory_version": "AUTOSOC_CASE_FACTORY_V0",
+            "case_state": "DETERMINISTIC_RULE_EVALUATED",
+            "state_machine": [
+                "DISCOVERED",
+                "SANITIZED_PACKET_BUILT",
+                "PACKET_VALIDATED",
+                "OPTIONAL_SUPPORT_TRIAGED",
+                "DETERMINISTIC_RULE_EVALUATED",
+                "ISSUE_UPDATE_PREPARED",
+                "HUMAN_REVIEW_REQUIRED",
+            ],
+            "github_issue_plan": {
+                "mode": "dry_run_only",
+                "mutation_allowed": False,
+                "issue_ref": None,
+                "labels_to_add": CASE_FACTORY_LABELS,
+                "labels_to_remove": [],
+                "comment_intent": (
+                    "Prepare a sanitized deterministic status comment only; do not mutate GitHub Issues "
+                    "without separately approved issue-write scope."
+                ),
+                "close_action_allowed": False,
+            },
+            "deterministic_close_rule": {
+                "evaluated": True,
+                "close_eligible": False,
+                "deterministic_close_eligible": False,
+                "result": "BLOCKED_HUMAN_REVIEW_REQUIRED",
+                "basis": (
+                    "Deterministic rules may evaluate the packet and prepare a dry-run issue plan, "
+                    "but AutoSOC Case Factory v0 cannot close cases."
+                ),
+                "blockers": [
+                    "human_review_required=true",
+                    "github_issue_mutation_allowed=false",
+                    "close_action_allowed=false",
+                    "deterministic_close_eligible=false",
+                    "ai_support_is_labor_not_authority",
+                ],
+                "ai_authority_granted": False,
+                "proof_promotion_allowed": False,
+                "public_safe_promotion_allowed": False,
+            },
+            "optional_ai_support": {
+                "status": "NOT_RUN_IN_CASE_PACKET",
+                "allowed_role": "AI_SUPPORT_ONLY",
+                "recommended_disposition": None,
+                "ai_decided_disposition": False,
+                "allowed_output_fields": [
+                    "summary",
+                    "triage_notes",
+                    "questions_for_human_review",
+                    "hypotheses",
+                    "recommended_next_checks",
+                    "confidence_notes",
+                ],
+            },
         },
     }
 
