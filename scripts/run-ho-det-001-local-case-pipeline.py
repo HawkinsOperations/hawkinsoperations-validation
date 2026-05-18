@@ -206,6 +206,14 @@ def ensure_required_boundaries(summary: dict[str, Any]) -> None:
         fail("summary signal_observed_public_proof must be false")
     if summary.get("public_safe_status") != PUBLIC_SAFE_STATUS:
         fail(f"summary public_safe_status must be {PUBLIC_SAFE_STATUS}")
+    if summary.get("github_issue_mutation_allowed") is not False:
+        fail("summary github_issue_mutation_allowed must be false")
+    if summary.get("github_issue_close_allowed") is not False:
+        fail("summary github_issue_close_allowed must be false")
+    if summary.get("deterministic_close_eligible") is not False:
+        fail("summary deterministic_close_eligible must be false")
+    if summary.get("case_factory_result") != "BLOCKED_HUMAN_REVIEW_REQUIRED":
+        fail("summary case_factory_result must be BLOCKED_HUMAN_REVIEW_REQUIRED")
 
     blocked = {str(item).strip().lower() for item in summary.get("blocked_claims", [])}
     for claim in BLOCKED_CLAIMS:
@@ -243,6 +251,7 @@ def build_summary(stage_results: list[dict[str, Any]]) -> dict[str, Any]:
         "result_parity_status": "pass",
         "case_packet_check_status": "pass",
         "case_packet_contract_status": "pass",
+        "case_factory_dry_run_status": "pass",
         "ho_det_001_controlled_test_proof_loop": "pass",
         "scope": SCOPE,
         "public_test_fixtures_only": True,
@@ -255,6 +264,10 @@ def build_summary(stage_results: list[dict[str, Any]]) -> dict[str, Any]:
         "recommended_disposition": None,
         "human_review_required": True,
         "public_safe": False,
+        "github_issue_mutation_allowed": False,
+        "github_issue_close_allowed": False,
+        "deterministic_close_eligible": False,
+        "case_factory_result": "BLOCKED_HUMAN_REVIEW_REQUIRED",
         "supported_claims": SUPPORTED_CLAIMS,
         "blocked_claims": BLOCKED_CLAIMS,
         "command_sequence": [stage["command"] for stage in stage_results],
@@ -303,6 +316,10 @@ def main() -> int:
     emit_status("AI_SUPPORT_AUTHORITY=support_only")
     emit_status("HUMAN_REVIEW_REQUIRED=true")
     emit_status("PUBLIC_SAFE=false")
+    emit_status("CASE_FACTORY_DRY_RUN_STATUS=pass")
+    emit_status("GITHUB_ISSUE_MUTATION_ALLOWED=false")
+    emit_status("GITHUB_ISSUE_CLOSE_ALLOWED=false")
+    emit_status("DETERMINISTIC_CLOSE_ELIGIBLE=false")
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 

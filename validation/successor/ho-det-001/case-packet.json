@@ -109,5 +109,68 @@
     "generated_by": "scripts/build-ho-det-001-case-packet.py",
     "source_mode": "committed_local_controlled_test_validation_artifacts",
     "controlled_test_fallback_used": false
+  },
+  "case_factory": {
+    "factory_version": "AUTOSOC_CASE_FACTORY_V0",
+    "case_state": "DETERMINISTIC_RULE_EVALUATED",
+    "state_machine": [
+      "DISCOVERED",
+      "SANITIZED_PACKET_BUILT",
+      "PACKET_VALIDATED",
+      "OPTIONAL_SUPPORT_TRIAGED",
+      "DETERMINISTIC_RULE_EVALUATED",
+      "ISSUE_UPDATE_PREPARED",
+      "HUMAN_REVIEW_REQUIRED"
+    ],
+    "github_issue_plan": {
+      "mode": "dry_run_only",
+      "mutation_allowed": false,
+      "issue_ref": null,
+      "labels_to_add": [
+        "autosoc:case",
+        "autosoc:sanitized",
+        "autosoc:validated",
+        "autosoc:needs-human-review",
+        "autosoc:blocked-close",
+        "proof:controlled-test",
+        "publication:not-approved",
+        "ai:support-only",
+        "det:ho-det-001"
+      ],
+      "labels_to_remove": [],
+      "comment_intent": "Prepare a sanitized deterministic status comment only; do not mutate GitHub Issues without separately approved issue-write scope.",
+      "close_action_allowed": false
+    },
+    "deterministic_close_rule": {
+      "evaluated": true,
+      "close_eligible": false,
+      "deterministic_close_eligible": false,
+      "result": "BLOCKED_HUMAN_REVIEW_REQUIRED",
+      "basis": "Deterministic rules may evaluate the packet and prepare a dry-run issue plan, but AutoSOC Case Factory v0 cannot close cases.",
+      "blockers": [
+        "human_review_required=true",
+        "github_issue_mutation_allowed=false",
+        "close_action_allowed=false",
+        "deterministic_close_eligible=false",
+        "ai_support_is_labor_not_authority"
+      ],
+      "ai_authority_granted": false,
+      "proof_promotion_allowed": false,
+      "public_safe_promotion_allowed": false
+    },
+    "optional_ai_support": {
+      "status": "NOT_RUN_IN_CASE_PACKET",
+      "allowed_role": "AI_SUPPORT_ONLY",
+      "recommended_disposition": null,
+      "ai_decided_disposition": false,
+      "allowed_output_fields": [
+        "summary",
+        "triage_notes",
+        "questions_for_human_review",
+        "hypotheses",
+        "recommended_next_checks",
+        "confidence_notes"
+      ]
+    }
   }
 }
