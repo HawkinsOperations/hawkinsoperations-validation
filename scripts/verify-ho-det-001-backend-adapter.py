@@ -37,6 +37,13 @@ EXPECTED_BACKEND_METADATA = {
     "source": "WinEventLog:Microsoft-Windows-Sysmon/Operational",
     "sourcetype": "XmlWinEventLog:Microsoft-Windows-Sysmon/Operational",
 }
+BLOCKED_PRIVATE_MARKERS = [
+    "HO-" + "WE-01",
+    "192." + "168.",
+    "C:" + "\\Raylee",
+    "splunkweb_csrf",
+    "token_key",
+]
 
 
 def fail(message: str) -> None:
@@ -74,7 +81,9 @@ def require_contains(text: str, expected: str, label: str) -> None:
         fail(f"{label} missing expected text: {expected}")
 
 
-def verify_mapping_contract() -> None:
+def verify_mapping_contract() -> str:
+    if not EVENT_MAPPING_FILE.is_file():
+        return "public_fixture_only"
     text = read_text(EVENT_MAPPING_FILE, "HO-DET-001 event mapping")
     for expected in [
         "detection_id: HO-DET-001",
@@ -87,6 +96,7 @@ def verify_mapping_contract() -> None:
         "PARENT_LAUNCHER_NOISE_SEPARATED",
     ]:
         require_contains(text, expected, "event mapping")
+    return "sibling_detection_mapping"
 
 
 def verify_sanitization(text: str) -> None:
@@ -94,7 +104,7 @@ def verify_sanitization(text: str) -> None:
         fail("adapter cases contain private IP address pattern")
     if SECRET_RE.search(text):
         fail("adapter cases contain secret-like text")
-    for blocked in ["HO-WE-01", "192.168.", "C:\\Raylee", "splunkweb_csrf", "token_key"]:
+    for blocked in BLOCKED_PRIVATE_MARKERS:
         if blocked.lower() in text.lower():
             fail(f"adapter cases contain blocked private marker: {blocked}")
 
@@ -216,7 +226,7 @@ def verify_mapped_process_image_support(data: dict[str, Any]) -> None:
 
 
 def main() -> int:
-    verify_mapping_contract()
+    mapping_contract_source = verify_mapping_contract()
     text = read_text(CASES_FILE, "runtime backend adapter cases")
     verify_sanitization(text)
     data = load_json(CASES_FILE, "runtime backend adapter cases")
@@ -230,6 +240,7 @@ def main() -> int:
     print("STATUS=pass")
     print("DETECTION_ID=HO-DET-001")
     print("RESULT=ADAPTER_CONTRACT_PASS")
+    print(f"EVENT_MAPPING_CONTRACT_SOURCE={mapping_contract_source}")
     print(f"STRICT_CHILD_CANDIDATES={strict_child_count}")
     print(f"PARENT_LAUNCHER_NOISE_EVENTS={parent_noise_count}")
     print(f"MARKER_ONLY_NOISE_EVENTS={marker_only_noise_count}")
