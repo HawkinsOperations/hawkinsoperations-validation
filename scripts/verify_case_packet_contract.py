@@ -70,6 +70,34 @@ PROHIBITED_CASE_FACTORY_LABEL_PARTS = [
     "runtime-active",
     "signal-observed",
 ]
+EXPECTED_CASE_FACTORY_STATE_MACHINE = [
+    "DISCOVERED",
+    "SANITIZED_PACKET_BUILT",
+    "PACKET_VALIDATED",
+    "OPTIONAL_SUPPORT_TRIAGED",
+    "DETERMINISTIC_RULE_EVALUATED",
+    "ISSUE_UPDATE_PREPARED",
+    "HUMAN_REVIEW_REQUIRED",
+]
+PROHIBITED_COMMENT_INTENT_PARTS = [
+    "post comment",
+    "post to github",
+    "submit comment",
+    "apply comment",
+    "will mutate",
+    "may mutate",
+    "can mutate",
+    "update issue",
+    "close issue",
+    "close case",
+]
+PROHIBITED_CLOSE_BASIS_PARTS = [
+    "may close",
+    "can close",
+    "close eligible",
+    "closure approved",
+    "human review not required",
+]
 
 
 def fail(message: str) -> None:
@@ -171,10 +199,26 @@ def verify_case_factory(packet: dict[str, Any]) -> None:
         fail("case_factory.case_state must be DETERMINISTIC_RULE_EVALUATED")
 
     issue_plan = get_path(packet, ["case_factory", "github_issue_plan"])
+    if not isinstance(issue_plan, dict):
+        fail("case_factory.github_issue_plan must be object")
+    state_machine = case_factory.get("state_machine")
+    if state_machine != EXPECTED_CASE_FACTORY_STATE_MACHINE:
+        fail("case_factory.state_machine must match the ordered AUTOSOC_CASE_FACTORY_V0 states")
     if issue_plan.get("mode") != "dry_run_only":
         fail("case_factory.github_issue_plan.mode must be dry_run_only")
     if issue_plan.get("mutation_allowed") is not False:
         fail("case_factory.github_issue_plan.mutation_allowed must be false")
+    if issue_plan.get("issue_ref") is not None:
+        fail("case_factory.github_issue_plan.issue_ref must be null for dry_run_only v0")
+    comment_intent = issue_plan.get("comment_intent")
+    if not isinstance(comment_intent, str) or not comment_intent.strip():
+        fail("case_factory.github_issue_plan.comment_intent must be non-empty string")
+    normalized_comment_intent = normalize(comment_intent)
+    if "do not mutate" not in normalized_comment_intent:
+        fail("case_factory.github_issue_plan.comment_intent must explicitly block GitHub mutation")
+    for blocked in PROHIBITED_COMMENT_INTENT_PARTS:
+        if blocked in normalized_comment_intent:
+            fail("case_factory.github_issue_plan.comment_intent implies posting or mutation")
     if issue_plan.get("close_action_allowed") is not False:
         fail("case_factory.github_issue_plan.close_action_allowed must be false")
 
@@ -191,6 +235,8 @@ def verify_case_factory(packet: dict[str, Any]) -> None:
                 fail(f"case_factory label implies blocked authority or proof state: {label}")
 
     close_rule = get_path(packet, ["case_factory", "deterministic_close_rule"])
+    if not isinstance(close_rule, dict):
+        fail("case_factory.deterministic_close_rule must be object")
     if close_rule.get("evaluated") is not True:
         fail("case_factory.deterministic_close_rule.evaluated must be true")
     if close_rule.get("close_eligible") is not False:
@@ -199,6 +245,15 @@ def verify_case_factory(packet: dict[str, Any]) -> None:
         fail("case_factory.deterministic_close_rule.deterministic_close_eligible must be false")
     if close_rule.get("result") != "BLOCKED_HUMAN_REVIEW_REQUIRED":
         fail("case_factory.deterministic_close_rule.result must be BLOCKED_HUMAN_REVIEW_REQUIRED")
+    basis = close_rule.get("basis")
+    if not isinstance(basis, str) or not basis.strip():
+        fail("case_factory.deterministic_close_rule.basis must be non-empty string")
+    normalized_basis = normalize(basis)
+    if "cannot close" not in normalized_basis:
+        fail("case_factory.deterministic_close_rule.basis must explicitly deny closure authority")
+    for blocked in PROHIBITED_CLOSE_BASIS_PARTS:
+        if blocked in normalized_basis:
+            fail("case_factory.deterministic_close_rule.basis implies closure authority")
     for key in ("ai_authority_granted", "proof_promotion_allowed", "public_safe_promotion_allowed"):
         if close_rule.get(key) is not False:
             fail(f"case_factory.deterministic_close_rule.{key} must be false")
@@ -213,6 +268,10 @@ def verify_case_factory(packet: dict[str, Any]) -> None:
             fail(f"case_factory close blockers missing: {blocker}")
 
     ai_support = get_path(packet, ["case_factory", "optional_ai_support"])
+    if not isinstance(ai_support, dict):
+        fail("case_factory.optional_ai_support must be object")
+    if ai_support.get("status") != "NOT_RUN_IN_CASE_PACKET":
+        fail("case_factory.optional_ai_support.status must be NOT_RUN_IN_CASE_PACKET")
     if ai_support.get("allowed_role") != "AI_SUPPORT_ONLY":
         fail("case_factory.optional_ai_support.allowed_role must be AI_SUPPORT_ONLY")
     if ai_support.get("ai_decided_disposition") is not False:
