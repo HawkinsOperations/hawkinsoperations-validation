@@ -24,6 +24,7 @@ PIPELINE_STATUS_PASS = "FULL_LOCAL_PIPELINE_PASS"
 SCOPE = "CONTROLLED_TEST_ONLY"
 PROOF_CEILING = "CONTROLLED_TEST_VALIDATED"
 SUCCESS_CEILING = "LOCAL_CASE_PIPELINE_DETERMINISTIC_CHECK_PASS"
+CASE_FACTORY_SCOPE_STATUS = "SHARED_DRY_RUN_BOUNDARY_ONLY"
 PUBLIC_SAFE_STATUS = "NOT_PUBLIC_SAFE"
 SUPPORTED_CLAIM = (
     "HawkinsOperations provides a clone-runnable controlled HO-DET-001 test-fixture proof runner "
@@ -214,6 +215,12 @@ def ensure_required_boundaries(summary: dict[str, Any]) -> None:
         fail("summary deterministic_close_eligible must be false")
     if summary.get("case_factory_result") != "BLOCKED_HUMAN_REVIEW_REQUIRED":
         fail("summary case_factory_result must be BLOCKED_HUMAN_REVIEW_REQUIRED")
+    if summary.get("case_factory_scope_status") != CASE_FACTORY_SCOPE_STATUS:
+        fail(f"summary case_factory_scope_status must be {CASE_FACTORY_SCOPE_STATUS}")
+    if summary.get("case_factory_included_detection_ids") != [DETECTION_ID]:
+        fail("summary case_factory_included_detection_ids must contain only HO-DET-001")
+    if summary.get("case_factory_new_detection_inclusion_allowed") is not False:
+        fail("summary case_factory_new_detection_inclusion_allowed must be false")
 
     blocked = {str(item).strip().lower() for item in summary.get("blocked_claims", [])}
     for claim in BLOCKED_CLAIMS:
@@ -268,6 +275,9 @@ def build_summary(stage_results: list[dict[str, Any]]) -> dict[str, Any]:
         "github_issue_close_allowed": False,
         "deterministic_close_eligible": False,
         "case_factory_result": "BLOCKED_HUMAN_REVIEW_REQUIRED",
+        "case_factory_scope_status": CASE_FACTORY_SCOPE_STATUS,
+        "case_factory_included_detection_ids": [DETECTION_ID],
+        "case_factory_new_detection_inclusion_allowed": False,
         "supported_claims": SUPPORTED_CLAIMS,
         "blocked_claims": BLOCKED_CLAIMS,
         "command_sequence": [stage["command"] for stage in stage_results],
@@ -317,6 +327,7 @@ def main() -> int:
     emit_status("HUMAN_REVIEW_REQUIRED=true")
     emit_status("PUBLIC_SAFE=false")
     emit_status("CASE_FACTORY_DRY_RUN_STATUS=pass")
+    emit_status(f"CASE_FACTORY_SCOPE_STATUS={summary['case_factory_scope_status']}")
     emit_status("GITHUB_ISSUE_MUTATION_ALLOWED=false")
     emit_status("GITHUB_ISSUE_CLOSE_ALLOWED=false")
     emit_status("DETERMINISTIC_CLOSE_ELIGIBLE=false")
