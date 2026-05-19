@@ -1,0 +1,119 @@
+{
+  "status": "pass",
+  "detection_id": "HO-DET-012",
+  "validation_scope": "controlled-test fixtures only",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-012",
+  "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-012/validation-cases.json",
+  "total_cases": 8,
+  "positive_cases": 4,
+  "negative_cases": 4,
+  "matched_positive_count": 4,
+  "missed_positive_cases": [],
+  "false_positive_negative_cases": [],
+  "positive": [
+    {
+      "id": "pos-001-security-4698-appdata-action",
+      "telemetry_source": "Windows Security 4698",
+      "behavior": "scheduled task action points to a user profile AppData path",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-002-taskscheduler-106-interpreter-action",
+      "telemetry_source": "TaskScheduler Operational 106",
+      "behavior": "registered task action invokes PowerShell with a script-like target",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-003-sysmon-schtasks-create-public-target",
+      "telemetry_source": "Sysmon Event ID 1",
+      "behavior": "schtasks /create command points task action to Users Public",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    },
+    {
+      "id": "pos-004-sysmon-powershell-register-task",
+      "telemetry_source": "Sysmon Event ID 1",
+      "behavior": "PowerShell Register-ScheduledTask command creates a task action in ProgramData",
+      "expected": true,
+      "matched": true,
+      "pass": true
+    }
+  ],
+  "negative": [
+    {
+      "id": "neg-001-benign-vendor-updater-program-files",
+      "telemetry_source": "Windows Security 4698",
+      "behavior": "vendor updater path under Program Files",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-002-benign-endpoint-management-task",
+      "telemetry_source": "TaskScheduler Operational 106",
+      "behavior": "managed endpoint agent task under managed application directory",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-003-approved-maintenance-window-task",
+      "telemetry_source": "Windows Security 4702",
+      "behavior": "approved maintenance task under Program Files",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    },
+    {
+      "id": "neg-004-suspicious-name-without-suspicious-action",
+      "telemetry_source": "Windows Security 4698",
+      "behavior": "weak task-name context only",
+      "expected": false,
+      "matched": false,
+      "pass": true
+    }
+  ],
+  "exact_claim_supported": "HO-DET-012 passed controlled-test validation against scheduled-task creation and update fixtures.",
+  "blocked_claims": [
+    "runtime-active",
+    "signal-observed",
+    "public-safe",
+    "evidence-linked public proof",
+    "public-safe runtime proof",
+    "Splunk-fired",
+    "live Splunk fired",
+    "Wazuh-routed",
+    "Cribl-routed",
+    "Security Onion observed",
+    "Suricata observed",
+    "Zeek observed",
+    "production-ready",
+    "production triage",
+    "fleet-wide",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition",
+    "attack coverage completeness",
+    "scheduled-task coverage completeness"
+  ],
+  "runtime_active": false,
+  "signal_observed": false,
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "splunk_fired": false,
+  "wazuh_routed": false,
+  "cribl_routed": false,
+  "security_onion_observed": false,
+  "production_ready": false,
+  "fleet_wide": false,
+  "autonomous_soc": false,
+  "ai_approved_disposition": false,
+  "analyst_approved_disposition": false,
+  "trust_boundary": "Controlled-test scheduled-task fixture validation only. This does not prove runtime, signal, public-safe proof, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
+  "privacy_status": "Controlled-test fixtures only; no sensitive operational material or live telemetry intentionally included."
+}

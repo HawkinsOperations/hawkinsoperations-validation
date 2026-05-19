@@ -1,0 +1,38 @@
+name: HO-DET-012 Fixture Loop
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/validate-ho-det-012.py'
+      - 'scripts/verify-ho-det-012-result-parity.py'
+      - 'scripts/scan-ho-det-012-claim-boundaries.py'
+      - 'validation/successor/ho-det-012/**'
+      - 'reports/ho-det-012/**'
+      - '.github/workflows/ho-det-012-fixture-loop.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/validate-ho-det-012.py'
+      - 'scripts/verify-ho-det-012-result-parity.py'
+      - 'scripts/scan-ho-det-012-claim-boundaries.py'
+      - 'validation/successor/ho-det-012/**'
+      - 'reports/ho-det-012/**'
+      - '.github/workflows/ho-det-012-fixture-loop.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ho-det-012-fixture-loop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run HO-DET-012 controlled-test fixture validation
+        run: python -B scripts/validate-ho-det-012.py --source-contract skip-if-missing
+      - name: Run HO-DET-012 result parity verifier
+        run: python -B scripts/verify-ho-det-012-result-parity.py
+      - name: Run HO-DET-012 claim-boundary scanner
+        run: python -B scripts/scan-ho-det-012-claim-boundaries.py
