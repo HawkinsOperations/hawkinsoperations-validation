@@ -1,0 +1,132 @@
+{
+  "detection_id": "HO-DET-012",
+  "case_scope": "controlled-test_scheduled_task_creation",
+  "validation_scope": "controlled-test fixtures only",
+  "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-012",
+  "source_scope": [
+    "Windows Security Event ID 4698 scheduled task creation where audit policy and collection support it",
+    "Windows Security Event ID 4702 scheduled task update where audit policy and collection support it",
+    "Microsoft-Windows-TaskScheduler/Operational Event IDs 106 and 140 where enabled and collected",
+    "Sysmon Event ID 1 process creation context for scheduled-task creation tooling"
+  ],
+  "cases": {
+    "positive": [
+      {
+        "id": "pos-001-security-4698-appdata-action",
+        "description": "Windows Security 4698 task creation with suspicious task action under AppData",
+        "telemetry_source": "Windows Security 4698",
+        "behavior": "scheduled task action points to a user profile AppData path",
+        "expected_match": true,
+        "event": {
+          "EventID": 4698,
+          "Channel": "Security",
+          "TaskName": "\\CacheUpdate",
+          "TaskContent": "C:\\Users\\Default\\AppData\\Local\\CacheUpdate\\cacheupdate.exe",
+          "SubjectUserName": "controlled-test-admin"
+        }
+      },
+      {
+        "id": "pos-002-taskscheduler-106-interpreter-action",
+        "description": "TaskScheduler Operational 106 task registration with an interpreter-backed action",
+        "telemetry_source": "TaskScheduler Operational 106",
+        "behavior": "registered task action invokes PowerShell with a script-like target",
+        "expected_match": true,
+        "event": {
+          "EventID": 106,
+          "Channel": "Microsoft-Windows-TaskScheduler/Operational",
+          "Provider_Name": "Microsoft-Windows-TaskScheduler",
+          "TaskName": "\\ScriptedUpdater",
+          "Action": "powershell.exe -NoProfile -File C:\\ProgramData\\ScriptedUpdater\\run.ps1"
+        }
+      },
+      {
+        "id": "pos-003-sysmon-schtasks-create-public-target",
+        "description": "Sysmon Event ID 1 process context using schtasks.exe /create with a suspicious /tr target",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "schtasks /create command points task action to Users Public",
+        "expected_match": true,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Provider_Name": "Microsoft-Windows-Sysmon",
+          "Image": "C:\\Windows\\System32\\schtasks.exe",
+          "CommandLine": "schtasks.exe /create /tn CacheUpdater /sc minute /tr C:\\Users\\Public\\Libraries\\cacheupdater.exe",
+          "ParentImage": "C:\\Windows\\System32\\cmd.exe"
+        }
+      },
+      {
+        "id": "pos-004-sysmon-powershell-register-task",
+        "description": "Sysmon Event ID 1 process context using PowerShell scheduled-task registration with a suspicious action",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "PowerShell Register-ScheduledTask command creates a task action in ProgramData",
+        "expected_match": true,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Provider_Name": "Microsoft-Windows-Sysmon",
+          "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "CommandLine": "powershell.exe -NoProfile -Command New-ScheduledTaskAction -Execute C:\\ProgramData\\TaskCache\\runner.cmd; Register-ScheduledTask -TaskName TaskCache -Action $a",
+          "ParentImage": "C:\\Windows\\System32\\cmd.exe"
+        }
+      }
+    ],
+    "negative": [
+      {
+        "id": "neg-001-benign-vendor-updater-program-files",
+        "description": "Benign vendor updater task under Program Files",
+        "telemetry_source": "Windows Security 4698",
+        "behavior": "vendor updater path under Program Files",
+        "expected_match": false,
+        "event": {
+          "EventID": 4698,
+          "Channel": "Security",
+          "TaskName": "\\VendorUpdater",
+          "TaskContent": "C:\\Program Files\\VendorSuite\\updater.exe",
+          "Signer": "Controlled-test Vendor"
+        }
+      },
+      {
+        "id": "neg-002-benign-endpoint-management-task",
+        "description": "Benign endpoint management task",
+        "telemetry_source": "TaskScheduler Operational 106",
+        "behavior": "managed endpoint agent task under managed application directory",
+        "expected_match": false,
+        "event": {
+          "EventID": 106,
+          "Channel": "Microsoft-Windows-TaskScheduler/Operational",
+          "Provider_Name": "Microsoft-Windows-TaskScheduler",
+          "TaskName": "\\EndpointManagement\\Inventory",
+          "Action": "C:\\Program Files\\EndpointManager\\inventory-agent.exe",
+          "ManagementContext": "approved-managed-agent"
+        }
+      },
+      {
+        "id": "neg-003-approved-maintenance-window-task",
+        "description": "Approved maintenance-window task creation",
+        "telemetry_source": "Windows Security 4702",
+        "behavior": "approved maintenance task under Program Files",
+        "expected_match": false,
+        "event": {
+          "EventID": 4702,
+          "Channel": "Security",
+          "TaskName": "\\Maintenance\\ApprovedCleanup",
+          "TaskContent": "C:\\Program Files\\MaintenanceTools\\cleanup.exe",
+          "ChangeWindow": "approved-maintenance"
+        }
+      },
+      {
+        "id": "neg-004-suspicious-name-without-suspicious-action",
+        "description": "Suspicious-looking task name without suspicious action, path, or tooling evidence",
+        "telemetry_source": "Windows Security 4698",
+        "behavior": "weak task-name context only",
+        "expected_match": false,
+        "event": {
+          "EventID": 4698,
+          "Channel": "Security",
+          "TaskName": "\\WindowsSecurityUpdate",
+          "TaskContent": "C:\\Program Files\\VendorSuite\\security-update.exe"
+        }
+      }
+    ]
+  }
+}
