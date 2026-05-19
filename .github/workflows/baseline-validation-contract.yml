@@ -10,8 +10,14 @@ on:
       - 'reports/hero001-validation-report.json'
       - 'reports/hero001-validation-report.md'
       - '.github/contracts/validation-report.schema.json'
+      - '.github/contracts/case-packet.schema.json'
       - '.github/workflows/baseline-validation-contract.yml'
+      - 'scripts/build-ho-det-001-case-packet.py'
+      - 'scripts/run-ho-det-001-local-case-pipeline.py'
+      - 'scripts/verify_case_packet_contract.py'
       - 'tests/**'
+      - 'validation/successor/ho-det-001/case-packet.json'
+      - 'validation/successor/ho-det-001/closed-autosoc-loop-001.sample.json'
   push:
     branches: [main]
     paths:
@@ -22,8 +28,14 @@ on:
       - 'reports/hero001-validation-report.json'
       - 'reports/hero001-validation-report.md'
       - '.github/contracts/validation-report.schema.json'
+      - '.github/contracts/case-packet.schema.json'
       - '.github/workflows/baseline-validation-contract.yml'
+      - 'scripts/build-ho-det-001-case-packet.py'
+      - 'scripts/run-ho-det-001-local-case-pipeline.py'
+      - 'scripts/verify_case_packet_contract.py'
       - 'tests/**'
+      - 'validation/successor/ho-det-001/case-packet.json'
+      - 'validation/successor/ho-det-001/closed-autosoc-loop-001.sample.json'
 
 jobs:
   baseline-hero-validation-contract:
