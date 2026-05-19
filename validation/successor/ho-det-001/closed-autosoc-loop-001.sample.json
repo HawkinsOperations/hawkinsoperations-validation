@@ -18,7 +18,7 @@
   },
   "case_packet_reference": {
     "path": "validation/successor/ho-det-001/case-packet.json",
-    "sha256": "0a58126d019ae0aa162dc643396c1fd19a43742c3f9ea5b6e61c16e892a7d605"
+    "sha256": "e4b6c4d7611a7451c305cc601be8c778be7acac599da659d8b62f8fb867c5061"
   },
   "autosoc_triage_reference": {
     "path": "validation/successor/ho-det-001/autosoc-triage-packet.json",

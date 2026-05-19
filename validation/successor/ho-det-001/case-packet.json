@@ -113,6 +113,47 @@
   "case_factory": {
     "factory_version": "AUTOSOC_CASE_FACTORY_V0",
     "case_state": "DETERMINISTIC_RULE_EVALUATED",
+    "factory_scope": {
+      "scope_status": "SHARED_DRY_RUN_BOUNDARY_ONLY",
+      "applies_to_detection_id": "HO-DET-001",
+      "included_detection_ids": [
+        "HO-DET-001"
+      ],
+      "excluded_detection_ids": [
+        "HO-DET-011"
+      ],
+      "new_detection_inclusion_allowed": false,
+      "inclusion_requires": [
+        "separate detection-scoped builder parity",
+        "separate detection-scoped verifier enforcement",
+        "claim-boundary scan pass",
+        "proof/public-safe promotion remains blocked",
+        "AI_SUPPORT_ONLY authority boundary preserved",
+        "explicit human approval for each new detection inclusion"
+      ],
+      "generic_contract_fields": [
+        "factory_version",
+        "case_state",
+        "state_machine",
+        "github_issue_plan.mode",
+        "github_issue_plan.mutation_allowed",
+        "github_issue_plan.issue_ref",
+        "github_issue_plan.comment_intent",
+        "github_issue_plan.close_action_allowed",
+        "deterministic_close_rule",
+        "optional_ai_support"
+      ],
+      "detection_specific_fields": [
+        "case_id",
+        "detection_id",
+        "detection_title",
+        "event",
+        "detection_references",
+        "validation_references",
+        "public_claim_boundary.supported_claim",
+        "github_issue_plan.labels_to_add"
+      ]
+    },
     "state_machine": [
       "DISCOVERED",
       "SANITIZED_PACKET_BUILT",

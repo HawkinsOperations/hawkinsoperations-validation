@@ -16,13 +16,18 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CASE_PACKET = ROOT / "validation" / "successor" / "ho-det-001" / "case-packet.json"
-VALIDATION_CASES = ROOT / "validation" / "successor" / "ho-det-001" / "validation-cases.json"
-VALIDATION_RESULT = ROOT / "reports" / "ho-det-001" / "validation-result.json"
-AUTOSOC_PACKET = ROOT / "validation" / "successor" / "ho-det-001" / "autosoc-triage-packet.json"
-LLM_SUMMARY = ROOT / "validation" / "successor" / "ho-det-001" / "llm-summary.json"
+DETECTION_ID = "HO-DET-001"
+DETECTION_SLUG = DETECTION_ID.lower()
+CASE_ID = f"{DETECTION_ID}-CASE-PACKET-001"
+DETECTION_DIR = ROOT / "validation" / "successor" / DETECTION_SLUG
+CASE_PACKET = DETECTION_DIR / "case-packet.json"
+VALIDATION_CASES = DETECTION_DIR / "validation-cases.json"
+VALIDATION_RESULT = ROOT / "reports" / DETECTION_SLUG / "validation-result.json"
+AUTOSOC_PACKET = DETECTION_DIR / "autosoc-triage-packet.json"
+LLM_SUMMARY = DETECTION_DIR / "llm-summary.json"
 
 PROOF_CEILING = "CONTROLLED_TEST_VALIDATED"
+CASE_FACTORY_SCOPE_STATUS = "SHARED_DRY_RUN_BOUNDARY_ONLY"
 SUPPORTED_CLAIM = (
     "HO-DET-001 passed controlled-test validation against controlled positive and "
     "negative process-creation fixtures."
@@ -54,7 +59,37 @@ CASE_FACTORY_LABELS = [
     "proof:controlled-test",
     "publication:not-approved",
     "ai:support-only",
-    "det:ho-det-001",
+    f"det:{DETECTION_SLUG}",
+]
+CASE_FACTORY_GENERIC_FIELDS = [
+    "factory_version",
+    "case_state",
+    "state_machine",
+    "github_issue_plan.mode",
+    "github_issue_plan.mutation_allowed",
+    "github_issue_plan.issue_ref",
+    "github_issue_plan.comment_intent",
+    "github_issue_plan.close_action_allowed",
+    "deterministic_close_rule",
+    "optional_ai_support",
+]
+CASE_FACTORY_DETECTION_SPECIFIC_FIELDS = [
+    "case_id",
+    "detection_id",
+    "detection_title",
+    "event",
+    "detection_references",
+    "validation_references",
+    "public_claim_boundary.supported_claim",
+    "github_issue_plan.labels_to_add",
+]
+CASE_FACTORY_INCLUSION_REQUIRES = [
+    "separate detection-scoped builder parity",
+    "separate detection-scoped verifier enforcement",
+    "claim-boundary scan pass",
+    "proof/public-safe promotion remains blocked",
+    "AI_SUPPORT_ONLY authority boundary preserved",
+    "explicit human approval for each new detection inclusion",
 ]
 
 
@@ -139,10 +174,10 @@ def validate_inputs(validation_cases: dict[str, Any], validation_result: dict[st
         ],
         "validation-result.json",
     )
-    if validation_cases.get("detection_id") != "HO-DET-001":
-        fail("validation-cases.json detection_id must be HO-DET-001")
-    if validation_result.get("detection_id") != "HO-DET-001":
-        fail("validation-result.json detection_id must be HO-DET-001")
+    if validation_cases.get("detection_id") != DETECTION_ID:
+        fail(f"validation-cases.json detection_id must be {DETECTION_ID}")
+    if validation_result.get("detection_id") != DETECTION_ID:
+        fail(f"validation-result.json detection_id must be {DETECTION_ID}")
     if validation_result.get("status") != "pass":
         fail("validation-result.json status must be pass")
     if validation_result.get("proof_level_after") != PROOF_CEILING:
@@ -158,8 +193,8 @@ def build_case_packet() -> dict[str, Any]:
     event = pick_controlled_test_event(validation_cases)
     totals = validation_result.get("totals", {})
     return {
-        "case_id": "HO-DET-001-CASE-PACKET-001",
-        "detection_id": "HO-DET-001",
+        "case_id": CASE_ID,
+        "detection_id": DETECTION_ID,
         "detection_title": "Encoded PowerShell process creation controlled-test validation",
         "truth_surface": "repo truth",
         "proof_level": PROOF_CEILING,
@@ -212,6 +247,16 @@ def build_case_packet() -> dict[str, Any]:
         "case_factory": {
             "factory_version": "AUTOSOC_CASE_FACTORY_V0",
             "case_state": "DETERMINISTIC_RULE_EVALUATED",
+            "factory_scope": {
+                "scope_status": CASE_FACTORY_SCOPE_STATUS,
+                "applies_to_detection_id": DETECTION_ID,
+                "included_detection_ids": [DETECTION_ID],
+                "excluded_detection_ids": ["HO-DET-011"],
+                "new_detection_inclusion_allowed": False,
+                "inclusion_requires": CASE_FACTORY_INCLUSION_REQUIRES,
+                "generic_contract_fields": CASE_FACTORY_GENERIC_FIELDS,
+                "detection_specific_fields": CASE_FACTORY_DETECTION_SPECIFIC_FIELDS,
+            },
             "state_machine": [
                 "DISCOVERED",
                 "SANITIZED_PACKET_BUILT",

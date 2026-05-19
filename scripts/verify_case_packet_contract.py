@@ -15,8 +15,10 @@ sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = ROOT / ".github" / "contracts" / "case-packet.schema.json"
-CASE_PACKET = ROOT / "validation" / "successor" / "ho-det-001" / "case-packet.json"
-BUILDER = ROOT / "scripts" / "build-ho-det-001-case-packet.py"
+DETECTION_ID = "HO-DET-001"
+DETECTION_SLUG = DETECTION_ID.lower()
+CASE_PACKET = ROOT / "validation" / "successor" / DETECTION_SLUG / "case-packet.json"
+BUILDER = ROOT / "scripts" / f"build-{DETECTION_SLUG}-case-packet.py"
 
 PROOF_ORDER = [
     "IDEA",
@@ -31,6 +33,7 @@ PROOF_ORDER = [
     "PUBLIC_SAFE",
 ]
 PROOF_CEILING = "CONTROLLED_TEST_VALIDATED"
+CASE_FACTORY_SCOPE_STATUS = "SHARED_DRY_RUN_BOUNDARY_ONLY"
 BLOCKED_CLAIMS = [
     "runtime-active",
     "signal-observed",
@@ -57,7 +60,37 @@ CASE_FACTORY_REQUIRED_LABELS = [
     "proof:controlled-test",
     "publication:not-approved",
     "ai:support-only",
-    "det:ho-det-001",
+    f"det:{DETECTION_SLUG}",
+]
+EXPECTED_CASE_FACTORY_GENERIC_FIELDS = [
+    "factory_version",
+    "case_state",
+    "state_machine",
+    "github_issue_plan.mode",
+    "github_issue_plan.mutation_allowed",
+    "github_issue_plan.issue_ref",
+    "github_issue_plan.comment_intent",
+    "github_issue_plan.close_action_allowed",
+    "deterministic_close_rule",
+    "optional_ai_support",
+]
+EXPECTED_CASE_FACTORY_DETECTION_SPECIFIC_FIELDS = [
+    "case_id",
+    "detection_id",
+    "detection_title",
+    "event",
+    "detection_references",
+    "validation_references",
+    "public_claim_boundary.supported_claim",
+    "github_issue_plan.labels_to_add",
+]
+EXPECTED_CASE_FACTORY_INCLUSION_REQUIRES = [
+    "separate detection-scoped builder parity",
+    "separate detection-scoped verifier enforcement",
+    "claim-boundary scan pass",
+    "proof/public-safe promotion remains blocked",
+    "AI_SUPPORT_ONLY authority boundary preserved",
+    "explicit human approval for each new detection inclusion",
 ]
 PROHIBITED_CASE_FACTORY_LABEL_PARTS = [
     "approved-disposition",
@@ -154,8 +187,8 @@ def normalize(value: Any) -> str:
 
 
 def verify_boundaries(packet: dict[str, Any]) -> None:
-    if packet.get("detection_id") != "HO-DET-001":
-        fail("detection_id must be HO-DET-001")
+    if packet.get("detection_id") != DETECTION_ID:
+        fail(f"detection_id must be {DETECTION_ID}")
     if packet.get("truth_surface") != "repo truth":
         fail("truth_surface must be repo truth")
     if packet.get("public_safe_status") != "NO":
@@ -197,6 +230,34 @@ def verify_case_factory(packet: dict[str, Any]) -> None:
         fail("case_factory.factory_version must be AUTOSOC_CASE_FACTORY_V0")
     if case_factory.get("case_state") != "DETERMINISTIC_RULE_EVALUATED":
         fail("case_factory.case_state must be DETERMINISTIC_RULE_EVALUATED")
+
+    factory_scope = get_path(packet, ["case_factory", "factory_scope"])
+    if not isinstance(factory_scope, dict):
+        fail("case_factory.factory_scope must be object")
+    if factory_scope.get("scope_status") != CASE_FACTORY_SCOPE_STATUS:
+        fail(f"case_factory.factory_scope.scope_status must be {CASE_FACTORY_SCOPE_STATUS}")
+    if factory_scope.get("applies_to_detection_id") != packet.get("detection_id"):
+        fail("case_factory.factory_scope.applies_to_detection_id must match packet detection_id")
+    if factory_scope.get("included_detection_ids") != [packet.get("detection_id")]:
+        fail("case_factory.factory_scope.included_detection_ids must contain only the packet detection_id")
+    excluded_detection_ids = factory_scope.get("excluded_detection_ids")
+    if not isinstance(excluded_detection_ids, list):
+        fail("case_factory.factory_scope.excluded_detection_ids must be list")
+    if "HO-DET-011" not in excluded_detection_ids:
+        fail("case_factory.factory_scope must explicitly exclude HO-DET-011 pending separate approval")
+    if factory_scope.get("new_detection_inclusion_allowed") is not False:
+        fail("case_factory.factory_scope.new_detection_inclusion_allowed must be false")
+    if factory_scope.get("generic_contract_fields") != EXPECTED_CASE_FACTORY_GENERIC_FIELDS:
+        fail("case_factory.factory_scope.generic_contract_fields do not match approved v0 fields")
+    if factory_scope.get("detection_specific_fields") != EXPECTED_CASE_FACTORY_DETECTION_SPECIFIC_FIELDS:
+        fail("case_factory.factory_scope.detection_specific_fields do not match approved v0 fields")
+    inclusion_requires = factory_scope.get("inclusion_requires")
+    if not isinstance(inclusion_requires, list):
+        fail("case_factory.factory_scope.inclusion_requires must be list")
+    normalized_requirements = {normalize(item) for item in inclusion_requires}
+    for requirement in EXPECTED_CASE_FACTORY_INCLUSION_REQUIRES:
+        if normalize(requirement) not in normalized_requirements:
+            fail(f"case_factory.factory_scope.inclusion_requires missing: {requirement}")
 
     issue_plan = get_path(packet, ["case_factory", "github_issue_plan"])
     if not isinstance(issue_plan, dict):

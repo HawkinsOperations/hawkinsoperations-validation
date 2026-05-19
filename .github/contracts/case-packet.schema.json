@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hawkinsoperations.local/contracts/case-packet.schema.json",
-  "title": "HawkinsOperations HO-DET-001 Validation Case Packet",
+  "title": "HawkinsOperations Validation Case Packet",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -187,6 +187,7 @@
       "required": [
         "factory_version",
         "case_state",
+        "factory_scope",
         "state_machine",
         "github_issue_plan",
         "deterministic_close_rule",
@@ -200,6 +201,73 @@
         "case_state": {
           "type": "string",
           "const": "DETERMINISTIC_RULE_EVALUATED"
+        },
+        "factory_scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope_status",
+            "applies_to_detection_id",
+            "included_detection_ids",
+            "excluded_detection_ids",
+            "new_detection_inclusion_allowed",
+            "inclusion_requires",
+            "generic_contract_fields",
+            "detection_specific_fields"
+          ],
+          "properties": {
+            "scope_status": {
+              "type": "string",
+              "const": "SHARED_DRY_RUN_BOUNDARY_ONLY"
+            },
+            "applies_to_detection_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "included_detection_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            },
+            "excluded_detection_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "new_detection_inclusion_allowed": {
+              "type": "boolean",
+              "const": false
+            },
+            "inclusion_requires": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            },
+            "generic_contract_fields": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            },
+            "detection_specific_fields": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            }
+          }
         },
         "state_machine": {
           "type": "array",
