@@ -213,7 +213,15 @@ def event_matches(event: dict[str, Any]) -> bool:
     return task_event_matches(event) or scheduled_task_tooling_matches(event)
 
 
-def validate_source_contract() -> None:
+def validate_source_contract(mode: str = "required") -> None:
+    source_paths = [SOURCE_RULE, SOURCE_STATUS, SOURCE_SPLUNK, SOURCE_WAZUH, SOURCE_MAPPING]
+    missing_paths = [path for path in source_paths if not path.exists()]
+    if missing_paths:
+        if mode == "skip-if-missing" and len(missing_paths) == len(source_paths):
+            print("SOURCE_CONTRACT=skipped")
+            print("SOURCE_CONTRACT_REASON=sibling detections repo unavailable")
+            return
+        fail("missing HO-DET-012 source surfaces: " + ", ".join(str(path) for path in missing_paths))
     rule = read_text(SOURCE_RULE, "HO-DET-012 source rule")
     status = read_text(SOURCE_STATUS, "HO-DET-012 source status")
     splunk = read_text(SOURCE_SPLUNK, "HO-DET-012 Splunk source")
@@ -364,8 +372,14 @@ def write_reports(report: dict[str, Any]) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Validate HO-DET-012 controlled-test fixtures")
     parser.add_argument("--write", action="store_true", help="write validation reports")
+    parser.add_argument(
+        "--source-contract",
+        choices=("required", "skip-if-missing"),
+        default="required",
+        help="require sibling detection source surfaces, or skip only when the entire sibling repo is unavailable",
+    )
     args = parser.parse_args(argv)
-    validate_source_contract()
+    validate_source_contract(args.source_contract)
     cases = load_json(CASES_FILE, "HO-DET-012 validation cases")
     report = build_report(cases)
     if report["status"] != "pass":

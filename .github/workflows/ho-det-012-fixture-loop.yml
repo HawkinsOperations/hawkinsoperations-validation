@@ -31,7 +31,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Run HO-DET-012 controlled-test fixture validation
-        run: python -B scripts/validate-ho-det-012.py
+        run: python -B scripts/validate-ho-det-012.py --source-contract skip-if-missing
       - name: Run HO-DET-012 result parity verifier
         run: python -B scripts/verify-ho-det-012-result-parity.py
       - name: Run HO-DET-012 claim-boundary scanner
