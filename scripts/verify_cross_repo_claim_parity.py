@@ -2,8 +2,9 @@
 """Cross-repo proof/claim parity scanner for HawkinsOperations.
 
 This checker is read-only. It scans selected sibling repositories for scoped
-detection IDs and claim language drift, and can fail closed on public-promotion
-terms outside blocked/negative context.
+detection IDs and claim language drift. Report-only mode always returns zero
+after printing findings; enforce mode fails closed on dangerous public-claim
+drift.
 """
 
 from __future__ import annotations
@@ -27,12 +28,19 @@ DETECTION_IDS = [
 
 PROMOTION_TERMS = [
     "production",
+    "production-ready",
+    "SOCaaS",
     "runtime-active",
+    "runtime-active public proof",
     "signal-observed",
+    "signal-observed public proof",
     "public-safe runtime proof",
     "autonomous SOC",
+    "autonomous",
     "AI-approved",
+    "AI-approved disposition",
     "analyst-approved",
+    "analyst-approved disposition",
     "fleet-wide",
     "live Splunk",
     "Wazuh-routed",
@@ -43,20 +51,70 @@ PROMOTION_TERMS = [
 STATUS_TOKENS = {
     "SOURCE_EXISTS",
     "CONTROLLED_TEST_VALIDATED",
-    "TEST_VALIDATED_SYNTHETIC_SCOPE",
     "PRIVATE_RUNTIME_EVIDENCE_CAPTURED",
     "BOUNDARY_CONTRACT_ONLY",
     "NOT_PUBLIC_SAFE",
     "BLOCKED",
 }
 
+ALLOWED_PROOF_CEILING_TOKENS = {
+    "SOURCE_EXISTS",
+    "CONTROLLED_TEST_VALIDATED",
+    "PRIVATE_RUNTIME_EVIDENCE_CAPTURED",
+    "BOUNDARY_CONTRACT_ONLY",
+    "NOT_PUBLIC_SAFE",
+    "BLOCKED",
+}
+
+DANGEROUS_STATUS_TOKENS = {
+    "PUBLIC_SAFE",
+    "PUBLIC_PROOF_SAFE",
+    "RUNTIME_ACTIVE",
+    "SIGNAL_OBSERVED",
+    "PRODUCTION_READY",
+}
+
+REQUIRED_BLOCKED_CLAIMS = [
+    "production-ready",
+    "SOCaaS",
+    "autonomous SOC",
+    "runtime-active public proof",
+    "signal-observed public proof",
+    "public-safe runtime proof",
+    "AI-approved disposition",
+    "analyst-approved disposition",
+]
+
+RENDERING_BOUNDARY_RE = re.compile(
+    r"(rendering|website|github|screenshot|presentation).{0,80}(not|does\s+not|cannot).{0,80}(proof|prove)|"
+    r"(not|does\s+not|cannot).{0,80}(proof|prove).{0,80}(rendering|website|github|screenshot|presentation)",
+    re.IGNORECASE,
+)
+
+HUMAN_REVIEW_RE = re.compile(
+    r"(human|raylee|operator|governance).{0,80}(review|approval|approved|required|authorize)|"
+    r"(merge|public[-\s]?safe|proof).{0,80}(requires|required).{0,80}(human|raylee|operator|governance)",
+    re.IGNORECASE,
+)
+
+PROOF_PACK_001_RE = re.compile(r"\bproof[-\s_]*pack[-\s_]*001\b", re.IGNORECASE)
+
+STALE_SNAPSHOT_RE = re.compile(
+    r"\b(stale\s+snapshot|old\s+snapshot|legacy\s+snapshot|snapshot\s+date|last\s+reviewed|reviewed_on)\b|"
+    r"\b202[0-5]-\d{2}-\d{2}\b",
+    re.IGNORECASE,
+)
+
 NEGATIVE_CONTEXT_RE = re.compile(
-    r"\b(block|blocked|not|no|without|does\s+not|do\s+not|remains\s+blocked|"
-    r"requires|pending|unsupported|claims_not_supported|blocked_claims)\b",
+    r"\b(block|blocked|blocking|not|no|none|without|cannot|does\s+not|do\s+not|"
+    r"must\s+not|remains\s+blocked|requires|pending|unsupported|not\s+proven|"
+    r"not\s+public[-_\s]?safe|claims_not_supported|blocked_claims|blocked_public_claims|"
+    r"claim[_\s-]?boundary|not[_\s-]?approved|not[_\s-]?authorized)\b",
     re.IGNORECASE,
 )
 
 TEXT_EXTS = {".md", ".yml", ".yaml", ".json", ".html", ".ts", ".js", ".mjs"}
+PUBLIC_BOUNDARY_SURFACES = {"proof", "website", "org_front_door", "platform"}
 
 
 @dataclass
@@ -105,29 +163,77 @@ def has_negative_context(line: str) -> bool:
     return bool(NEGATIVE_CONTEXT_RE.search(line))
 
 
+def line_window(lines: list[str], index: int, radius: int = 2) -> str:
+    start = max(0, index - radius)
+    end = min(len(lines), index + radius + 1)
+    return "\n".join(lines[start:end])
+
+
+def has_negative_context_for_line(lines: list[str], index: int) -> bool:
+    line = lines[index]
+    if has_negative_context(line):
+        return True
+    if index == 0:
+        return False
+
+    previous = lines[index - 1]
+    stripped = line.lstrip()
+    continuation = stripped.startswith(("-", "*")) or line.startswith((" ", "\t"))
+    parent_key = previous.rstrip().endswith(":")
+    if (continuation or parent_key) and has_negative_context(previous):
+        return True
+
+    # YAML/Markdown blocked-claim lists often span several lines beneath a
+    # negative parent key such as blocked_claims: or does_not_support:.
+    for offset in range(1, 7):
+        parent_index = index - offset
+        if parent_index < 0:
+            break
+        candidate = lines[parent_index]
+        if not candidate.strip():
+            break
+        if candidate.rstrip().endswith(":") and has_negative_context(candidate):
+            return True
+    return False
+
+
+def has_boundary(text: str, boundary_re: re.Pattern[str]) -> bool:
+    compact = " ".join(text.split())
+    return bool(boundary_re.search(compact))
+
+
+def contains_claim(text: str, claim: str) -> bool:
+    return claim.lower() in text.lower()
+
+
+def extract_candidate_status_tokens(text: str) -> set[str]:
+    return set(re.findall(r"\b[A-Z][A-Z0-9_]{2,}\b", text))
+
+
 def scan_promotion_terms(
     text: str,
     detection_id: str,
     surface: str,
     rel_path: str,
-    fail_on_public_promotion: bool,
+    enforce: bool,
 ) -> list[DriftItem]:
     items: list[DriftItem] = []
     lower_text = text.lower()
     if detection_id.lower() not in lower_text:
         return items
 
+    lines = text.splitlines()
     for term in PROMOTION_TERMS:
         term_l = term.lower()
-        for line_no, line in enumerate(text.splitlines(), start=1):
-            if term_l in line.lower() and not has_negative_context(line):
-                sev = "fail" if fail_on_public_promotion else "warning"
+        for index, line in enumerate(lines):
+            if term_l in line.lower() and not has_negative_context_for_line(lines, index):
+                sev = "fail" if enforce else "warning"
                 items.append(
                     DriftItem(
                         severity=sev,
                         detection_id=detection_id,
                         surface=surface,
-                        path=f"{rel_path}:{line_no}",
+                        path=f"{rel_path}:{index + 1}",
                         message=f"promotion term without blocked/negative context: {term}",
                     )
                 )
@@ -142,12 +248,148 @@ def extract_status_tokens(text: str) -> set[str]:
     return found
 
 
+def scan_status_tokens(
+    text: str,
+    detection_id: str,
+    surface: str,
+    rel_path: str,
+    enforce: bool,
+) -> list[DriftItem]:
+    items: list[DriftItem] = []
+    if detection_id.lower() not in text.lower():
+        return items
+
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        for token in extract_candidate_status_tokens(line):
+            if token in ALLOWED_PROOF_CEILING_TOKENS:
+                continue
+            if token in DANGEROUS_STATUS_TOKENS and not has_negative_context_for_line(lines, index):
+                items.append(
+                    DriftItem(
+                        severity="fail" if enforce else "warning",
+                        detection_id=detection_id,
+                        surface=surface,
+                        path=f"{rel_path}:{index + 1}",
+                        message=f"dangerous status token without blocked/negative context: {token}",
+                    )
+                )
+    return items
+
+
+def scan_required_boundaries(
+    text: str,
+    detection_id: str,
+    surface: str,
+    rel_path: str,
+    enforce: bool,
+) -> list[DriftItem]:
+    if detection_id.lower() not in text.lower():
+        return []
+
+    severity = "fail" if enforce else "warning"
+    items: list[DriftItem] = []
+    if not has_boundary(text, RENDERING_BOUNDARY_RE):
+        items.append(
+            DriftItem(
+                severity=severity,
+                detection_id=detection_id,
+                surface=surface,
+                path=rel_path,
+                message="missing rendering-not-proof boundary",
+            )
+        )
+    if not has_boundary(text, HUMAN_REVIEW_RE):
+        items.append(
+            DriftItem(
+                severity=severity,
+                detection_id=detection_id,
+                surface=surface,
+                path=rel_path,
+                message="missing human-review-required boundary",
+            )
+        )
+    return items
+
+
+def scan_required_blocked_claims(
+    text: str,
+    detection_id: str,
+    surface: str,
+    rel_path: str,
+    enforce: bool,
+) -> list[DriftItem]:
+    if detection_id.lower() not in text.lower():
+        return []
+
+    severity = "fail" if enforce else "warning"
+    items: list[DriftItem] = []
+    lines = text.splitlines()
+    for claim in REQUIRED_BLOCKED_CLAIMS:
+        if contains_claim(text, claim):
+            claim_lines = [
+                index
+                for index, line in enumerate(lines)
+                if claim.lower() in line.lower()
+            ]
+            if any(has_negative_context_for_line(lines, index) for index in claim_lines):
+                continue
+        items.append(
+            DriftItem(
+                severity=severity,
+                detection_id=detection_id,
+                surface=surface,
+                path=rel_path,
+                message=f"required blocked claim missing or not negated: {claim}",
+            )
+        )
+    return items
+
+
+def scan_release_wording(
+    text: str,
+    detection_id: str,
+    surface: str,
+    rel_path: str,
+    enforce: bool,
+) -> list[DriftItem]:
+    if not PROOF_PACK_001_RE.search(text):
+        return []
+
+    items: list[DriftItem] = []
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        window = line_window(lines, index)
+        if PROOF_PACK_001_RE.search(window) and any(term.lower() in line.lower() for term in PROMOTION_TERMS):
+            if not has_negative_context(window):
+                items.append(
+                    DriftItem(
+                        severity="fail" if enforce else "warning",
+                        detection_id=detection_id,
+                        surface=surface,
+                        path=f"{rel_path}:{index + 1}",
+                        message="Proof Pack 001 release state contradiction",
+                    )
+                )
+        if STALE_SNAPSHOT_RE.search(line):
+            items.append(
+                DriftItem(
+                    severity="warning",
+                    detection_id=detection_id,
+                    surface=surface,
+                    path=f"{rel_path}:{index + 1}",
+                    message="stale release/snapshot wording requires review",
+                )
+            )
+    return items
+
+
 def scan_surface(
     surface: str,
     repo_root: Path,
     patterns: Iterable[str],
     detection_ids: list[str],
-    fail_on_public_promotion: bool,
+    enforce: bool,
 ) -> tuple[list[DriftItem], dict[str, set[str]], int]:
     drift: list[DriftItem] = []
     status_by_id: dict[str, set[str]] = {d: set() for d in detection_ids}
@@ -177,7 +419,44 @@ def scan_surface(
                         detection_id=detection_id,
                         surface=surface,
                         rel_path=rel_path,
-                        fail_on_public_promotion=fail_on_public_promotion,
+                        enforce=enforce,
+                    )
+                )
+                drift.extend(
+                    scan_status_tokens(
+                        text=text,
+                        detection_id=detection_id,
+                        surface=surface,
+                        rel_path=rel_path,
+                        enforce=enforce,
+                    )
+                )
+                if surface in PUBLIC_BOUNDARY_SURFACES:
+                    drift.extend(
+                        scan_required_boundaries(
+                            text=text,
+                            detection_id=detection_id,
+                            surface=surface,
+                            rel_path=rel_path,
+                            enforce=enforce,
+                        )
+                    )
+                    drift.extend(
+                        scan_required_blocked_claims(
+                            text=text,
+                            detection_id=detection_id,
+                            surface=surface,
+                            rel_path=rel_path,
+                            enforce=enforce,
+                        )
+                    )
+                drift.extend(
+                    scan_release_wording(
+                        text=text,
+                        detection_id=detection_id,
+                        surface=surface,
+                        rel_path=rel_path,
+                        enforce=enforce,
                     )
                 )
     return drift, status_by_id, 0
@@ -187,12 +466,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Verify cross-repo claim parity and promotion boundaries")
     parser.add_argument("--repo-root", required=True, help="Root containing sibling HawkinsOperations repos")
     parser.add_argument("--report-only", action="store_true", help="Report drift but do not fail on warnings")
+    parser.add_argument("--enforce", action="store_true", help="Fail closed on dangerous public-claim drift")
     parser.add_argument(
         "--fail-on-public-promotion",
         action="store_true",
-        help="Fail if public-promotion terms appear outside blocked/negative context",
+        help="Compatibility alias for enforce-mode promotion failures",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.report_only and args.enforce:
+        parser.error("--report-only and --enforce cannot be combined")
+    return args
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -226,7 +509,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
     }
 
-    fail_on_public_promotion = args.fail_on_public_promotion
+    enforce = args.enforce or args.fail_on_public_promotion
     drift_items: list[DriftItem] = []
     per_surface_status: dict[str, dict[str, set[str]]] = {}
     all_ids = DETECTION_IDS.copy()
@@ -237,7 +520,7 @@ def main(argv: list[str] | None = None) -> int:
             repo_root=repo_path,
             patterns=patterns,
             detection_ids=all_ids,
-            fail_on_public_promotion=fail_on_public_promotion,
+            enforce=enforce,
         )
         drift_items.extend(items)
         per_surface_status[surface] = status_map
@@ -261,7 +544,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Status drift heuristic: if a detection appears with both SOURCE_EXISTS and
     # stronger status tokens across surfaces, flag as warning for parity review.
-    stronger = {"CONTROLLED_TEST_VALIDATED", "TEST_VALIDATED_SYNTHETIC_SCOPE", "PRIVATE_RUNTIME_EVIDENCE_CAPTURED"}
+    stronger = {"CONTROLLED_TEST_VALIDATED", "PRIVATE_RUNTIME_EVIDENCE_CAPTURED"}
     for detection_id in all_ids:
         union_tokens: set[str] = set()
         for status_map in per_surface_status.values():
@@ -299,6 +582,8 @@ def main(argv: list[str] | None = None) -> int:
         status = "fail"
     elif warning_count > 0 and not args.report_only:
         status = "fail"
+    if args.report_only:
+        status = "pass"
 
     print(f"STATUS={status}")
     print(f"FAIL_COUNT={fail_count}")

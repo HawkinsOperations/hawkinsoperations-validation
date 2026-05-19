@@ -1,101 +1,139 @@
 {
-  "title": "Security Onion NDR Visibility Rollup Contract",
+  "title": "Security Onion HO-NDR-001 Visibility Rollup Contract",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "packet_id",
-    "classification",
+    "visibility_contract_id",
+    "sample_or_runtime_scope",
+    "capture_status",
+    "achieved_status",
     "public_safe_status",
-    "claim_ceiling",
-    "observation_basis",
-    "time_window",
-    "components",
+    "cross_source_corroboration_captured",
+    "splunk_search_executed",
+    "cribl_route_proven",
+    "wazuh_route_proven",
+    "security_onion_runtime_proven",
+    "zeek_completeness_proven",
+    "suricata_detection_quality_proven",
+    "wazuh_agent_summary",
+    "security_onion_module_summary",
+    "suricata_summary",
+    "zeek_summary",
+    "splunk_correlation_placeholder",
+    "cribl_route_placeholder",
+    "proof_ceiling",
     "blocked_claims",
-    "next_gates"
+    "next_gate"
   ],
   "properties": {
-    "packet_id": {
+    "visibility_contract_id": {
       "type": "string",
-      "minLength": 1
+      "const": "HO-NDR-001-SANITIZED-VISIBILITY-ROLLUP"
     },
-    "classification": {
+    "sample_or_runtime_scope": {
       "type": "string",
-      "const": "PRIVATE_INTERNAL_UI_VISIBILITY_ROLLUP_SAMPLE"
+      "enum": [
+        "sample_only",
+        "sanitized_private_runtime_rollup"
+      ]
+    },
+    "capture_status": {
+      "type": "string",
+      "const": "NOT_CAPTURED_SAMPLE_ONLY"
+    },
+    "achieved_status": {
+      "type": "string",
+      "const": "NOT_CAPTURED_SAMPLE_ONLY"
     },
     "public_safe_status": {
       "type": "string",
-      "const": "NOT_APPROVED"
+      "const": "NOT_PUBLIC_SAFE"
     },
-    "claim_ceiling": {
+    "cross_source_corroboration_captured": {
+      "type": "boolean",
+      "const": false
+    },
+    "splunk_search_executed": {
+      "type": "boolean",
+      "const": false
+    },
+    "cribl_route_proven": {
+      "type": "boolean",
+      "const": false
+    },
+    "wazuh_route_proven": {
+      "type": "boolean",
+      "const": false
+    },
+    "security_onion_runtime_proven": {
+      "type": "boolean",
+      "const": false
+    },
+    "zeek_completeness_proven": {
+      "type": "boolean",
+      "const": false
+    },
+    "suricata_detection_quality_proven": {
+      "type": "boolean",
+      "const": false
+    },
+    "wazuh_agent_summary": {
+      "$ref": "#/$defs/bounded_summary"
+    },
+    "security_onion_module_summary": {
+      "$ref": "#/$defs/bounded_summary"
+    },
+    "suricata_summary": {
+      "$ref": "#/$defs/bounded_summary"
+    },
+    "zeek_summary": {
+      "$ref": "#/$defs/bounded_summary"
+    },
+    "splunk_correlation_placeholder": {
+      "$ref": "#/$defs/bounded_summary"
+    },
+    "cribl_route_placeholder": {
+      "$ref": "#/$defs/bounded_summary"
+    },
+    "proof_ceiling": {
       "type": "string",
-      "const": "PRIVATE_NDR_MODULE_VISIBILITY_ROLLUP_DEFINED"
-    },
-    "observation_basis": {
-      "type": "string",
-      "const": "SANITIZED_SAMPLE_FROM_PRIVATE_UI_OBSERVATIONS"
-    },
-    "time_window": {
-      "type": "string",
-      "minLength": 1
-    },
-    "components": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "temp_mirror_packet_visibility",
-        "zeek_index_visibility",
-        "suricata_index_visibility"
-      ],
-      "properties": {
-        "temp_mirror_packet_visibility": {
-          "$ref": "#/$defs/component"
-        },
-        "zeek_index_visibility": {
-          "$ref": "#/$defs/component"
-        },
-        "suricata_index_visibility": {
-          "$ref": "#/$defs/component"
-        }
-      }
+      "const": "VALIDATION_CONTRACT_HARDENED_ONLY"
     },
     "blocked_claims": {
       "type": "array",
       "items": {
         "type": "string",
         "enum": [
-          "permanent_span",
-          "production_ndr",
-          "fleet_wide_visibility",
+          "runtime_active",
+          "signal_observed",
           "public_safe_proof",
-          "durable_monitoring",
-          "pcap_availability",
-          "long_term_retention",
-          "cross_source_corroboration",
-          "zeek_coverage_completeness",
-          "suricata_detection_quality"
+          "production_ndr",
+          "cross_source_corroboration_captured",
+          "security_onion_runtime_proven",
+          "splunk_search_executed",
+          "cribl_route_proven",
+          "wazuh_route_proven",
+          "zeek_completeness_proven",
+          "suricata_detection_quality_proven",
+          "raw_pcap_artifact",
+          "private_identifier_publication"
         ]
       },
       "minItems": 1,
       "uniqueItems": true
     },
-    "next_gates": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      },
-      "minItems": 1
+    "next_gate": {
+      "type": "string",
+      "const": "RUNTIME_CAPTURE_APPROVAL_REQUIRED_BEFORE_ANY_EVIDENCE_OR_PROOF_PROMOTION"
     }
   },
   "$defs": {
-    "component": {
+    "bounded_summary": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "status",
-        "evidence_type",
-        "count_present",
-        "count_value",
+        "summary",
         "public_safe",
         "blocked_from_public_claim"
       ],
@@ -103,25 +141,15 @@
         "status": {
           "type": "string",
           "enum": [
-            "defined_private_scope",
-            "observed_private_scope",
-            "blocked_pending_validation"
+            "not_captured_sample_only",
+            "placeholder_not_executed",
+            "not_routed",
+            "not_proven"
           ]
         },
-        "evidence_type": {
+        "summary": {
           "type": "string",
-          "enum": [
-            "sanitized_private_ui_observation",
-            "sanitized_private_packet_path_observation",
-            "not_included_in_public_sample"
-          ]
-        },
-        "count_present": {
-          "type": "boolean"
-        },
-        "count_value": {
-          "type": "integer",
-          "minimum": 0
+          "minLength": 1
         },
         "public_safe": {
           "type": "boolean",

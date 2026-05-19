@@ -1,53 +1,67 @@
 {
-  "packet_id": "HO-NDR-001-SANITIZED-VISIBILITY-ROLLUP-SAMPLE",
-  "classification": "PRIVATE_INTERNAL_UI_VISIBILITY_ROLLUP_SAMPLE",
-  "public_safe_status": "NOT_APPROVED",
-  "claim_ceiling": "PRIVATE_NDR_MODULE_VISIBILITY_ROLLUP_DEFINED",
-  "observation_basis": "SANITIZED_SAMPLE_FROM_PRIVATE_UI_OBSERVATIONS",
-  "time_window": "last_24_hours",
-  "components": {
-    "temp_mirror_packet_visibility": {
-      "status": "defined_private_scope",
-      "evidence_type": "sanitized_private_packet_path_observation",
-      "count_present": false,
-      "count_value": 0,
-      "public_safe": false,
-      "blocked_from_public_claim": true
-    },
-    "zeek_index_visibility": {
-      "status": "observed_private_scope",
-      "evidence_type": "sanitized_private_ui_observation",
-      "count_present": true,
-      "count_value": 2219,
-      "public_safe": false,
-      "blocked_from_public_claim": true
-    },
-    "suricata_index_visibility": {
-      "status": "observed_private_scope",
-      "evidence_type": "sanitized_private_ui_observation",
-      "count_present": true,
-      "count_value": 163,
-      "public_safe": false,
-      "blocked_from_public_claim": true
-    }
+  "visibility_contract_id": "HO-NDR-001-SANITIZED-VISIBILITY-ROLLUP",
+  "sample_or_runtime_scope": "sample_only",
+  "capture_status": "NOT_CAPTURED_SAMPLE_ONLY",
+  "achieved_status": "NOT_CAPTURED_SAMPLE_ONLY",
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "cross_source_corroboration_captured": false,
+  "splunk_search_executed": false,
+  "cribl_route_proven": false,
+  "wazuh_route_proven": false,
+  "security_onion_runtime_proven": false,
+  "zeek_completeness_proven": false,
+  "suricata_detection_quality_proven": false,
+  "wazuh_agent_summary": {
+    "status": "not_captured_sample_only",
+    "summary": "No Wazuh agent runtime evidence is included in this sample.",
+    "public_safe": false,
+    "blocked_from_public_claim": true
   },
+  "security_onion_module_summary": {
+    "status": "not_captured_sample_only",
+    "summary": "Security Onion visibility is represented as a contract placeholder only.",
+    "public_safe": false,
+    "blocked_from_public_claim": true
+  },
+  "suricata_summary": {
+    "status": "not_proven",
+    "summary": "No Suricata detection-quality conclusion is included in this sample.",
+    "public_safe": false,
+    "blocked_from_public_claim": true
+  },
+  "zeek_summary": {
+    "status": "not_proven",
+    "summary": "No Zeek completeness conclusion is included in this sample.",
+    "public_safe": false,
+    "blocked_from_public_claim": true
+  },
+  "splunk_correlation_placeholder": {
+    "status": "placeholder_not_executed",
+    "summary": "No Splunk search was executed for this sample.",
+    "public_safe": false,
+    "blocked_from_public_claim": true
+  },
+  "cribl_route_placeholder": {
+    "status": "not_routed",
+    "summary": "No Cribl route receipt is included in this sample.",
+    "public_safe": false,
+    "blocked_from_public_claim": true
+  },
+  "proof_ceiling": "VALIDATION_CONTRACT_HARDENED_ONLY",
   "blocked_claims": [
-    "permanent_span",
-    "production_ndr",
-    "fleet_wide_visibility",
+    "runtime_active",
+    "signal_observed",
     "public_safe_proof",
-    "durable_monitoring",
-    "pcap_availability",
-    "long_term_retention",
-    "cross_source_corroboration",
-    "zeek_coverage_completeness",
-    "suricata_detection_quality"
+    "production_ndr",
+    "cross_source_corroboration_captured",
+    "security_onion_runtime_proven",
+    "splunk_search_executed",
+    "cribl_route_proven",
+    "wazuh_route_proven",
+    "zeek_completeness_proven",
+    "suricata_detection_quality_proven",
+    "raw_pcap_artifact",
+    "private_identifier_publication"
   ],
-  "next_gates": [
-    "document_mirror_status_before_any_durable_visibility_claim",
-    "review_dataset_breakdown_in_private_scope",
-    "test_pcap_export_path_in_private_scope",
-    "complete_redaction_review_before_any_public_candidate",
-    "defer_repo_proof_record_until_separately_approved"
-  ]
+  "next_gate": "RUNTIME_CAPTURE_APPROVAL_REQUIRED_BEFORE_ANY_EVIDENCE_OR_PROOF_PROMOTION"
 }
