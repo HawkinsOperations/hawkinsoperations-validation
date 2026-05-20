@@ -1,0 +1,38 @@
+name: ID-DET-001 Fixture Loop
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/validate-id-det-001.py'
+      - 'scripts/verify-id-det-001-result-parity.py'
+      - 'scripts/scan-id-det-001-claim-boundaries.py'
+      - 'validation/identity/id-det-001/**'
+      - 'reports/id-det-001/**'
+      - '.github/workflows/id-det-001-fixture-loop.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/validate-id-det-001.py'
+      - 'scripts/verify-id-det-001-result-parity.py'
+      - 'scripts/scan-id-det-001-claim-boundaries.py'
+      - 'validation/identity/id-det-001/**'
+      - 'reports/id-det-001/**'
+      - '.github/workflows/id-det-001-fixture-loop.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  id-det-001-fixture-loop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run ID-DET-001 controlled identity-event validation
+        run: python -B scripts/validate-id-det-001.py --source-contract skip-if-missing
+      - name: Run ID-DET-001 result parity verifier
+        run: python -B scripts/verify-id-det-001-result-parity.py
+      - name: Run ID-DET-001 claim-boundary scanner
+        run: python -B scripts/scan-id-det-001-claim-boundaries.py
