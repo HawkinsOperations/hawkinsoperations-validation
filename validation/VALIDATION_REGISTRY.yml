@@ -20,8 +20,8 @@
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "runtime_status": false,
       "signal_status": false,
-      "source_dependency_required": true,
-      "ci_source_dependency_mode": "skip_if_missing",
+      "source_dependency_required": false,
+      "ci_source_dependency_mode": "none",
       "notes": "Baseline controlled validation contract package. This is not public proof, runtime proof, or signal proof."
     },
     {
@@ -41,8 +41,8 @@
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "runtime_status": false,
       "signal_status": false,
-      "source_dependency_required": false,
-      "ci_source_dependency_mode": "none",
+      "source_dependency_required": true,
+      "ci_source_dependency_mode": "skip_if_missing",
       "notes": "Controlled CloudTrail-style fixture validation only. Sibling source contract is checked when present and skipped only when the entire sibling source surface is absent from a single-repo CI checkout. This does not prove live AWS, IdP, SIEM, runtime, signal, or public-safe status."
     },
     {
