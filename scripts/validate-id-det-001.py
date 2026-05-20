@@ -93,6 +93,47 @@ BLOCKED_CLAIMS = [
     "proof promotion",
     "website/public-surface promotion",
 ]
+FUTURE_GATED_PHASES = [
+    {
+        "id": "ID-RUNTIME-001",
+        "name": "Proxmox and Windows private runtime identity receipt",
+        "purpose": "Map ID-DET-001 logic into one private lab receipt using Windows identity/auth metadata, Wazuh count-only receipt, Splunk count-only receipt, and platform private ledger review.",
+        "claim_ceiling": "PRIVATE_RUNTIME_METADATA_CAPTURED",
+        "boundary": "Not public proof. Not production coverage. Not public-safe.",
+    },
+    {
+        "id": "ID-CLOUD-001",
+        "name": "IdP export/log review lane",
+        "purpose": "Review exported or approved Entra-style or Okta-style identity-provider logs only after a separate gate.",
+        "claim_ceiling": "CONTROLLED_TEST_VALIDATED first, then PRIVATE_RUNTIME_METADATA_CAPTURED only if approved sanitized export review exists.",
+        "boundary": "No live IdP proof in this PR. No production tenant claim.",
+    },
+    {
+        "id": "ID-AGENT-001",
+        "name": "AI or machine identity tool-scope validation lane",
+        "purpose": "Model AI agent or machine identity behavior where the identity performs an action outside approved tool or resource scope.",
+        "claim_ceiling": "CONTROLLED_TEST_VALIDATED",
+        "boundary": "No autonomous SOC claim. No AI disposition authority.",
+    },
+    {
+        "id": "ID-ROUTE-001",
+        "name": "SIEM/NDR route receipt lane",
+        "purpose": "Add count-only route checks for Wazuh, Splunk, Cribl, and Security Onion without exposing event payloads or expanding Splunk ingestion.",
+        "claim_ceiling": "PRIVATE_RUNTIME_METADATA_CAPTURED if receipt exists.",
+        "boundary": "No live SIEM/NDR public proof in this PR. No full route proof unless later separately captured and reviewed.",
+    },
+]
+NOT_CLAIMED_HERE = [
+    "live IdP proof",
+    "live SIEM/NDR observation",
+    "production identity coverage",
+    "complete identity-attack coverage",
+    "autonomous SOC operation",
+    "disposition authority",
+    "proof promotion",
+    "public-safe status",
+    "website/public-surface publication",
+]
 
 
 def fail(message: str) -> None:
@@ -308,6 +349,9 @@ def build_report(cases: dict[str, Any]) -> dict[str, Any]:
         "false_positive_negative_cases": false_positive,
         "supported_claim": SUPPORTED_CLAIM,
         "exact_claim_supported": SUPPORTED_CLAIM,
+        "current_scope": "This validation result establishes controlled-test validation for ID-DET-001 only.",
+        "future_gated_phases": FUTURE_GATED_PHASES,
+        "not_claimed_here": NOT_CLAIMED_HERE,
         "blocked_claims": BLOCKED_CLAIMS,
         "fixture_results": fixture_results,
         "runtime_active": False,
@@ -349,6 +393,21 @@ def write_reports(report: dict[str, Any]) -> None:
         "## Supported Claim",
         "",
         report["supported_claim"],
+        "",
+        "## Current Scope",
+        "",
+        report["current_scope"],
+        "",
+        "## Future Gated Phases",
+        "",
+        *[
+            f"- `{gate['id']}`: {gate['name']}. Claim ceiling: `{gate['claim_ceiling']}`. Boundary: {gate['boundary']}"
+            for gate in report["future_gated_phases"]
+        ],
+        "",
+        "## Not Claimed Here",
+        "",
+        *[f"- {claim}" for claim in report["not_claimed_here"]],
         "",
         "## Boundary",
         "",

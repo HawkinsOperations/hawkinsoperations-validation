@@ -32,6 +32,23 @@ This fixture set validates ID-DET-001 suspicious identity session context behavi
 
 This validates controlled identity-event fixture behavior only. It does not inspect runtime systems, live IdP telemetry, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production deployment, public-safe status, or evidence-linked public proof.
 
+## Current Scope
+
+This validation lane establishes controlled-test validation for ID-DET-001 only. The 10 fixture cases are deterministic validation cases built from controlled identity-event fixtures.
+
+## Future Gated Phases
+
+Future live or runtime work requires separate gates:
+
+- `ID-RUNTIME-001`: Proxmox and Windows private runtime identity receipt using Windows identity/auth metadata, Wazuh count-only receipt, Splunk count-only receipt, and platform private ledger review.
+- `ID-CLOUD-001`: IdP export/log review lane for approved Entra-style or Okta-style identity log exports.
+- `ID-AGENT-001`: AI or machine identity tool-scope validation lane for actions outside approved tool or resource scope.
+- `ID-ROUTE-001`: SIEM/NDR route receipt lane for count-only Wazuh, Splunk, Cribl, and Security Onion route checks.
+
+## Not Claimed Here
+
+This validation lane does not claim live IdP proof, live SIEM/NDR observation, production identity coverage, complete identity-attack coverage, autonomous SOC operation, disposition authority, proof promotion, public-safe status, or website/public-surface publication.
+
 ## Reproduction
 
 From the validation repository root:

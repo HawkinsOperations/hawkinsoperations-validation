@@ -48,6 +48,8 @@ ALLOWED_JSON_PATH_PARTS = {
     "trust_boundary",
     "privacy_status",
     "public_safe_status",
+    "future_gated_phases",
+    "not_claimed_here",
 }
 ALLOWED_TEXT_MARKERS = [
     "blocked",
@@ -57,6 +59,11 @@ ALLOWED_TEXT_MARKERS = [
     "not_public_safe",
     "controlled identity-event fixtures only",
     "controlled-test validation only",
+    "future gated phases",
+    "future live or runtime work requires separate gates",
+    "not claimed here",
+    "no live",
+    "no production",
 ]
 
 
@@ -123,7 +130,7 @@ def markdown_section(line: str, current: str) -> str:
 
 def markdown_context_allowed(section: str, line: str) -> bool:
     lower = line.lower()
-    if section in {"blocked claims", "boundary", "validation boundary"}:
+    if section in {"blocked claims", "boundary", "validation boundary", "future gated phases", "not claimed here"}:
         return True
     return any(marker in lower for marker in ALLOWED_TEXT_MARKERS)
 
