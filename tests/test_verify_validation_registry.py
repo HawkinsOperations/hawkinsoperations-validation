@@ -126,6 +126,19 @@ class VerifyValidationRegistryTests(unittest.TestCase):
                 with self.assertRaisesRegex(module.RegistryFailure, "missing"):
                     module.validate_registry(registry, self.root)
 
+    def test_ci_source_dependency_mode_must_match_source_dependency_requirement(self):
+        registry = copy.deepcopy(self.registry)
+        registry["packages"][0]["ci_source_dependency_mode"] = "skip_if_missing"
+        with self.assertRaisesRegex(module.RegistryFailure, "ci_source_dependency_mode must be none"):
+            module.validate_registry(registry, self.root)
+
+    def test_skip_if_missing_mode_allowed_when_source_dependency_required(self):
+        registry = copy.deepcopy(self.registry)
+        registry["packages"][0]["source_dependency_required"] = True
+        registry["packages"][0]["ci_source_dependency_mode"] = "skip_if_missing"
+        packages = module.validate_registry(registry, self.root)
+        self.assertTrue(packages[0]["source_dependency_required"])
+
 
 if __name__ == "__main__":
     unittest.main()

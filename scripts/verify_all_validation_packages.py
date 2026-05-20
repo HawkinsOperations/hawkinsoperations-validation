@@ -26,7 +26,22 @@ def _script_command(script_path: str) -> list[str]:
     return [script_path]
 
 
-def build_commands(package: dict[str, Any]) -> list[tuple[str, list[str]]]:
+def _normalize_source_mode(value: Any) -> str:
+    if value == "skip_if_missing":
+        return "skip-if-missing"
+    return str(value)
+
+
+def _script_supports_source_contract(root: Path, script_path: str) -> bool:
+    path = root / script_path
+    try:
+        text = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return False
+    return "--source-contract" in text
+
+
+def build_commands(package: dict[str, Any], root: Path = ROOT) -> list[tuple[str, list[str]]]:
     commands: list[tuple[str, list[str]]] = []
     for label, field in CHECK_FIELDS:
         script_path = package.get(field)
@@ -34,9 +49,9 @@ def build_commands(package: dict[str, Any]) -> list[tuple[str, list[str]]]:
             continue
         command = _script_command(script_path)
         if (
-            field == "validator_script"
-            and package.get("source_dependency_required") is True
-            and package.get("ci_source_dependency_mode") == "skip-if-missing"
+            package.get("source_dependency_required") is True
+            and _normalize_source_mode(package.get("ci_source_dependency_mode")) == "skip-if-missing"
+            and _script_supports_source_contract(root, script_path)
         ):
             command.extend(["--source-contract", "skip-if-missing"])
         commands.append((label, command))
@@ -49,7 +64,7 @@ def run_package_commands(packages: list[dict[str, Any]], root: Path = ROOT) -> i
 
     for package in packages:
         detection_id = package["detection_id"]
-        for label, command in build_commands(package):
+        for label, command in build_commands(package, root):
             result = subprocess.run(command, cwd=root, text=True, capture_output=True)
             status = "pass" if result.returncode == 0 else "fail"
             rows.append((detection_id, label, status))

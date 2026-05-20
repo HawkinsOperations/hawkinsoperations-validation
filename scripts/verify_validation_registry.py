@@ -257,8 +257,10 @@ def validate_registry(data: dict[str, Any], root: Path = ROOT) -> list[dict[str,
             fail(f"{detection_id} signal_status is promoted/truthy")
         if not isinstance(package["source_dependency_required"], bool):
             fail(f"{detection_id} source_dependency_required must be boolean")
-        if package["ci_source_dependency_mode"] not in {"none", "required", "skip-if-missing"}:
+        if package["ci_source_dependency_mode"] not in {"none", "required", "skip-if-missing", "skip_if_missing"}:
             fail(f"{detection_id} ci_source_dependency_mode is invalid")
+        if package["source_dependency_required"] is False and package["ci_source_dependency_mode"] != "none":
+            fail(f"{detection_id} ci_source_dependency_mode must be none when source_dependency_required is false")
 
         required_paths = {
             "baseline_contract": BASELINE_REQUIRED_PATHS,

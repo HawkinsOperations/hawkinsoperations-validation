@@ -23,12 +23,14 @@ class VerifyAllValidationPackagesTests(unittest.TestCase):
     def tearDown(self):
         self.tmpdir.cleanup()
 
-    def _write_script(self, rel_path, exit_code=0):
+    def _write_script(self, rel_path, exit_code=0, supports_source_contract=False):
         path = self.root / rel_path
+        source_contract_line = "# supports --source-contract\n" if supports_source_contract else ""
         path.write_text(
             textwrap.dedent(
                 f"""\
                 import sys
+                {source_contract_line}
                 print("script ok")
                 raise SystemExit({exit_code})
                 """
@@ -55,12 +57,21 @@ class VerifyAllValidationPackagesTests(unittest.TestCase):
         self.assertEqual(module.run_package_commands([self._package("scripts/fail.py")], self.root), 1)
 
     def test_build_commands_adds_skip_if_missing_for_source_backed_validator(self):
+        self._write_script("scripts/pass.py", supports_source_contract=True)
         package = self._package()
         package["source_dependency_required"] = True
-        package["ci_source_dependency_mode"] = "skip-if-missing"
-        commands = module.build_commands(package)
+        package["ci_source_dependency_mode"] = "skip_if_missing"
+        commands = module.build_commands(package, self.root)
         self.assertIn("--source-contract", commands[0][1])
         self.assertIn("skip-if-missing", commands[0][1])
+
+    def test_build_commands_does_not_add_skip_to_scripts_without_support(self):
+        self._write_script("scripts/pass.py", supports_source_contract=False)
+        package = self._package()
+        package["source_dependency_required"] = True
+        package["ci_source_dependency_mode"] = "skip_if_missing"
+        commands = module.build_commands(package, self.root)
+        self.assertNotIn("--source-contract", commands[0][1])
 
 
 if __name__ == "__main__":

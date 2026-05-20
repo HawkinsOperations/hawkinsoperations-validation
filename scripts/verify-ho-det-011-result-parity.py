@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import argparse
 import sys
 from pathlib import Path
 
@@ -36,13 +37,21 @@ def load_validator():
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Verify stable HO-DET-011 validation-result parity.")
+    parser.add_argument(
+        "--source-contract",
+        choices=("required", "skip-if-missing"),
+        default="required",
+        help="require sibling detection source surfaces, or skip only when the entire sibling repo is unavailable",
+    )
+    args = parser.parse_args()
     missing = [path for path in REQUIRED_PATHS if not path.exists()]
     if missing:
         not_ready(missing)
     validator = load_validator()
     cases = validator.load_json(VALIDATION_CASES, "validation-cases.json")
     actual = validator.load_json(VALIDATION_RESULT, "validation-result.json")
-    expected = validator.build_report(cases)
+    expected = validator.build_report(cases, source_contract=args.source_contract)
     if actual != expected:
         print("STATUS=fail")
         print("VALIDATION_RESULT_PARITY=fail")
