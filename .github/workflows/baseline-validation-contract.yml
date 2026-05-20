@@ -2,94 +2,11 @@ name: baseline-validation-contract
 
 on:
   pull_request:
-    paths:
-      - 'scripts/verify_validation_contract.py'
-      - 'scripts/validation_lib.py'
-      - 'scripts/validate-hero001.ps1'
-      - 'scripts/validate-ho-det-012.py'
-      - 'scripts/verify-ho-det-012-result-parity.py'
-      - 'scripts/scan-ho-det-012-claim-boundaries.py'
-      - 'scripts/validate-id-det-001.py'
-      - 'scripts/verify-id-det-001-result-parity.py'
-      - 'scripts/scan-id-det-001-claim-boundaries.py'
-      - 'scripts/validate-id-det-002.py'
-      - 'scripts/validate-id-det-003.py'
-      - 'scripts/validate-id-det-004.py'
-      - 'scripts/verify-id-det-002-result-parity.py'
-      - 'scripts/verify-id-det-003-result-parity.py'
-      - 'scripts/verify-id-det-004-result-parity.py'
-      - 'scripts/scan-id-det-002-claim-boundaries.py'
-      - 'scripts/scan-id-det-003-claim-boundaries.py'
-      - 'scripts/scan-id-det-004-claim-boundaries.py'
-      - 'validation/hero/001-powershell-encoded-command/**'
-      - 'validation/successor/ho-det-012/**'
-      - 'validation/identity/id-det-001/**'
-      - 'validation/identity/id-det-002/**'
-      - 'validation/identity/id-det-003/**'
-      - 'validation/identity/id-det-004/**'
-      - 'reports/hero001-validation-report.json'
-      - 'reports/hero001-validation-report.md'
-      - 'reports/ho-det-012/**'
-      - 'reports/id-det-001/**'
-      - 'reports/id-det-002/**'
-      - 'reports/id-det-003/**'
-      - 'reports/id-det-004/**'
-      - '.github/contracts/validation-report.schema.json'
-      - '.github/contracts/case-packet.schema.json'
-      - '.github/workflows/baseline-validation-contract.yml'
-      - '.github/workflows/ho-det-012-fixture-loop.yml'
-      - '.github/workflows/id-det-001-fixture-loop.yml'
-      - 'scripts/build-ho-det-001-case-packet.py'
-      - 'scripts/run-ho-det-001-local-case-pipeline.py'
-      - 'scripts/verify_case_packet_contract.py'
-      - 'tests/**'
-      - 'validation/successor/ho-det-001/case-packet.json'
-      - 'validation/successor/ho-det-001/closed-autosoc-loop-001.sample.json'
   push:
     branches: [main]
-    paths:
-      - 'scripts/verify_validation_contract.py'
-      - 'scripts/validation_lib.py'
-      - 'scripts/validate-hero001.ps1'
-      - 'scripts/validate-ho-det-012.py'
-      - 'scripts/verify-ho-det-012-result-parity.py'
-      - 'scripts/scan-ho-det-012-claim-boundaries.py'
-      - 'scripts/validate-id-det-001.py'
-      - 'scripts/verify-id-det-001-result-parity.py'
-      - 'scripts/scan-id-det-001-claim-boundaries.py'
-      - 'scripts/validate-id-det-002.py'
-      - 'scripts/validate-id-det-003.py'
-      - 'scripts/validate-id-det-004.py'
-      - 'scripts/verify-id-det-002-result-parity.py'
-      - 'scripts/verify-id-det-003-result-parity.py'
-      - 'scripts/verify-id-det-004-result-parity.py'
-      - 'scripts/scan-id-det-002-claim-boundaries.py'
-      - 'scripts/scan-id-det-003-claim-boundaries.py'
-      - 'scripts/scan-id-det-004-claim-boundaries.py'
-      - 'validation/hero/001-powershell-encoded-command/**'
-      - 'validation/successor/ho-det-012/**'
-      - 'validation/identity/id-det-001/**'
-      - 'validation/identity/id-det-002/**'
-      - 'validation/identity/id-det-003/**'
-      - 'validation/identity/id-det-004/**'
-      - 'reports/hero001-validation-report.json'
-      - 'reports/hero001-validation-report.md'
-      - 'reports/ho-det-012/**'
-      - 'reports/id-det-001/**'
-      - 'reports/id-det-002/**'
-      - 'reports/id-det-003/**'
-      - 'reports/id-det-004/**'
-      - '.github/contracts/validation-report.schema.json'
-      - '.github/contracts/case-packet.schema.json'
-      - '.github/workflows/baseline-validation-contract.yml'
-      - '.github/workflows/ho-det-012-fixture-loop.yml'
-      - '.github/workflows/id-det-001-fixture-loop.yml'
-      - 'scripts/build-ho-det-001-case-packet.py'
-      - 'scripts/run-ho-det-001-local-case-pipeline.py'
-      - 'scripts/verify_case_packet_contract.py'
-      - 'tests/**'
-      - 'validation/successor/ho-det-001/case-packet.json'
-      - 'validation/successor/ho-det-001/closed-autosoc-loop-001.sample.json'
+
+permissions:
+  contents: read
 
 jobs:
   baseline-hero-validation-contract:
@@ -99,9 +16,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Self-test Baseline Validation Contract Checker
-        run: python -B scripts/verify_validation_contract.py --self-test
-      - name: Validate Baseline Validation Contract
-        run: python -B scripts/verify_validation_contract.py
-      - name: Unit Tests
-        run: python -B -m unittest discover -s tests
+      - name: Validate Registry and Baseline Contract
+        run: |
+          python -B scripts/verify_validation_registry.py
+          python -B scripts/verify_all_validation_packages.py
+          python -B scripts/verify_validation_contract.py
+          python -B -m unittest discover -s tests
