@@ -1,0 +1,150 @@
+{
+  "status": "pass",
+  "detection_id": "ID-DET-003",
+  "validation_scope": "controlled identity administration fixtures only",
+  "claim_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "source_reference": "hawkinsoperations-detections/detections/identity/id-det-003",
+  "validation_cases_file": "hawkinsoperations-validation/validation/identity/id-det-003/validation-cases.json",
+  "fixture_count": 10,
+  "positive_count": 5,
+  "negative_count": 5,
+  "matched_positive_count": 5,
+  "missed_positive_count": 0,
+  "false_positive_negative_count": 0,
+  "total_cases": 10,
+  "positive_cases": 5,
+  "negative_cases": 5,
+  "missed_positive_cases": [],
+  "false_positive_negative_cases": [],
+  "supported_claim": "ID-DET-003 passed controlled-test validation against 10 controlled identity administration fixtures for privileged role assignment or admin group change behavior.",
+  "exact_claim_supported": "ID-DET-003 passed controlled-test validation against 10 controlled identity administration fixtures for privileged role assignment or admin group change behavior.",
+  "current_scope": "This validation result establishes controlled-test validation for ID-DET-003 only.",
+  "not_claimed_here": [
+    "live IdP proof",
+    "live SIEM/NDR observation",
+    "production identity coverage",
+    "complete identity-attack coverage",
+    "autonomous SOC operation",
+    "disposition authority",
+    "proof promotion",
+    "public-safe status",
+    "website/public-surface publication"
+  ],
+  "blocked_claims": [
+    "runtime-active",
+    "signal-observed",
+    "public-safe",
+    "evidence-linked public proof",
+    "live Okta proof",
+    "live Entra proof",
+    "live IdP proof",
+    "live Splunk proof",
+    "Wazuh-routed proof",
+    "Cribl-routed proof",
+    "Security Onion observed proof",
+    "production-ready",
+    "fleet-wide",
+    "production identity coverage",
+    "full identity attack coverage",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition",
+    "proof promotion",
+    "website/public-surface promotion"
+  ],
+  "fixture_results": [
+    {
+      "id": "pos-001-privileged-role-assignment",
+      "description": "Successful privileged role assignment without approval context",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "A privileged role is assigned successfully without approved change context."
+    },
+    {
+      "id": "pos-002-admin-group-change",
+      "description": "Successful admin group membership addition without approval context",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "A target identity is added to an admin group without approved change context."
+    },
+    {
+      "id": "pos-003-sensitive-entitlement-grant",
+      "description": "Successful sensitive entitlement grant without approval context",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "A sensitive entitlement is granted without approved change context."
+    },
+    {
+      "id": "pos-004-privileged-role-update",
+      "description": "Successful privileged role update without approval context",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "A privileged role is updated successfully without approved change context."
+    },
+    {
+      "id": "pos-005-admin-group-entitlement-combined",
+      "description": "Successful admin group change with sensitive entitlement context",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "An admin group change includes sensitive entitlement context without approved change context."
+    },
+    {
+      "id": "neg-001-approved-jit-role",
+      "description": "Approved just-in-time privileged role assignment",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Approved just-in-time context suppresses privileged role assignment."
+    },
+    {
+      "id": "neg-002-ticketed-admin-group-change",
+      "description": "Ticketed admin group change",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Approved change-ticket context suppresses admin group change."
+    },
+    {
+      "id": "neg-003-breakglass-exercise",
+      "description": "Break-glass privilege exercise",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Break-glass exercise context suppresses sensitive entitlement grant."
+    },
+    {
+      "id": "neg-004-maintenance-expected-admin",
+      "description": "Maintenance window with expected administrative actor",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Expected maintenance by an approved admin actor suppresses privileged role assignment."
+    },
+    {
+      "id": "neg-005-failed-privileged-role-assignment",
+      "description": "Failed privileged role assignment does not match",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Failed action result does not satisfy the successful privilege-change selection."
+    }
+  ],
+  "runtime_active": false,
+  "signal_observed": false,
+  "live_idp_proof": false,
+  "splunk_fired": false,
+  "wazuh_routed": false,
+  "cribl_routed": false,
+  "security_onion_observed": false,
+  "proof_promotion": false,
+  "website_public_surface_promotion": false,
+  "trust_boundary": "Controlled identity administration fixture validation only. This does not prove runtime, signal, public-safe proof, live IdP, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production identity coverage, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
+  "privacy_status": "Controlled identity administration fixtures only; no sensitive operational material or live telemetry intentionally included."
+}

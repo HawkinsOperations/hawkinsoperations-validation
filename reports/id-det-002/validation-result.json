@@ -1,0 +1,150 @@
+{
+  "status": "pass",
+  "detection_id": "ID-DET-002",
+  "validation_scope": "controlled identity-event fixtures only",
+  "claim_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "source_reference": "hawkinsoperations-detections/detections/identity/id-det-002",
+  "validation_cases_file": "hawkinsoperations-validation/validation/identity/id-det-002/validation-cases.json",
+  "fixture_count": 10,
+  "positive_count": 5,
+  "negative_count": 5,
+  "matched_positive_count": 5,
+  "missed_positive_count": 0,
+  "false_positive_negative_count": 0,
+  "total_cases": 10,
+  "positive_cases": 5,
+  "negative_cases": 5,
+  "missed_positive_cases": [],
+  "false_positive_negative_cases": [],
+  "supported_claim": "ID-DET-002 passed controlled-test validation against 10 controlled identity-event fixtures for suspicious MFA fatigue or repeated MFA failure patterns.",
+  "exact_claim_supported": "ID-DET-002 passed controlled-test validation against 10 controlled identity-event fixtures for suspicious MFA fatigue or repeated MFA failure patterns.",
+  "current_scope": "This validation result establishes controlled-test validation for ID-DET-002 only.",
+  "not_claimed_here": [
+    "live IdP proof",
+    "live SIEM/NDR observation",
+    "production identity coverage",
+    "complete identity-attack coverage",
+    "autonomous SOC operation",
+    "disposition authority",
+    "proof promotion",
+    "public-safe status",
+    "website/public-surface publication"
+  ],
+  "blocked_claims": [
+    "runtime-active",
+    "signal-observed",
+    "public-safe",
+    "evidence-linked public proof",
+    "live Okta proof",
+    "live Entra proof",
+    "live IdP proof",
+    "live Splunk proof",
+    "Wazuh-routed proof",
+    "Cribl-routed proof",
+    "Security Onion observed proof",
+    "production-ready",
+    "fleet-wide",
+    "production identity coverage",
+    "full identity attack coverage",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition",
+    "proof promotion",
+    "website/public-surface promotion"
+  ],
+  "fixture_results": [
+    {
+      "id": "pos-001-mfa-push-fatigue-volume",
+      "description": "Repeated MFA push attempts inside threshold window",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "MFA push count reaches threshold inside the controlled window."
+    },
+    {
+      "id": "pos-002-repeated-mfa-denial",
+      "description": "Repeated MFA denials inside threshold window",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "MFA denial count reaches threshold inside the controlled window."
+    },
+    {
+      "id": "pos-003-success-after-mfa-failures",
+      "description": "Successful login after repeated MFA failures",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "Authentication succeeds after repeated MFA failures."
+    },
+    {
+      "id": "pos-004-privileged-identity-pressure",
+      "description": "Privileged identity under repeated MFA pressure",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "Privileged identity has repeated MFA failures that meet the lower pressure threshold."
+    },
+    {
+      "id": "pos-005-privileged-success-after-failures",
+      "description": "Privileged identity succeeds after repeated MFA failures",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "Privileged identity succeeds after repeated MFA failures without approved reset or enrollment context."
+    },
+    {
+      "id": "neg-001-single-mfa-failure",
+      "description": "Single MFA failure below threshold",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Single MFA failure does not meet repetition threshold."
+    },
+    {
+      "id": "neg-002-approved-mfa-reset",
+      "description": "Approved MFA reset suppresses repeated activity",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Approved MFA reset context suppresses otherwise suspicious repetition."
+    },
+    {
+      "id": "neg-003-enrollment-workflow",
+      "description": "Enrollment workflow suppresses repeated MFA activity",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Approved enrollment context suppresses repeated challenge activity."
+    },
+    {
+      "id": "neg-004-expected-health-check",
+      "description": "Expected identity-provider health check suppresses repeated activity",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Expected health-check retry behavior suppresses repeated challenge activity."
+    },
+    {
+      "id": "neg-005-breakglass-exercise",
+      "description": "Break-glass exercise suppresses repeated privileged MFA activity",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Break-glass exercise context suppresses otherwise suspicious privileged MFA pressure."
+    }
+  ],
+  "runtime_active": false,
+  "signal_observed": false,
+  "live_idp_proof": false,
+  "splunk_fired": false,
+  "wazuh_routed": false,
+  "cribl_routed": false,
+  "security_onion_observed": false,
+  "proof_promotion": false,
+  "website_public_surface_promotion": false,
+  "trust_boundary": "Controlled identity-event fixture validation only. This does not prove runtime, signal, public-safe proof, live IdP, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production identity coverage, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
+  "privacy_status": "Controlled identity-event fixtures only; no sensitive operational material or live telemetry intentionally included."
+}
