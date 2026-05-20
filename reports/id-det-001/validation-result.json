@@ -1,0 +1,142 @@
+{
+  "status": "pass",
+  "detection_id": "ID-DET-001",
+  "validation_scope": "controlled identity-event fixtures only",
+  "claim_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "source_reference": "hawkinsoperations-detections/detections/identity/id-det-001",
+  "validation_cases_file": "hawkinsoperations-validation/validation/identity/id-det-001/validation-cases.json",
+  "fixture_count": 10,
+  "positive_count": 5,
+  "negative_count": 5,
+  "matched_positive_count": 5,
+  "missed_positive_count": 0,
+  "false_positive_negative_count": 0,
+  "total_cases": 10,
+  "positive_cases": 5,
+  "negative_cases": 5,
+  "missed_positive_cases": [],
+  "false_positive_negative_cases": [],
+  "supported_claim": "ID-DET-001 passed controlled-test validation against 10 controlled identity-event fixtures for suspicious identity session context.",
+  "exact_claim_supported": "ID-DET-001 passed controlled-test validation against 10 controlled identity-event fixtures for suspicious identity session context.",
+  "blocked_claims": [
+    "runtime-active",
+    "signal-observed",
+    "public-safe",
+    "evidence-linked public proof",
+    "live Okta proof",
+    "live Entra proof",
+    "live IdP proof",
+    "live Splunk proof",
+    "Wazuh-routed proof",
+    "Cribl-routed proof",
+    "Security Onion observed proof",
+    "production-ready",
+    "fleet-wide",
+    "production identity coverage",
+    "machine identity production governance",
+    "AI agent production governance",
+    "full identity attack coverage",
+    "impossible-travel completeness",
+    "session hijacking completeness",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition",
+    "proof promotion",
+    "website/public-surface promotion"
+  ],
+  "fixture_results": [
+    {
+      "id": "pos-001-impossible-travel-success",
+      "description": "Impossible travel successful login",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "Authentication succeeded while impossible-travel context is true."
+    },
+    {
+      "id": "pos-002-new-device-new-asn",
+      "description": "Successful login from new device plus new ASN category",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "Authentication succeeded from an unknown device and a changed source ASN category."
+    },
+    {
+      "id": "pos-003-service-account-interactive",
+      "description": "Service account used interactively",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "Service account has successful interactive console use without expected automation context."
+    },
+    {
+      "id": "pos-004-ai-agent-privileged-out-of-scope",
+      "description": "AI or agent identity performs privileged action outside approved tool scope",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "AI or agent identity performs a privileged action when approved tool scope is false."
+    },
+    {
+      "id": "pos-005-session-reuse-context-shift",
+      "description": "Session reuse after user-agent and ASN shift",
+      "expected_result": "match",
+      "matched": true,
+      "pass": true,
+      "reason": "A reused session appears after both user-agent family and ASN category shift."
+    },
+    {
+      "id": "neg-001-normal-known-device",
+      "description": "Normal successful login from known device",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Successful login from expected device and network context has no suspicious combination."
+    },
+    {
+      "id": "neg-002-vpn-known-device-expected-asn",
+      "description": "VPN country change with known device and expected ASN category",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Country changes, but known-device and expected VPN ASN context suppress the match."
+    },
+    {
+      "id": "neg-003-service-account-expected-automation",
+      "description": "Service account used by expected automation",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Service account usage is tied to expected automation and has no interactive context."
+    },
+    {
+      "id": "neg-004-ai-agent-approved-tool-scope",
+      "description": "AI or agent identity uses approved tool within scope",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Agent identity performs tool activity within approved scope."
+    },
+    {
+      "id": "neg-005-privileged-maintenance-window",
+      "description": "Privileged user performs expected action during maintenance window",
+      "expected_result": "no_match",
+      "matched": false,
+      "pass": true,
+      "reason": "Privileged action happens in approved maintenance-window context."
+    }
+  ],
+  "runtime_active": false,
+  "signal_observed": false,
+  "live_idp_proof": false,
+  "splunk_fired": false,
+  "wazuh_routed": false,
+  "cribl_routed": false,
+  "security_onion_observed": false,
+  "proof_promotion": false,
+  "website_public_surface_promotion": false,
+  "trust_boundary": "Controlled identity-event fixture validation only. This does not prove runtime, signal, public-safe proof, live IdP, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production identity coverage, AI or agent production governance, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
+  "privacy_status": "Controlled identity-event fixtures only; no sensitive operational material or live telemetry intentionally included."
+}
