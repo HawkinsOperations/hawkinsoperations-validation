@@ -221,7 +221,16 @@ def event_matches(event: dict[str, Any]) -> bool:
     return system_7045_matches(event) or security_4697_matches(event) or service_creation_process_matches(event)
 
 
-def validate_source_contract() -> None:
+def validate_source_contract(mode: str = "required") -> None:
+    source_paths = [SOURCE_RULE, SOURCE_STATUS]
+    missing_paths = [path for path in source_paths if not path.exists()]
+    if missing_paths:
+        if mode == "skip-if-missing" and len(missing_paths) == len(source_paths):
+            print("SOURCE_CONTRACT=skipped")
+            print("SOURCE_CONTRACT_REASON=sibling detections repo unavailable")
+            return
+        fail("missing HO-DET-011 source surfaces: " + ", ".join(str(path) for path in missing_paths))
+
     rule = read_text(SOURCE_RULE, "HO-DET-011 source rule")
     status = read_text(SOURCE_STATUS, "HO-DET-011 source status")
     required_rule_fragments = [
@@ -348,8 +357,8 @@ def evaluate_cases(cases: dict[str, Any]) -> tuple[list[dict[str, Any]], list[di
     return positive_results, negative_results, missed_positive_cases, false_positive_negative_cases
 
 
-def build_report(cases: dict[str, Any]) -> dict[str, Any]:
-    validate_source_contract()
+def build_report(cases: dict[str, Any], source_contract: str = "required") -> dict[str, Any]:
+    validate_source_contract(source_contract)
     positive_results, negative_results, missed, false_positive = evaluate_cases(cases)
     all_results = positive_results + negative_results
     fail_count = len(missed) + len(false_positive)
@@ -449,10 +458,16 @@ def verify_report_matches(report: dict[str, Any]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate HO-DET-011 controlled-test Windows service creation cases.")
     parser.add_argument("--write", action="store_true", help="Regenerate report artifacts.")
+    parser.add_argument(
+        "--source-contract",
+        choices=("required", "skip-if-missing"),
+        default="required",
+        help="require sibling detection source surfaces, or skip only when the entire sibling repo is unavailable",
+    )
     args = parser.parse_args()
 
     cases = load_json(CASES_FILE, "HO-DET-011 validation cases")
-    report = build_report(cases)
+    report = build_report(cases, source_contract=args.source_contract)
     if args.write:
         write_reports(report)
         write_skipped = "false"

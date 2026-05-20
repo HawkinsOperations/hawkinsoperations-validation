@@ -74,6 +74,21 @@ def validate_source_contract(text: str, jsonpath_text: str) -> None:
             fail(f"CloudTrail JSONPath missing fragment: {fragment}")
 
 
+def validate_source_files(mode: str = "required") -> None:
+    source_paths = [SOURCE_FILE, JSONPATH_FILE]
+    missing_paths = [path for path in source_paths if not path.exists()]
+    if missing_paths:
+        if mode == "skip-if-missing" and len(missing_paths) == len(source_paths):
+            print("SOURCE_CONTRACT=skipped")
+            print("SOURCE_CONTRACT_REASON=sibling detections repo unavailable")
+            return
+        fail("missing AWS-DET-001 source surfaces: " + ", ".join(str(path) for path in missing_paths))
+
+    source_text = read_text(SOURCE_FILE, "AWS-DET-001 source rule")
+    jsonpath_text = read_text(JSONPATH_FILE, "AWS-DET-001 CloudTrail JSONPath")
+    validate_source_contract(source_text, jsonpath_text)
+
+
 def event_matches(event: dict[str, Any]) -> bool:
     source = str(event.get("eventSource", "") or "").lower()
     error_code = str(event.get("errorCode", "") or "").lower()
@@ -201,11 +216,15 @@ def verify_report_matches(report: dict[str, Any]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate AWS-DET-001 fixture-only CloudTrail-style cases.")
     parser.add_argument("--write", action="store_true", help="Regenerate report artifacts.")
+    parser.add_argument(
+        "--source-contract",
+        choices=("required", "skip-if-missing"),
+        default="required",
+        help="require sibling detection source surfaces, or skip only when the entire sibling repo is unavailable",
+    )
     args = parser.parse_args()
 
-    source_text = read_text(SOURCE_FILE, "AWS-DET-001 source rule")
-    jsonpath_text = read_text(JSONPATH_FILE, "AWS-DET-001 CloudTrail JSONPath")
-    validate_source_contract(source_text, jsonpath_text)
+    validate_source_files(args.source_contract)
     cases = load_json(CASES_FILE, "AWS-DET-001 validation cases")
     if cases.get("detection_id") != "AWS-DET-001":
         fail("validation cases detection_id must be AWS-DET-001")

@@ -209,6 +209,21 @@ def write_reports(report: dict[str, Any]) -> None:
     REPORT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def validate_source_files(mode: str = "required") -> None:
+    source_paths = [SOURCE_FILE, SPLUNK_SOURCE_FILE]
+    missing_paths = [path for path in source_paths if not path.exists()]
+    if missing_paths:
+        if mode == "skip-if-missing" and len(missing_paths) == len(source_paths):
+            print("SOURCE_CONTRACT=skipped")
+            print("SOURCE_CONTRACT_REASON=sibling detections repo unavailable")
+            return
+        fail("missing HO-DET-001 source surfaces: " + ", ".join(str(path) for path in missing_paths))
+
+    source_text = read_text(SOURCE_FILE, "HO-DET-001 source rule")
+    read_text(SPLUNK_SOURCE_FILE, "HO-DET-001 Splunk source")
+    validate_source_contract(source_text)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate HO-DET-001 controlled-test process-creation fixtures.")
     parser.add_argument(
@@ -221,11 +236,15 @@ def main() -> int:
         action="store_true",
         help="Run check-only mode. This is the default and is kept for explicit CI/readiness usage.",
     )
+    parser.add_argument(
+        "--source-contract",
+        choices=("required", "skip-if-missing"),
+        default="required",
+        help="require sibling detection source surfaces, or skip only when the entire sibling repo is unavailable",
+    )
     args = parser.parse_args()
 
-    source_text = read_text(SOURCE_FILE, "HO-DET-001 source rule")
-    read_text(SPLUNK_SOURCE_FILE, "HO-DET-001 Splunk source")
-    validate_source_contract(source_text)
+    validate_source_files(args.source_contract)
 
     cases = load_json(CASES_FILE, "HO-DET-001 validation cases")
     if cases.get("detection_id") != "HO-DET-001":
