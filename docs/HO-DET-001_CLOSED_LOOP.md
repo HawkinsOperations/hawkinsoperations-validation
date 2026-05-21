@@ -34,6 +34,17 @@ Suspicious PowerShell or pwsh execution using encoded-command style flags or enc
 
 HO-DET-001 is CONTROLLED_TEST_VALIDATED through controlled positive and negative process-creation test cases.
 
+## SOCaaS Pilot Receipt Fit
+
+This existing loop can support a SOCaaS-style reviewer receipt at controlled-test scope only:
+
+- Alert shape: PARTIAL. The fixture and case packet expose endpoint process fields such as host, user, process image, command line, parent process, detection ID, and ATT&CK technique. Vendor, raw alert name, rule version, and timestamp still need a normalized receipt wrapper.
+- Robustness/decomposition record: PARTIAL. The detection source records the observable, ATT&CK mapping, data source, false-positive context, and source assumptions; it does not yet provide a first-class evasion and blind-spot record.
+- Deterministic validation: PRESENT. Positive and negative controlled fixtures passed with deterministic output.
+- Receipt record: PARTIAL. The validation result, case packet, AutoSOC triage packet, proof record, and proof card form the receipt chain, but there is not yet one unified SOCaaS receipt object.
+- Triage-support output: PRESENT at controlled-test support-only scope. Human review remains required, and AI cannot decide disposition.
+- Customer-safe summary: PARTIAL. Existing proof and website routes can explain the boundary, but the customer-safe summary still needs one explicit view.
+
 ## Blocked Claims
 
 This does not prove:
