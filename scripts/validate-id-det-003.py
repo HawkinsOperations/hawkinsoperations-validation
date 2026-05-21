@@ -193,6 +193,7 @@ def validate_source_contract(mode: str = "required") -> None:
     require_yaml_scalar(status, "runtime_active", "false")
     require_yaml_scalar(status, "signal_observed", "false")
     require_yaml_scalar(status, "evidence_linked_public_proof", "false")
+    require_yaml_scalar(status, "proof_status", "NO_PROOF_RECORD")
     require_yaml_scalar(status, "public_safe_status", "NOT_PUBLIC_SAFE")
 
 
