@@ -176,16 +176,23 @@ def validate_source_contract(mode: str = "required") -> None:
         "selection_privileged_role:",
         "selection_admin_group:",
         "selection_sensitive_entitlement:",
-        "validation_status: VALIDATION_PLANNED",
+        "validation_status: CONTROLLED_TEST_VALIDATED",
         "public_safe_status: NOT_PUBLIC_SAFE",
     ]:
         if fragment not in combined:
             fail(f"ID-DET-003 source missing required fragment: {fragment}")
     require_yaml_scalar(status, "detection_id", "ID-DET-003")
-    require_yaml_scalar(status, "validation_status", "VALIDATION_PLANNED")
-    require_yaml_scalar(status, "claim_ceiling", "SOURCE_EXISTS")
+    require_yaml_scalar(status, "source_status", "SOURCE_EXISTS")
+    require_yaml_scalar(status, "validation_status", "CONTROLLED_TEST_VALIDATED")
+    require_yaml_scalar(status, "validation_count", "10")
+    require_yaml_scalar(status, "positive_count", "5")
+    require_yaml_scalar(status, "negative_count", "5")
+    require_yaml_scalar(status, "missed_positive_count", "0")
+    require_yaml_scalar(status, "false_positive_negative_count", "0")
+    require_yaml_scalar(status, "claim_ceiling", "CONTROLLED_TEST_VALIDATED")
     require_yaml_scalar(status, "runtime_active", "false")
     require_yaml_scalar(status, "signal_observed", "false")
+    require_yaml_scalar(status, "evidence_linked_public_proof", "false")
     require_yaml_scalar(status, "public_safe_status", "NOT_PUBLIC_SAFE")
 
 
