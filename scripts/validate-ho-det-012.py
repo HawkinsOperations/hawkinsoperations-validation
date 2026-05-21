@@ -239,8 +239,9 @@ def validate_source_contract(mode: str = "required") -> None:
         "Register-ScheduledTask",
         "New-ScheduledTaskAction",
         "validation_status: CONTROLLED_TEST_VALIDATED",
+        "proof_status: NO_PROOF_RECORD",
         "public_safe_status: NOT_PUBLIC_SAFE",
-        "validation passed",
+        "proof record availability",
     ]
     combined = "\n".join([rule, status, splunk, wazuh, mapping])
     for fragment in required_fragments:
@@ -248,8 +249,15 @@ def validate_source_contract(mode: str = "required") -> None:
             fail(f"HO-DET-012 source missing required fragment: {fragment}")
     require_yaml_scalar(status, "detection_id", "HO-DET-012")
     require_yaml_scalar(status, "validation_status", "CONTROLLED_TEST_VALIDATED")
+    require_yaml_scalar(status, "validation_total_cases", "8")
+    require_yaml_scalar(status, "validation_positive_cases", "4")
+    require_yaml_scalar(status, "validation_negative_cases", "4")
+    require_yaml_scalar(status, "validation_missed_positives", "0")
+    require_yaml_scalar(status, "validation_false_positive_negatives", "0")
     require_yaml_scalar(status, "runtime_active", "false")
     require_yaml_scalar(status, "signal_observed", "false")
+    require_yaml_scalar(status, "evidence_linked_public_proof", "false")
+    require_yaml_scalar(status, "proof_status", "NO_PROOF_RECORD")
     require_yaml_scalar(status, "public_safe_status", "NOT_PUBLIC_SAFE")
 
 
