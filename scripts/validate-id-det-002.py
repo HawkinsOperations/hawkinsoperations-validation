@@ -191,18 +191,36 @@ def validate_source_contract(mode: str = "required") -> None:
         "selection_repeated_mfa_denial:",
         "selection_success_after_failures:",
         "selection_privileged_identity_pressure:",
-        "validation_status: VALIDATION_PLANNED",
+        "source_status: SOURCE_EXISTS",
+        "validation_status: CONTROLLED_TEST_VALIDATED",
+        "validation_count: 10",
+        "positive_count: 5",
+        "negative_count: 5",
+        "missed_positive_count: 0",
+        "false_positive_negative_count: 0",
+        "claim_ceiling: CONTROLLED_TEST_VALIDATED",
         "public_safe_status: NOT_PUBLIC_SAFE",
+        "runtime_active: false",
+        "signal_observed: false",
+        "evidence_linked_public_proof: false",
     ]:
         if fragment not in combined:
             fail(f"ID-DET-002 source missing required fragment: {fragment}")
     if "identity_present" in combined:
         fail("ID-DET-002 source must not use unmapped identity_present helper")
     require_yaml_scalar(status, "detection_id", "ID-DET-002")
-    require_yaml_scalar(status, "validation_status", "VALIDATION_PLANNED")
-    require_yaml_scalar(status, "claim_ceiling", "SOURCE_EXISTS")
+    require_yaml_scalar(status, "source_status", "SOURCE_EXISTS")
+    require_yaml_scalar(status, "validation_status", "CONTROLLED_TEST_VALIDATED")
+    require_yaml_scalar(status, "validation_count", "10")
+    require_yaml_scalar(status, "positive_count", "5")
+    require_yaml_scalar(status, "negative_count", "5")
+    require_yaml_scalar(status, "missed_positive_count", "0")
+    require_yaml_scalar(status, "false_positive_negative_count", "0")
+    require_yaml_scalar(status, "claim_ceiling", "CONTROLLED_TEST_VALIDATED")
+    require_yaml_scalar(status, "proof_status", "NO_PROOF_RECORD")
     require_yaml_scalar(status, "runtime_active", "false")
     require_yaml_scalar(status, "signal_observed", "false")
+    require_yaml_scalar(status, "evidence_linked_public_proof", "false")
     require_yaml_scalar(status, "public_safe_status", "NOT_PUBLIC_SAFE")
 
 
