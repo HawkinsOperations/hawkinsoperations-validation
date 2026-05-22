@@ -35,8 +35,6 @@ ALLOWED_JSON_PATH_PARTS = {
     "trust_boundary",
     "privacy_status",
     "public_safe_status",
-    "description",
-    "behavior",
 }
 ALLOWED_TEXT_MARKERS = [
     "blocked",
@@ -47,6 +45,7 @@ ALLOWED_TEXT_MARKERS = [
     "controlled contract",
     "contract validation only",
     "must fail",
+    "attempts to promote",
     "false",
 ]
 

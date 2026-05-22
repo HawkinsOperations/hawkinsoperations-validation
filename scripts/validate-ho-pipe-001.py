@@ -80,6 +80,38 @@ REQUIRED_CASE_IDS = {
     "neg-002-promoted-live-splunk-claim",
     "neg-003-missing-required-field",
 }
+EXPECTED_ROUTE_METADATA = {
+    "pos-001-required-field-preservation": {
+        "marker_family": "controlled_contract_marker",
+        "expected_output_target": "default_hec_output_contract_only",
+        "transform_action": "preserve_matching_marker_event",
+    },
+    "pos-002-blocked-promotion-guards": {
+        "marker_family": "controlled_contract_marker",
+        "expected_output_target": "default_hec_output_contract_only",
+        "transform_action": "drop_nonmatching_events_before_output",
+    },
+    "pos-003-route-contract-metadata": {
+        "marker_family": "controlled_contract_marker",
+        "expected_output_target": "default_hec_output_contract_only",
+        "transform_action": "validate_route_shape_only",
+    },
+    "neg-001-missing-route-contract-id": {
+        "marker_family": "controlled_contract_marker",
+        "expected_output_target": "default_hec_output_contract_only",
+        "transform_action": "preserve_matching_marker_event",
+    },
+    "neg-002-promoted-live-splunk-claim": {
+        "marker_family": "controlled_contract_marker",
+        "expected_output_target": "default_hec_output_contract_only",
+        "transform_action": "validate_route_shape_only",
+    },
+    "neg-003-missing-required-field": {
+        "marker_family": "controlled_contract_marker",
+        "expected_output_target": "default_hec_output_contract_only",
+        "transform_action": "preserve_matching_marker_event",
+    },
+}
 
 
 def fail(message: str) -> None:
@@ -189,16 +221,32 @@ def validate_cases_shape(cases: dict[str, Any]) -> tuple[list[dict[str, Any]], l
     return positive, negative
 
 
-def contract_matches(contract: dict[str, Any]) -> bool:
+def contract_matches(case_id: str, contract: dict[str, Any]) -> bool:
     if contract.get("route_contract_id") != "HO-PIPE-001":
         return False
     if contract.get("source_detection_id") != "HO-DET-001":
         return False
-    if not isinstance(contract.get("marker_family"), str) or not contract["marker_family"].strip():
+    expected_metadata = EXPECTED_ROUTE_METADATA.get(case_id)
+    if not expected_metadata:
         return False
-    if not isinstance(contract.get("expected_output_target"), str) or not contract["expected_output_target"].strip():
-        return False
-    if not isinstance(contract.get("transform_action"), str) or not contract["transform_action"].strip():
+    for key, expected_value in expected_metadata.items():
+        if contract.get(key) != expected_value:
+            return False
+
+    for key in ("marker_family", "expected_output_target", "transform_action"):
+        if not isinstance(contract.get(key), str) or not contract[key].strip():
+            return False
+
+    allowed_keys = {
+        "route_contract_id",
+        "source_detection_id",
+        "marker_family",
+        "expected_output_target",
+        "transform_action",
+        "required_preserved_fields",
+        "blocked_promotion_fields",
+    }
+    if not set(contract).issubset(allowed_keys):
         return False
 
     preserved = contract.get("required_preserved_fields")
@@ -212,7 +260,7 @@ def contract_matches(contract: dict[str, Any]) -> bool:
 
 
 def evaluate_case(case: dict[str, Any]) -> dict[str, Any]:
-    matched = contract_matches(case["contract"])
+    matched = contract_matches(str(case["id"]), case["contract"])
     expected = bool(case["expected_match"])
     return {
         "id": case["id"],
