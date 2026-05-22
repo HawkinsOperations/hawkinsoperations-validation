@@ -27,6 +27,8 @@ This repository verifies that detection logic behaves as intended against contro
 
 This repository does not claim runtime-active public proof, signal-observed public proof, public-safe runtime proof, live Splunk proof, live Wazuh proof, Cribl-routed proof, model execution in CI, Ollama prompt execution in CI, production readiness, autonomous SOC, AI-approved disposition, analyst-approved disposition, AI-decided disposition, or production AutoSOC triage status.
 
+Cyber Kill Chain coverage: this repo contributes controlled-validation truth and validation counts to the canonical [Cyber Kill Chain coverage map](https://github.com/HawkinsOperations/hawkinsoperations-proof/blob/main/docs/mappings/CYBER_KILL_CHAIN_COVERAGE.md) in `hawkinsoperations-proof`. The map is reviewer navigation, not runtime, signal, production, or public-safe proof authority.
+
 ## Scope
 
 - Detection test cases and replay packs
