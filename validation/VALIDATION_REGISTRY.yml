@@ -212,6 +212,27 @@
       "source_dependency_required": false,
       "ci_source_dependency_mode": "none",
       "notes": "Security Onion visibility contract samples only. This does not prove live Security Onion, live Splunk, live Wazuh, live Cribl, runtime-active, signal-observed, or public-safe status."
+    },
+    {
+      "detection_id": "HO-PIPE-001",
+      "validation_kind": "controlled_validation",
+      "validation_package_path": "validation/successor/ho-pipe-001",
+      "fixture_file": "validation/successor/ho-pipe-001/validation-cases.json",
+      "report_json": "reports/ho-pipe-001/validation-result.json",
+      "report_markdown": "reports/ho-pipe-001/validation-result.md",
+      "validator_script": "scripts/validate-ho-pipe-001.py",
+      "parity_script": "scripts/verify-ho-pipe-001-result-parity.py",
+      "claim_boundary_script": "scripts/scan-ho-pipe-001-claim-boundaries.py",
+      "expected_fixture_count": 6,
+      "expected_positive_count": 3,
+      "expected_negative_count": 3,
+      "proof_ceiling": "VALIDATION_CONTRACT_ENFORCED",
+      "public_safe_status": "NOT_PUBLIC_SAFE",
+      "runtime_status": false,
+      "signal_status": false,
+      "source_dependency_required": true,
+      "ci_source_dependency_mode": "skip_if_missing",
+      "notes": "Controlled pipeline route integrity contract validation only. This does not prove runtime-active status, signal-observed status, live Splunk, Cribl-routed proof, Wazuh-routed proof, Security Onion observed proof, production-ready status, public-safe runtime status, autonomous SOC behavior, AI-approved status, or analyst-approved status."
     }
   ]
 }

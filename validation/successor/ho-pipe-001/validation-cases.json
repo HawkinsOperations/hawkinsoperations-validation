@@ -1,0 +1,243 @@
+{
+  "detection_id": "HO-PIPE-001",
+  "case_scope": "controlled_pipeline_route_integrity_contract",
+  "validation_scope": "controlled contract validation only",
+  "source_reference": "hawkinsoperations-detections/detections/successor/ho-pipe-001",
+  "proof_ceiling": "VALIDATION_CONTRACT_ENFORCED",
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "runtime_active": false,
+  "signal_observed": false,
+  "blocked_claims": [
+    "runtime-active",
+    "signal-observed",
+    "live Splunk",
+    "Cribl-routed proof",
+    "Wazuh-routed proof",
+    "Security Onion observed proof",
+    "production-ready",
+    "public-safe runtime",
+    "autonomous SOC",
+    "AI-approved",
+    "analyst-approved"
+  ],
+  "cases": {
+    "positive": [
+      {
+        "id": "pos-001-required-field-preservation",
+        "description": "Route contract preserves the required downstream marker and routing fields",
+        "behavior": "required field preservation contract is complete",
+        "expected_match": true,
+        "contract": {
+          "marker_family": "controlled_contract_marker",
+          "route_contract_id": "HO-PIPE-001",
+          "source_detection_id": "HO-DET-001",
+          "expected_output_target": "default_hec_output_contract_only",
+          "transform_action": "preserve_matching_marker_event",
+          "required_preserved_fields": [
+            "_time",
+            "host",
+            "source",
+            "sourcetype",
+            "index",
+            "event_marker",
+            "detection_id",
+            "route_contract_id"
+          ],
+          "blocked_promotion_fields": {
+            "runtime_active": false,
+            "signal_observed": false,
+            "live_splunk": false,
+            "cribl_routed_proof": false,
+            "wazuh_routed_proof": false,
+            "security_onion_observed_proof": false,
+            "production_ready": false,
+            "public_safe_runtime": false,
+            "autonomous_soc": false,
+            "ai_approved": false,
+            "analyst_approved": false
+          }
+        }
+      },
+      {
+        "id": "pos-002-blocked-promotion-guards",
+        "description": "Route contract explicitly keeps promotion and proof fields false",
+        "behavior": "blocked promotion guardrails remain enforced",
+        "expected_match": true,
+        "contract": {
+          "marker_family": "controlled_contract_marker",
+          "route_contract_id": "HO-PIPE-001",
+          "source_detection_id": "HO-DET-001",
+          "expected_output_target": "default_hec_output_contract_only",
+          "transform_action": "drop_nonmatching_events_before_output",
+          "required_preserved_fields": [
+            "_time",
+            "host",
+            "source",
+            "sourcetype",
+            "index",
+            "event_marker",
+            "detection_id",
+            "route_contract_id"
+          ],
+          "blocked_promotion_fields": {
+            "runtime_active": false,
+            "signal_observed": false,
+            "live_splunk": false,
+            "cribl_routed_proof": false,
+            "wazuh_routed_proof": false,
+            "security_onion_observed_proof": false,
+            "production_ready": false,
+            "public_safe_runtime": false,
+            "autonomous_soc": false,
+            "ai_approved": false,
+            "analyst_approved": false
+          }
+        }
+      },
+      {
+        "id": "pos-003-route-contract-metadata",
+        "description": "Route contract metadata identifies HO-PIPE-001 and the source detection without claiming delivery",
+        "behavior": "route metadata is bounded to contract validation",
+        "expected_match": true,
+        "contract": {
+          "marker_family": "controlled_contract_marker",
+          "route_contract_id": "HO-PIPE-001",
+          "source_detection_id": "HO-DET-001",
+          "expected_output_target": "default_hec_output_contract_only",
+          "transform_action": "validate_route_shape_only",
+          "required_preserved_fields": [
+            "_time",
+            "host",
+            "source",
+            "sourcetype",
+            "index",
+            "event_marker",
+            "detection_id",
+            "route_contract_id"
+          ],
+          "blocked_promotion_fields": {
+            "runtime_active": false,
+            "signal_observed": false,
+            "live_splunk": false,
+            "cribl_routed_proof": false,
+            "wazuh_routed_proof": false,
+            "security_onion_observed_proof": false,
+            "production_ready": false,
+            "public_safe_runtime": false,
+            "autonomous_soc": false,
+            "ai_approved": false,
+            "analyst_approved": false
+          }
+        }
+      }
+    ],
+    "negative": [
+      {
+        "id": "neg-001-missing-route-contract-id",
+        "description": "Route contract is missing the HO-PIPE-001 contract identifier",
+        "behavior": "missing contract identity must fail",
+        "expected_match": false,
+        "contract": {
+          "marker_family": "controlled_contract_marker",
+          "source_detection_id": "HO-DET-001",
+          "expected_output_target": "default_hec_output_contract_only",
+          "transform_action": "preserve_matching_marker_event",
+          "required_preserved_fields": [
+            "_time",
+            "host",
+            "source",
+            "sourcetype",
+            "index",
+            "event_marker",
+            "detection_id",
+            "route_contract_id"
+          ],
+          "blocked_promotion_fields": {
+            "runtime_active": false,
+            "signal_observed": false,
+            "live_splunk": false,
+            "cribl_routed_proof": false,
+            "wazuh_routed_proof": false,
+            "security_onion_observed_proof": false,
+            "production_ready": false,
+            "public_safe_runtime": false,
+            "autonomous_soc": false,
+            "ai_approved": false,
+            "analyst_approved": false
+          }
+        }
+      },
+      {
+        "id": "neg-002-promoted-live-splunk-claim",
+        "description": "Route contract attempts to promote live Splunk proof",
+        "behavior": "promoted live Splunk claim must fail",
+        "expected_match": false,
+        "contract": {
+          "marker_family": "controlled_contract_marker",
+          "route_contract_id": "HO-PIPE-001",
+          "source_detection_id": "HO-DET-001",
+          "expected_output_target": "default_hec_output_contract_only",
+          "transform_action": "validate_route_shape_only",
+          "required_preserved_fields": [
+            "_time",
+            "host",
+            "source",
+            "sourcetype",
+            "index",
+            "event_marker",
+            "detection_id",
+            "route_contract_id"
+          ],
+          "blocked_promotion_fields": {
+            "runtime_active": false,
+            "signal_observed": false,
+            "live_splunk": true,
+            "cribl_routed_proof": false,
+            "wazuh_routed_proof": false,
+            "security_onion_observed_proof": false,
+            "production_ready": false,
+            "public_safe_runtime": false,
+            "autonomous_soc": false,
+            "ai_approved": false,
+            "analyst_approved": false
+          }
+        }
+      },
+      {
+        "id": "neg-003-missing-required-field",
+        "description": "Route contract omits a required preserved field",
+        "behavior": "missing preserved field must fail",
+        "expected_match": false,
+        "contract": {
+          "marker_family": "controlled_contract_marker",
+          "route_contract_id": "HO-PIPE-001",
+          "source_detection_id": "HO-DET-001",
+          "expected_output_target": "default_hec_output_contract_only",
+          "transform_action": "preserve_matching_marker_event",
+          "required_preserved_fields": [
+            "_time",
+            "host",
+            "source",
+            "sourcetype",
+            "index",
+            "event_marker",
+            "detection_id"
+          ],
+          "blocked_promotion_fields": {
+            "runtime_active": false,
+            "signal_observed": false,
+            "live_splunk": false,
+            "cribl_routed_proof": false,
+            "wazuh_routed_proof": false,
+            "security_onion_observed_proof": false,
+            "production_ready": false,
+            "public_safe_runtime": false,
+            "autonomous_soc": false,
+            "ai_approved": false,
+            "analyst_approved": false
+          }
+        }
+      }
+    ]
+  }
+}
