@@ -29,6 +29,19 @@
 - PUBLIC_SAFE_STATUS=NOT_PUBLIC_SAFE
 - PROOF_CEILING=CONTROLLED_LOCAL_LLM_RUNTIME_RECEIPT_PACKET_SCOPE
 
+## Runtime Truth Spine
+
+| Truth plane | State | Public/runtime claim status | Evidence refs |
+| --- | --- | --- | --- |
+| source_truth | SOURCE_EXISTS | not a runtime claim | `hawkinsoperations-detections/detections/successor/ho-det-001/rule.yml`; `hawkinsoperations-detections/detections/successor/ho-det-001/splunk.spl` |
+| validation_truth | CONTROLLED_TEST_VALIDATED | not a runtime claim | `reports/ho-det-001/validation-result.json`; `reports/ho-det-001/pipeline-proof.json` |
+| runtime_truth | RUNTIME_EVIDENCE_VERIFIED_PRIVATE | PUBLIC_RUNTIME_BLOCKED | `HawkinsOperations/hawkinsoperations-validation#22`; `scripts/verify-ho-det-001-runtime-packet.py` |
+| signal_truth | SIGNAL_OBSERVED_PRIVATE | PUBLIC_RUNTIME_BLOCKED | `HawkinsOperations/hawkinsoperations-validation#22`; `proof/records/HO-DET-001.md#controlled-runtime-signal-packet-001` |
+| evidence_truth | RUNTIME_EVIDENCE_VERIFIED_PRIVATE | raw private evidence remains NOT_PUBLIC_SAFE | hash-only private refs; repo contains no raw private evidence |
+| ai_triage_truth | AI_SUPPORT_ONLY / AI_TRIAGE_OUTPUT_PRIVATE / AI_NOT_AUTHORITY | AI is not disposition authority | AI_DECIDED_DISPOSITION=false; HUMAN_REVIEW_REQUIRED=true |
+| public_proof_truth | PUBLIC_RUNTIME_BLOCKED | proof ceiling remains CONTROLLED_TEST_VALIDATED | public-safe status remains NOT_PUBLIC_SAFE |
+| human_review_truth | HUMAN_REVIEW_REQUIRED | PUBLIC_RUNTIME_BLOCKED until approval | approval required for any public runtime summary |
+
 ## Public Boundary
 
 - private GPU local LLM runtime receipt exists
