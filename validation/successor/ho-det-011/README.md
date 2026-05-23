@@ -37,6 +37,12 @@ This fixture set validates HO-DET-011 service creation source behavior against c
 
 This validates controlled-test fixture behavior only. It does not inspect runtime systems, live telemetry, live Splunk, Wazuh routing, Cribl routing, Security Onion observation, production deployment, fleet status, public-safe status, or evidence-linked public proof.
 
+## Private Runtime Receipt Boundary
+
+`runtime-receipt.schema.json`, `runtime-receipt.sample.redacted.json`, and `scripts/verify-ho-det-011-runtime-receipt.py` define a deterministic private receipt contract for an approved HO-DET-011 runtime proof run. The verifier reads a private receipt path supplied at runtime and checks only structure, minimum private runtime criteria, cleanup confirmation, and publication guardrails.
+
+The runtime receipt verifier does not read raw telemetry, query runtime systems, claim Splunk observation, promote external-use approval, update proof records, or publish raw private evidence.
+
 ## Reproduction
 
 From the validation repository root:
@@ -45,6 +51,7 @@ From the validation repository root:
 python scripts/validate-ho-det-011.py
 python scripts/verify-ho-det-011-result-parity.py
 python scripts/scan-ho-det-011-claim-boundaries.py
+python scripts/verify-ho-det-011-runtime-receipt.py <private-runtime-receipt.json>
 ```
 
 Use `--write` only when intentionally regenerating `reports/ho-det-011/validation-result.json` and `reports/ho-det-011/validation-result.md`.
