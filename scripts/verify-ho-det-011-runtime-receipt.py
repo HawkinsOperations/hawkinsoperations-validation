@@ -125,8 +125,17 @@ def verify_receipt(data: dict[str, Any]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("receipt", type=Path, help="Private runtime receipt JSON path")
-    return parser.parse_args()
+    parser.add_argument("receipt_path", nargs="?", type=Path, help="Private runtime receipt JSON path")
+    parser.add_argument("--receipt", dest="receipt_option", type=Path, help="Private runtime receipt JSON path")
+    args = parser.parse_args()
+    if args.receipt_path and args.receipt_option:
+        fail("provide receipt path either positionally or with --receipt, not both")
+    args.receipt = args.receipt_option or args.receipt_path
+    if args.receipt is None:
+        fail("missing receipt path")
+    del args.receipt_path
+    del args.receipt_option
+    return args
 
 
 def main() -> int:
