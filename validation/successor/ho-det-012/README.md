@@ -40,3 +40,27 @@ python scripts/scan-ho-det-012-claim-boundaries.py
 ```
 
 Use `--write` only when intentionally regenerating `reports/ho-det-012/validation-result.json` and `reports/ho-det-012/validation-result.md`.
+
+## Private Runtime Receipt Verifier
+
+The runtime receipt verifier validates a private HO-DET-012 scheduled-task runtime receipt without reading raw telemetry or querying runtime systems:
+
+```powershell
+python scripts/verify-ho-det-012-runtime-receipt.py --receipt <PRIVATE_RUNTIME_RECEIPT>
+```
+
+The verifier requires the receipt to remain private-bound:
+
+- `detection_id` is `HO-DET-012`.
+- The task name includes the receipt correlation ID.
+- Local scheduled-task or Sysmon telemetry is present.
+- Private Wazuh observation is present.
+- Cleanup confirms the task is absent.
+- `splunk_status` remains `NOT_VERIFIED`.
+- `raw_private_evidence_public` is `false`.
+- `ai_decided_disposition` is `false`.
+- `human_review_required` is `true`.
+- `public_safe` is `false`.
+- `public_safe_status` remains `REVIEW_REQUIRED` or `NOT_PUBLIC_SAFE`.
+
+This verifier keeps the private runtime receipt bounded to deterministic receipt validation and does not raise the existing controlled-test ceiling.
