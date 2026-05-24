@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hawkinsoperations.local/schemas/ho-det-012-runtime-receipt.schema.json",
+  "title": "HO-DET-012 Private Runtime Receipt",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema",
+    "detection_id",
+    "run_id",
+    "correlation_id",
+    "host",
+    "user",
+    "elevated_admin",
+    "task_name",
+    "benign_task_action",
+    "task_create_exit_code",
+    "local_security_4698_count",
+    "local_security_4702_count",
+    "local_taskscheduler_106_count",
+    "local_taskscheduler_140_count",
+    "local_sysmon_1_count",
+    "wazuh_query_exit_code",
+    "wazuh_matching_lines",
+    "cleanup_exit_code",
+    "task_absent",
+    "minimum_success",
+    "splunk_status",
+    "raw_private_evidence_public",
+    "ai_decided_disposition",
+    "human_review_required",
+    "public_safe",
+    "public_safe_status"
+  ],
+  "properties": {
+    "schema": {
+      "const": "ho-det-012-runtime-receipt.v1"
+    },
+    "detection_id": {
+      "const": "HO-DET-012"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^HO-DET-012-RUNTIME-[0-9]{8}-[0-9]{6}$"
+    },
+    "correlation_id": {
+      "type": "string",
+      "pattern": "^HO_DET_012_[0-9]{8}_[0-9]{6}_[0-9a-f]{8}$"
+    },
+    "host": {
+      "type": "string",
+      "minLength": 1
+    },
+    "user": {
+      "type": "string",
+      "minLength": 1
+    },
+    "elevated_admin": {
+      "const": true
+    },
+    "task_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "benign_task_action": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_create_exit_code": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "local_security_4698_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "local_security_4702_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "local_taskscheduler_106_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "local_taskscheduler_140_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "local_sysmon_1_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "wazuh_query_exit_code": {
+      "const": 0
+    },
+    "wazuh_matching_lines": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "cleanup_exit_code": {
+      "type": ["integer", "null"]
+    },
+    "task_absent": {
+      "const": true
+    },
+    "minimum_success": {
+      "const": true
+    },
+    "missing_fields": {
+      "type": ["array", "null"],
+      "maxItems": 0
+    },
+    "splunk_status": {
+      "const": "NOT_VERIFIED"
+    },
+    "raw_private_evidence_public": {
+      "const": false
+    },
+    "ai_decided_disposition": {
+      "const": false
+    },
+    "human_review_required": {
+      "const": true
+    },
+    "public_safe": {
+      "const": false
+    },
+    "public_safe_status": {
+      "enum": ["REVIEW_REQUIRED", "NOT_PUBLIC_SAFE"]
+    }
+  }
+}
