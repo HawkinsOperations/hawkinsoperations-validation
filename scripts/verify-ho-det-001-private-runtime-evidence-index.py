@@ -126,6 +126,7 @@ def fail(message: str) -> None:
     print(f"PUBLIC_SAFE_STATUS={PUBLIC_SAFE_STATUS}")
     print(f"PROMOTION_STATUS={PROMOTION_STATUS}")
     print(f"PROOF_CEILING={PROOF_CEILING}")
+    print("PUBLIC_RUNTIME_CLAIM_STATUS=PUBLIC_RUNTIME_BLOCKED")
     print(f"FAIL: {message}", file=sys.stderr)
     raise SystemExit(1)
 
@@ -234,6 +235,13 @@ def require_ref_list(value: Any, label: str, minimum: int = 2) -> None:
             fail(f"{label} entries must be non-empty strings")
 
 
+def require_truth_plane(spine: dict[str, Any], label: str) -> dict[str, Any]:
+    value = spine.get(label)
+    if not isinstance(value, dict):
+        fail(f"runtime_truth_spine.{label} must be a JSON object")
+    return value
+
+
 def verify_runtime_truth_spine(index: dict[str, Any]) -> None:
     spine = index.get("runtime_truth_spine")
     if not isinstance(spine, dict):
@@ -242,40 +250,43 @@ def verify_runtime_truth_spine(index: dict[str, Any]) -> None:
     if missing:
         fail(f"runtime_truth_spine missing truth planes: {missing}")
 
-    require_equal(spine["source_truth"].get("state"), "SOURCE_EXISTS", "source_truth.state")
-    require_equal(spine["validation_truth"].get("state"), "CONTROLLED_TEST_VALIDATED", "validation_truth.state")
-    require_ref_list(spine["source_truth"].get("refs"), "source_truth.refs")
-    require_ref_list(spine["validation_truth"].get("refs"), "validation_truth.refs")
+    source_truth = require_truth_plane(spine, "source_truth")
+    validation_truth = require_truth_plane(spine, "validation_truth")
+    runtime_truth = require_truth_plane(spine, "runtime_truth")
+    signal_truth = require_truth_plane(spine, "signal_truth")
+    evidence_truth = require_truth_plane(spine, "evidence_truth")
+    ai_truth = require_truth_plane(spine, "ai_triage_truth")
+    public_truth = require_truth_plane(spine, "public_proof_truth")
+    human_truth = require_truth_plane(spine, "human_review_truth")
 
-    runtime_truth = spine["runtime_truth"]
+    require_equal(source_truth.get("state"), "SOURCE_EXISTS", "source_truth.state")
+    require_equal(validation_truth.get("state"), "CONTROLLED_TEST_VALIDATED", "validation_truth.state")
+    require_ref_list(source_truth.get("refs"), "source_truth.refs")
+    require_ref_list(validation_truth.get("refs"), "validation_truth.refs")
+
     require_equal(runtime_truth.get("state"), "RUNTIME_EVIDENCE_VERIFIED_PRIVATE", "runtime_truth.state")
     require_equal(runtime_truth.get("public_runtime_claim_status"), "PUBLIC_RUNTIME_BLOCKED", "runtime_truth.public_runtime_claim_status")
     require_ref_list(runtime_truth.get("verified_runtime_evidence_refs"), "runtime_truth.verified_runtime_evidence_refs")
 
-    signal_truth = spine["signal_truth"]
     require_equal(signal_truth.get("state"), "SIGNAL_OBSERVED_PRIVATE", "signal_truth.state")
     require_equal(signal_truth.get("public_signal_claim_status"), "PUBLIC_RUNTIME_BLOCKED", "signal_truth.public_signal_claim_status")
     require_ref_list(signal_truth.get("verified_signal_record_refs"), "signal_truth.verified_signal_record_refs")
 
-    evidence_truth = spine["evidence_truth"]
     require_equal(evidence_truth.get("state"), "RUNTIME_EVIDENCE_VERIFIED_PRIVATE", "evidence_truth.state")
     require_equal(evidence_truth.get("raw_private_evidence_public_safe"), False, "evidence_truth.raw_private_evidence_public_safe")
     require_equal(evidence_truth.get("repo_contains_raw_private_evidence"), False, "evidence_truth.repo_contains_raw_private_evidence")
     require_equal(evidence_truth.get("hash_only_private_refs"), True, "evidence_truth.hash_only_private_refs")
 
-    ai_truth = spine["ai_triage_truth"]
     require_equal(ai_truth.get("support_state"), "AI_SUPPORT_ONLY", "ai_triage_truth.support_state")
     require_equal(ai_truth.get("triage_output_state"), "AI_TRIAGE_OUTPUT_PRIVATE", "ai_triage_truth.triage_output_state")
     require_equal(ai_truth.get("authority_state"), "AI_NOT_AUTHORITY", "ai_triage_truth.authority_state")
     require_equal(ai_truth.get("ai_decided_disposition"), False, "ai_triage_truth.ai_decided_disposition")
     require_equal(ai_truth.get("human_review_required"), True, "ai_triage_truth.human_review_required")
 
-    public_truth = spine["public_proof_truth"]
     require_equal(public_truth.get("state"), "PUBLIC_RUNTIME_BLOCKED", "public_proof_truth.state")
     require_equal(public_truth.get("proof_ceiling"), "CONTROLLED_TEST_VALIDATED", "public_proof_truth.proof_ceiling")
     require_equal(public_truth.get("public_safe_status"), PUBLIC_SAFE_STATUS, "public_proof_truth.public_safe_status")
 
-    human_truth = spine["human_review_truth"]
     require_equal(human_truth.get("state"), "HUMAN_REVIEW_REQUIRED", "human_review_truth.state")
     require_equal(human_truth.get("public_runtime_summary_state"), "PUBLIC_RUNTIME_BLOCKED", "human_review_truth.public_runtime_summary_state")
     require_equal(human_truth.get("approval_required_for_public_summary"), True, "human_review_truth.approval_required_for_public_summary")
