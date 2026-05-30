@@ -18,6 +18,8 @@ SCOPED_FILES = [
     ROOT / "reports" / "ho-det-001" / "validation-result.json",
     ROOT / "reports" / "ho-det-001" / "pipeline-proof.md",
     ROOT / "reports" / "ho-det-001" / "pipeline-proof.json",
+    ROOT / "reports" / "ho-det-001" / "SOCAAS_PILOT_RECEIPT.md",
+    ROOT / "reports" / "ho-det-001" / "socaas-pilot-receipt.json",
     ROOT / "docs" / "HO-DET-001_CLOSED_LOOP.md",
 ]
 BLOCKED_TERMS = [
@@ -41,8 +43,15 @@ BLOCKED_TERMS = [
     "aws-live",
     "autonomous soc",
     "production-ready soc",
+    "production deployment",
+    "customer deployment",
+    "socaas-ready",
+    "socaas deployment",
+    "socaas availability",
     "fleet-wide deployment",
     "fleet-wide coverage",
+    "fortisiem integration proven",
+    "customer-ready product",
     "ai-approved disposition",
     "ai decided disposition",
     "live autosoc",
@@ -56,6 +65,7 @@ ALLOWED_JSON_PATH_PARTS = {
     "claim_boundary",
     "trust_boundary",
     "privacy_status",
+    "next_promotion_gate",
 }
 ALLOWED_TEXT_MARKERS = [
     "blocked",
@@ -154,7 +164,7 @@ def markdown_section(line: str, current: str) -> str:
 
 def markdown_context_allowed(section: str, line: str) -> bool:
     lower = line.lower()
-    if section in {"blocked claims", "what this does not prove"}:
+    if section in {"blocked claims", "what this does not prove", "next promotion gate"}:
         return True
     if section == "status":
         if any(marker in lower for marker in ["blocked", "not_public_safe", "not_proven", "does not prove", "do not prove", "controlled-test scope only"]):
@@ -196,6 +206,8 @@ def main() -> int:
     print("STATUS=pass")
     print("CLAIM_BOUNDARY_SCAN=pass")
     print(f"FILES_SCANNED={scanned}")
+    for path in SCOPED_FILES:
+        print(f"SCANNED_FILE={path.relative_to(ROOT).as_posix()}")
     print("WRITE_SKIPPED=true")
     return 0
 
