@@ -1,0 +1,109 @@
+{
+  "receipt_id": "HO-DET-001-SOCAAS-PILOT-RECEIPT-001",
+  "detection_id": "HO-DET-001",
+  "detection_name": "Encoded PowerShell process creation",
+  "receipt_status": "controlled_test_validated",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "validation_scope": "controlled process-creation fixtures",
+  "validation_truth_surface": "Validation truth only; not runtime truth, signal truth, evidence truth, public proof, or public-safe approval.",
+  "total_cases": 14,
+  "positive_cases": 7,
+  "negative_cases": 7,
+  "matched_positives": 7,
+  "missed_positives": [],
+  "false_positive_negative_matches": [],
+  "alert_shape": {
+    "event_model": "Sysmon process creation style event",
+    "event_id": 1,
+    "process_identity": {
+      "any_of": [
+        "Image ends with \\\\powershell.exe",
+        "Image ends with \\\\pwsh.exe",
+        "OriginalFileName contains PowerShell",
+        "OriginalFileName contains pwsh"
+      ]
+    },
+    "command_line_indicators": {
+      "any_of": [
+        "-enc",
+        "-encodedcommand",
+        "/encodedcommand:",
+        "FromBase64String("
+      ]
+    },
+    "positive_match_shape": "PowerShell or pwsh process identity plus encoded-command or base64 decode command-line behavior.",
+    "negative_control_shape": "Rejects encoded-looking command text when PowerShell process identity or command-line evidence is absent."
+  },
+  "required_fields": [
+    "EventID",
+    "CommandLine",
+    "Image or OriginalFileName"
+  ],
+  "partial_or_missing_fields": {
+    "image_missing_originalfilename_present": "Allowed only when OriginalFileName supplies PowerShell or pwsh identity.",
+    "image_and_originalfilename_missing": "Negative control; not a match.",
+    "commandline_missing": "Negative control; not a match.",
+    "non_powershell_process_with_encoded_text": "Negative control; not a match."
+  },
+  "case_packet_references": [
+    {
+      "name": "case packet",
+      "path": "validation/successor/ho-det-001/case-packet.json",
+      "role": "Controlled-test case packet and human-review boundary."
+    },
+    {
+      "name": "autosoc triage packet",
+      "path": "validation/successor/ho-det-001/autosoc-triage-packet.json",
+      "role": "Deterministic support packet derived from the controlled validation result."
+    },
+    {
+      "name": "controlled validation cases",
+      "path": "validation/successor/ho-det-001/validation-cases.json",
+      "role": "Positive and negative process-creation fixtures."
+    }
+  ],
+  "proof_references": [
+    {
+      "name": "validation result",
+      "path": "reports/ho-det-001/validation-result.json",
+      "supports": "Controlled positive and negative fixture pass/fail result."
+    },
+    {
+      "name": "validation result summary",
+      "path": "reports/ho-det-001/validation-result.md",
+      "supports": "Reviewer-readable controlled validation summary."
+    },
+    {
+      "name": "pipeline proof route",
+      "path": "reports/ho-det-001/pipeline-proof.json",
+      "supports": "Public proof-loop routing metadata and blocked-claim categories."
+    },
+    {
+      "name": "proof record route",
+      "path": "hawkinsoperations-proof/proof/records/HO-DET-001.md",
+      "supports": "Cross-repo proof record route only; does not raise this receipt above CONTROLLED_TEST_VALIDATED."
+    }
+  ],
+  "ai_authority": "support_only",
+  "human_review_required": true,
+  "blocked_claims": [
+    "runtime-active",
+    "signal-observed",
+    "evidence-linked public proof",
+    "public-safe",
+    "production-ready",
+    "production/customer SOCaaS deployment",
+    "SOCaaS availability",
+    "live Splunk firing",
+    "Cribl-routed telemetry",
+    "Wazuh live collection",
+    "FortiSIEM integration proven",
+    "production triage",
+    "analyst-approved disposition",
+    "AI-decided disposition",
+    "AI-approved disposition",
+    "autonomous SOC response",
+    "fleet-wide deployment"
+  ],
+  "next_promotion_gate": "Human review plus separately approved runtime/signal/evidence capture and proof/publication promotion before any runtime-active, signal-observed, evidence-linked, public-safe, production, customer, or SOCaaS availability claim."
+}
