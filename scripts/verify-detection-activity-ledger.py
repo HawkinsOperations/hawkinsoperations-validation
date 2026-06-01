@@ -106,6 +106,36 @@ def registry_expected_counts(registry: dict[str, Any]) -> tuple[int, int, int, s
     return positive, negative, total, counted_ids
 
 
+def expected_activity_entries_from_registry(registry_path: Path = REGISTRY_PATH) -> dict[str, dict[str, Any]]:
+    registry = load_json(registry_path, "validation registry")
+    packages = registry.get("packages")
+    if not isinstance(packages, list):
+        fail("validation registry packages must be a list")
+
+    expected: dict[str, dict[str, Any]] = {}
+    for package in packages:
+        if not isinstance(package, dict):
+            fail("validation registry package must be an object")
+        detection_id = package.get("detection_id")
+        fixture_count = package.get("expected_fixture_count")
+        positive_count = package.get("expected_positive_count")
+        negative_count = package.get("expected_negative_count")
+        if fixture_count is None and positive_count is None and negative_count is None:
+            continue
+        if not isinstance(detection_id, str) or not detection_id:
+            fail("counted validation registry package must have a detection_id")
+        if not all(isinstance(value, int) for value in (fixture_count, positive_count, negative_count)):
+            fail(f"{detection_id} registry counts must be integers when present")
+        report_json = package.get("report_json")
+        if not isinstance(report_json, str) or not report_json:
+            fail(f"{detection_id} counted registry package must have report_json")
+        expected[detection_id] = {
+            "count": positive_count,
+            "source_artifacts": ["validation/VALIDATION_REGISTRY.yml", report_json],
+        }
+    return expected
+
+
 def _require_relative_artifacts(entry: dict[str, Any]) -> None:
     artifacts = entry.get("source_artifacts")
     if not isinstance(artifacts, list) or not artifacts:
@@ -157,6 +187,7 @@ def verify_ledger(ledger_path: Path = LEDGER_PATH, registry_path: Path = REGISTR
 
     fire_sum = 0
     entry_ids: set[str] = set()
+    actual_entry_map: dict[str, dict[str, Any]] = {}
     for entry in entries:
         if not isinstance(entry, dict):
             fail("activity entry must be an object")
@@ -178,6 +209,10 @@ def verify_ledger(ledger_path: Path = LEDGER_PATH, registry_path: Path = REGISTR
             fail(f"{entry['detection_id']} count must be a non-negative integer")
         _require_relative_artifacts(entry)
         entry_ids.add(str(entry["detection_id"]))
+        actual_entry_map[str(entry["detection_id"])] = {
+            "count": entry["count"],
+            "source_artifacts": entry["source_artifacts"],
+        }
         if scope == "CONTROLLED_VALIDATION_FIRE":
             fire_sum += entry["count"]
 
@@ -185,6 +220,16 @@ def verify_ledger(ledger_path: Path = LEDGER_PATH, registry_path: Path = REGISTR
         fail(f"controlled fire entry sum mismatch: expected {expected_positive}, found {fire_sum}")
     if not entry_ids.issubset(counted_ids):
         fail(f"activity entries include detections not counted by registry: {sorted(entry_ids - counted_ids)}")
+    expected_entry_map = expected_activity_entries_from_registry(registry_path)
+    if actual_entry_map != expected_entry_map:
+        missing = sorted(set(expected_entry_map) - set(actual_entry_map))
+        extra = sorted(set(actual_entry_map) - set(expected_entry_map))
+        changed = sorted(
+            key
+            for key in set(actual_entry_map).intersection(expected_entry_map)
+            if actual_entry_map[key] != expected_entry_map[key]
+        )
+        fail(f"activity entries do not match validation registry: missing={missing}, extra={extra}, changed={changed}")
 
     return {
         "status": "pass",

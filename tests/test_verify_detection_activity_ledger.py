@@ -29,6 +29,19 @@ class DetectionActivityLedgerTests(unittest.TestCase):
         self.assertEqual(result["public_safe_status"], "NOT_PUBLIC_SAFE")
         self.assertEqual(result["runtime_public_safe_count"], 0)
 
+    def test_repo_activity_entries_match_validation_registry(self) -> None:
+        ledger = json.loads(LEDGER_PATH.read_text(encoding="utf-8"))
+        expected_entries = verifier.expected_activity_entries_from_registry(REGISTRY_PATH)
+        actual_entries = {
+            entry["detection_id"]: {
+                "count": entry["count"],
+                "source_artifacts": entry["source_artifacts"],
+            }
+            for entry in ledger["activity_entries"]
+        }
+
+        self.assertEqual(actual_entries, expected_entries)
+
     def test_detection_fire_cannot_be_governed_case_scope(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "ledger.json"
