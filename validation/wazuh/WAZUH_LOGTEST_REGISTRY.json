@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "registry_status": "WAZUH_LOGTEST_CONTRACT_ENFORCED",
+  "proof_ceiling": "CONTROLLED_TEST_ONLY_NOT_RUNTIME_PROOF",
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "runtime_status": false,
+  "signal_status": false,
+  "entries": [
+    {
+      "detection_id": "HO-DET-011",
+      "status": "STATIC_CONTRACT_READY",
+      "wazuh_rule_source": "detections/successor/ho-det-011/wazuh.xml",
+      "sample_event": "validation/wazuh/samples/ho-det-011-service-create-system-7045.json",
+      "expected_rule_ids": [910011],
+      "expected_levels": [8],
+      "expected_groups": ["ho-det-011", "source-only", "validation-planned"],
+      "expected_mitre_ids": ["T1543.003"],
+      "runtime_status": false,
+      "signal_status": false,
+      "public_safe_status": "NOT_PUBLIC_SAFE",
+      "execution_mode": "static_ci_optional_private_logtest",
+      "notes": "Controlled synthetic Wazuh logtest contract only; does not prove live Wazuh signal."
+    },
+    {
+      "detection_id": "HO-DET-012",
+      "status": "STATIC_CONTRACT_READY",
+      "wazuh_rule_source": "detections/successor/ho-det-012/wazuh.xml",
+      "sample_event": "validation/wazuh/samples/ho-det-012-scheduled-task-security-4698.json",
+      "expected_rule_ids": [910021],
+      "expected_levels": [7],
+      "expected_groups": ["ho-det-012", "source-only", "validation-planned"],
+      "expected_mitre_ids": ["T1053.005"],
+      "runtime_status": false,
+      "signal_status": false,
+      "public_safe_status": "NOT_PUBLIC_SAFE",
+      "execution_mode": "static_ci_optional_private_logtest",
+      "notes": "Controlled synthetic Wazuh logtest contract only; does not prove live Wazuh signal."
+    },
+    {
+      "detection_id": "HO-DET-001",
+      "status": "PLANNED_NEEDS_WAZUH_SOURCE",
+      "wazuh_rule_source": null,
+      "sample_event": null,
+      "expected_rule_ids": [],
+      "expected_levels": [],
+      "expected_groups": [],
+      "expected_mitre_ids": ["T1059.001"],
+      "runtime_status": false,
+      "signal_status": false,
+      "public_safe_status": "NOT_PUBLIC_SAFE",
+      "execution_mode": "planned_static_contract_only",
+      "notes": "EncodedCommand Wazuh validation is planned and requires Wazuh source plus controlled fixture before logtest assertions."
+    }
+  ]
+}

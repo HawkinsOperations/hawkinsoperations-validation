@@ -1,0 +1,18 @@
+{
+  "detection_id": "HO-DET-012",
+  "sample_scope": "controlled_synthetic_wazuh_logtest_candidate",
+  "source_channel": "Security",
+  "event_id": 4698,
+  "event_summary": "Synthetic scheduled task creation event for Wazuh rule-source contract validation.",
+  "runtime_status": false,
+  "signal_status": false,
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "blocked_claims": [
+    "runtime-active",
+    "signal-observed",
+    "Wazuh-routed proof",
+    "public-safe",
+    "production-ready"
+  ],
+  "logtest_input": "{\"win\":{\"system\":{\"eventID\":\"4698\",\"channel\":\"Security\"},\"eventdata\":{\"taskContent\":\"<Command>C:\\\\Windows\\\\Temp\\\\task.ps1</Command>\"}}}"
+}
