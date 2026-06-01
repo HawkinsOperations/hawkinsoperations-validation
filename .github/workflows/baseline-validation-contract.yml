@@ -21,4 +21,5 @@ jobs:
           python -B scripts/verify_validation_registry.py
           python -B scripts/verify_all_validation_packages.py
           python -B scripts/verify_validation_contract.py
+          python -B scripts/verify_wazuh_logtest_registry.py
           python -B -m unittest discover -s tests
