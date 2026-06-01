@@ -59,6 +59,12 @@ def load_json(path: Path, label: str) -> dict[str, Any]:
     return data
 
 
+def split_groups(value: str | None) -> set[str]:
+    if not value:
+        return set()
+    return {item.strip() for item in value.split(",") if item.strip()}
+
+
 def require_false_boundary(data: dict[str, Any], label: str) -> None:
     for field in ("runtime_status", "signal_status"):
         if truthy(data.get(field)):
@@ -73,15 +79,28 @@ def parse_wazuh_xml(path: Path) -> list[dict[str, Any]]:
     except ET.ParseError as exc:
         fail(f"invalid Wazuh XML parse: {path} ({exc})")
     rules = []
-    for rule in root.iter("rule"):
-        rule_id = int(str(rule.attrib.get("id", "")).strip())
-        level = int(str(rule.attrib.get("level", "0")).strip())
-        groups: set[str] = set()
-        for group in rule.findall("group"):
-            if group.text:
-                groups.update(item.strip() for item in group.text.split(",") if item.strip())
-        mitre_ids = {node.text.strip() for node in rule.findall(".//id") if node.text and node.text.strip().startswith("T")}
-        rules.append({"id": rule_id, "level": level, "groups": groups, "mitre_ids": mitre_ids})
+
+    def walk(node: ET.Element, inherited_groups: set[str]) -> None:
+        effective_groups = set(inherited_groups)
+        if node.tag == "group":
+            effective_groups.update(split_groups(node.attrib.get("name")))
+        if node.tag == "rule":
+            rule_groups = set(effective_groups)
+            for group in node.findall("group"):
+                rule_groups.update(split_groups(group.text))
+            rule_id = int(str(node.attrib.get("id", "")).strip())
+            level = int(str(node.attrib.get("level", "0")).strip())
+            mitre_ids = {
+                child.text.strip()
+                for child in node.findall(".//id")
+                if child.text and child.text.strip().startswith("T")
+            }
+            rules.append({"id": rule_id, "level": level, "groups": rule_groups, "mitre_ids": mitre_ids})
+            return
+        for child in node:
+            walk(child, effective_groups)
+
+    walk(root, set())
     if not rules:
         fail(f"Wazuh XML has no rules: {path}")
     return rules
