@@ -42,6 +42,34 @@ class DetectionActivityLedgerTests(unittest.TestCase):
 
         self.assertEqual(actual_entries, expected_entries)
 
+    def test_activity_entry_count_must_match_registry_expected_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ledger.json"
+            data = json.loads(LEDGER_PATH.read_text(encoding="utf-8"))
+            data["aggregate_metrics"]["activity_entry_count"] = 999
+            path.write_text(json.dumps(data), encoding="utf-8")
+
+            with self.assertRaisesRegex(verifier.VerificationError, "activity_entry_count mismatch"):
+                verifier.verify_ledger(path, REGISTRY_PATH, ROOT)
+
+    def test_activity_entries_fail_closed_when_missing_or_extra_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ledger.json"
+            data = json.loads(LEDGER_PATH.read_text(encoding="utf-8"))
+            data["activity_entries"] = data["activity_entries"][:-1]
+            path.write_text(json.dumps(data), encoding="utf-8")
+
+            with self.assertRaisesRegex(verifier.VerificationError, "activity entry count mismatch"):
+                verifier.verify_ledger(path, REGISTRY_PATH, ROOT)
+
+            data = json.loads(LEDGER_PATH.read_text(encoding="utf-8"))
+            data["activity_entries"].append(dict(data["activity_entries"][0]))
+            data["aggregate_metrics"]["activity_entry_count"] += 1
+            path.write_text(json.dumps(data), encoding="utf-8")
+
+            with self.assertRaisesRegex(verifier.VerificationError, "activity_entry_count mismatch"):
+                verifier.verify_ledger(path, REGISTRY_PATH, ROOT)
+
     def test_detection_fire_cannot_be_governed_case_scope(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "ledger.json"

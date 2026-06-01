@@ -167,11 +167,13 @@ def verify_ledger(ledger_path: Path = LEDGER_PATH, registry_path: Path = REGISTR
         fail("aggregate_metrics must be present")
 
     expected_positive, expected_negative, expected_total, counted_ids = registry_expected_counts(registry)
+    expected_entry_map = expected_activity_entries_from_registry(registry_path)
     expected_metrics = {
         "detection_activity_count": expected_positive,
         "controlled_validation_fire_count": expected_positive,
         "controlled_negative_test_count": expected_negative,
         "validation_case_count": expected_total,
+        "activity_entry_count": len(expected_entry_map),
         "runtime_public_safe_count": 0,
         "public_safe_count": 0,
     }
@@ -184,6 +186,8 @@ def verify_ledger(ledger_path: Path = LEDGER_PATH, registry_path: Path = REGISTR
     entries = ledger.get("activity_entries")
     if not isinstance(entries, list) or not entries:
         fail("activity_entries must be a non-empty list")
+    if len(entries) != len(expected_entry_map):
+        fail(f"activity entry count mismatch: expected {len(expected_entry_map)}, found {len(entries)}")
 
     fire_sum = 0
     entry_ids: set[str] = set()
@@ -220,7 +224,6 @@ def verify_ledger(ledger_path: Path = LEDGER_PATH, registry_path: Path = REGISTR
         fail(f"controlled fire entry sum mismatch: expected {expected_positive}, found {fire_sum}")
     if not entry_ids.issubset(counted_ids):
         fail(f"activity entries include detections not counted by registry: {sorted(entry_ids - counted_ids)}")
-    expected_entry_map = expected_activity_entries_from_registry(registry_path)
     if actual_entry_map != expected_entry_map:
         missing = sorted(set(expected_entry_map) - set(actual_entry_map))
         extra = sorted(set(actual_entry_map) - set(expected_entry_map))
@@ -237,6 +240,7 @@ def verify_ledger(ledger_path: Path = LEDGER_PATH, registry_path: Path = REGISTR
         "detection_activity_count": metrics["detection_activity_count"],
         "controlled_validation_fire_count": metrics["controlled_validation_fire_count"],
         "controlled_negative_test_count": metrics["controlled_negative_test_count"],
+        "activity_entry_count": metrics["activity_entry_count"],
         "validation_case_count": metrics["validation_case_count"],
         "runtime_public_safe_count": metrics["runtime_public_safe_count"],
         "public_safe_status": ledger["public_safe_status"],
