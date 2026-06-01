@@ -1,14 +1,14 @@
-name: HO-DET-001 Proof Loop
+name: HO-DET-001 Proof Loop Trusted
 
 on:
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  ho-det-001-proof-loop:
-    runs-on: ubuntu-latest
+  ho-det-001-proof-loop-trusted:
+    runs-on: [self-hosted, Linux, X64, ho-runner-01]
     env:
       PYTHONDONTWRITEBYTECODE: "1"
     defaults:
