@@ -12,7 +12,8 @@ It does not answer whether a detection is running in production, whether a live 
 
 | Start here | What it shows | Command or route | Boundary |
 | --- | --- | --- | --- |
-| HO-DET-001 local case pipeline | Clone-runnable validation of public fixtures, case packet structure, AI authority boundary, claim scan, and result parity | `python -B scripts/run-ho-det-001-local-case-pipeline.py --check` | Controlled public test fixtures only |
+| Single-repo validation package sweep | Clone-runnable registry, validation package, parity, claim-boundary, and contract checks | `python -B scripts/verify_all_validation_packages.py` | Public fixtures and skip-if-missing source contracts only |
+| HO-DET-001 source-contract pipeline | Full local pipeline for public fixtures, case packet structure, AI authority boundary, claim scan, and result parity | `python -B scripts/run-ho-det-001-local-case-pipeline.py --check` | Requires adjacent HawkinsOperations source checkout for source-contract validation |
 | Validation registry | Detection package inventory, fixture counts, proof ceilings, public-safe status, and verifier routes | [`validation/VALIDATION_REGISTRY.yml`](validation/VALIDATION_REGISTRY.yml) | Registry truth, not runtime truth |
 | Activity ledger | Reviewer-facing controlled validation activity totals | [`activity/detection-activity-ledger-v1.md`](activity/detection-activity-ledger-v1.md) | Counts controlled validation activity, not governed case closure |
 | HO-DET-001 validation result | Positive/negative controlled fixture result with missed-positive and false-positive tracking | [`reports/ho-det-001/validation-result.md`](reports/ho-det-001/validation-result.md) | Validation truth only |
@@ -21,7 +22,8 @@ It does not answer whether a detection is running in production, whether a live 
 ## Strongest Current Receipts
 
 - **HO-DET-001 controlled validation route**: 14 controlled process-creation cases, 7 positive cases, 7 negative cases, 0 missed positives, and 0 false-positive negatives in [`reports/ho-det-001/validation-result.md`](reports/ho-det-001/validation-result.md).
-- **Public clone-runner**: `scripts/run-ho-det-001-local-case-pipeline.py --check` composes the backend adapter verifier, AI-support contract verifier, controlled validator, claim-boundary scanner, result parity verifier, deterministic case-packet check, and case-packet contract verifier.
+- **Public clone-runnable package sweep**: `scripts/verify_all_validation_packages.py` runs every registry-listed validation package and uses the registry's skip-if-missing source-contract mode where sibling source repositories are not present.
+- **Full HO-DET-001 source-contract pipeline**: `scripts/run-ho-det-001-local-case-pipeline.py --check` composes the backend adapter verifier, AI-support contract verifier, controlled validator, claim-boundary scanner, result parity verifier, deterministic case-packet check, and case-packet contract verifier when the adjacent HawkinsOperations source checkout is available.
 - **Case-packet and AI authority checks**: the HO-DET-001 route validates deterministic triage/case-packet structure while keeping AI output support-only and requiring human review before any disposition or action claim.
 - **Validation registry**: [`validation/VALIDATION_REGISTRY.yml`](validation/VALIDATION_REGISTRY.yml) ties each validation package to fixture counts, validator scripts, parity scripts, claim-boundary scanners, proof ceilings, and public-safe status.
 - **Reviewer Metrics Pipeline v1**: [`activity/detection-activity-ledger-v1.md`](activity/detection-activity-ledger-v1.md) records 49 controlled positive fixture matches, 57 controlled negative checks, and 106 total validation cases, while keeping runtime-public-safe and public-safe counts at 0.
@@ -67,12 +69,13 @@ HO-DET-001 is the clearest validation-to-reviewer path in this repository.
 | Layer | Route | What it verifies | What it does not prove |
 | --- | --- | --- | --- |
 | Controlled fixtures | [`validation/successor/ho-det-001/validation-cases.json`](validation/successor/ho-det-001/validation-cases.json) | Positive and negative process-creation cases | Live telemetry |
-| Validator | `python -B scripts/validate-ho-det-001.py` | Detection behavior against controlled fixtures | Deployment or signal observation |
+| Single-repo validator | `python -B scripts/validate-ho-det-001.py --source-contract skip-if-missing` | Detection behavior against controlled fixtures when sibling source checkout is absent | Deployment or signal observation |
+| Source-contract validator | `python -B scripts/validate-ho-det-001.py` | Detection behavior plus required adjacent detections source contract | Runtime or signal observation |
 | Result parity | `python -B scripts/verify-ho-det-001-result-parity.py` | Reported result matches expected fixture outcome | Public-safe runtime proof |
 | Claim scan | `python -B scripts/scan-ho-det-001-claim-boundaries.py` | Blocked claims remain blocked or boundary-only | Public approval |
 | Case packet | `python -B scripts/build-ho-det-001-case-packet.py --check` | Deterministic case-packet output remains stable | Case closure |
 | AI boundary | `python -B scripts/verify-ho-det-001-ai-triage-contract.py` | AI-support artifacts preserve human-review authority | AI disposition authority |
-| Local pipeline | `python -B scripts/run-ho-det-001-local-case-pipeline.py --check` | End-to-end controlled public fixture route | Runtime, signal, or production truth |
+| Local pipeline | `python -B scripts/run-ho-det-001-local-case-pipeline.py --check` | End-to-end controlled public fixture route with required adjacent source checkout | Runtime, signal, or production truth |
 
 Detailed route notes live in [`validation/successor/ho-det-001/README.md`](validation/successor/ho-det-001/README.md) and [`docs/HO-DET-001_CLOSED_LOOP.md`](docs/HO-DET-001_CLOSED_LOOP.md).
 
@@ -97,10 +100,11 @@ python -B scripts/verify_all_validation_packages.py
 
 ## Reviewer Commands
 
-From the repository root:
+### Single-repo public clone path
+
+These commands are the safest first path when a reviewer clones only `hawkinsoperations-validation`:
 
 ```powershell
-python -B scripts/run-ho-det-001-local-case-pipeline.py --check
 python -B scripts/verify_validation_registry.py
 python -B scripts/verify_all_validation_packages.py
 python -B scripts/verify_validation_contract.py
@@ -108,10 +112,23 @@ python -B scripts/verify_wazuh_logtest_registry.py
 python -B -m unittest discover -s tests
 ```
 
-For HO-DET-001 alone:
+For HO-DET-001 alone in a single-repo clone:
+
+```powershell
+python -B scripts/validate-ho-det-001.py --source-contract skip-if-missing
+python -B scripts/verify-ho-det-001-result-parity.py
+python -B scripts/scan-ho-det-001-claim-boundaries.py
+python -B scripts/build-ho-det-001-case-packet.py --check
+python -B scripts/verify_case_packet_contract.py
+```
+
+### Full source-contract path
+
+Use this path when the adjacent HawkinsOperations source repositories are available, especially `../hawkinsoperations-detections` for HO-DET-001 source-contract validation:
 
 ```powershell
 python -B scripts/validate-ho-det-001.py
+python -B scripts/run-ho-det-001-local-case-pipeline.py --check
 python -B scripts/verify-ho-det-001-result-parity.py
 python -B scripts/scan-ho-det-001-claim-boundaries.py
 python -B scripts/build-ho-det-001-case-packet.py --check
