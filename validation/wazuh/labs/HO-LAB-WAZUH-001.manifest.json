@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "lab_id": "HO-LAB-WAZUH-001",
+  "lab_name": "Static Wazuh Rule Contract Lab",
+  "lab_status": "STATIC_CONTRACT_READY",
+  "owner_repo": "hawkinsoperations-validation",
+  "source_registry_repo": "hawkinsoperations-detections",
+  "validation_registry": "validation/wazuh/WAZUH_LOGTEST_REGISTRY.json",
+  "source_registry": "detections/wazuh/WAZUH_RULE_SOURCE_REGISTRY.yml",
+  "proof_ceiling": "SOURCE_AND_STATIC_CI_CONTRACT_ONLY",
+  "runtime_status": false,
+  "signal_status": false,
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "default_execution_mode": "static_ci_optional_private_logtest",
+  "optional_private_execution": "wazuh-logtest execution is gated behind --run-logtest in the registry verifier and is not required for this lab.",
+  "entries": [
+    {
+      "detection_id": "HO-DET-011",
+      "source_registry_status": "SOURCE_EXISTS",
+      "validation_registry_status": "STATIC_CONTRACT_READY",
+      "source_required": true,
+      "sample_required": true,
+      "expected_result_reference_required": false
+    },
+    {
+      "detection_id": "HO-DET-012",
+      "source_registry_status": "SOURCE_EXISTS",
+      "validation_registry_status": "STATIC_CONTRACT_READY",
+      "source_required": true,
+      "sample_required": true,
+      "expected_result_reference_required": false
+    },
+    {
+      "detection_id": "HO-DET-001",
+      "source_registry_status": "WAZUH_SOURCE_NEEDED",
+      "validation_registry_status": "PLANNED_NEEDS_WAZUH_SOURCE",
+      "source_required": false,
+      "sample_required": false,
+      "expected_result_reference_required": false
+    }
+  ],
+  "claim_boundary_files": [
+    "validation/wazuh/labs/HO-LAB-WAZUH-001.md",
+    "validation/wazuh/labs/HO-LAB-WAZUH-001.manifest.json"
+  ],
+  "supported_claims": [
+    "Wazuh source registry contract exists.",
+    "Wazuh logtest/static validation registry exists.",
+    "Registry entries map to HawkinsOperations detection IDs where verified.",
+    "Static verifier checks registry consistency.",
+    "Controlled sample wiring exists where verified.",
+    "This lab is reviewer-runnable for source/static validation review."
+  ],
+  "blocked_claims": [
+    "live Wazuh deployment",
+    "live Wazuh manager proof",
+    "Wazuh-routed runtime proof",
+    "runtime-active proof",
+    "signal-observed proof",
+    "public-safe runtime proof",
+    "production SOC",
+    "SOCaaS deployment",
+    "customer deployment",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "AI-decided disposition",
+    "analyst-approved disposition",
+    "case closure"
+  ]
+}
