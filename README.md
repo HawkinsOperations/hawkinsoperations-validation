@@ -16,6 +16,7 @@ It does not answer whether a detection is running in production, whether a live 
 | HO-DET-001 source-contract pipeline | Full local pipeline for public fixtures, case packet structure, AI authority boundary, claim scan, and result parity | `python -B scripts/run-ho-det-001-local-case-pipeline.py --check` | Requires adjacent HawkinsOperations source checkout for source-contract validation |
 | Validation registry | Detection package inventory, fixture counts, proof ceilings, public-safe status, and verifier routes | [`validation/VALIDATION_REGISTRY.yml`](validation/VALIDATION_REGISTRY.yml) | Registry truth, not runtime truth |
 | Activity ledger | Reviewer-facing controlled validation activity totals | [`activity/detection-activity-ledger-v1.md`](activity/detection-activity-ledger-v1.md) | Counts controlled validation activity, not governed case closure |
+| HO-LAB-WAZUH-001 static contract lab | Wazuh source/static registry consistency, controlled sample wiring, and proof-boundary checks | `python -B scripts/verify_ho_lab_wazuh_001.py` | Source/static CI contract only |
 | HO-DET-001 validation result | Positive/negative controlled fixture result with missed-positive and false-positive tracking | [`reports/ho-det-001/validation-result.md`](reports/ho-det-001/validation-result.md) | Validation truth only |
 | CI validation gates | Public PR checks for registry, contracts, parity, claim boundaries, and trusted-runner separation | [`.github/workflows`](.github/workflows) | CI checks do not prove live deployment or public-safe runtime proof |
 
@@ -29,6 +30,7 @@ It does not answer whether a detection is running in production, whether a live 
 - **Reviewer Metrics Pipeline v1**: [`activity/detection-activity-ledger-v1.md`](activity/detection-activity-ledger-v1.md) records 49 controlled positive fixture matches, 57 controlled negative checks, and 106 total validation cases, while keeping runtime-public-safe and public-safe counts at 0.
 - **Result parity and claim-boundary enforcement**: scripts such as `verify-ho-det-001-result-parity.py`, `verify-aws-det-001-result-parity.py`, `verify-id-det-001-result-parity.py`, and `scan-ho-det-001-claim-boundaries.py` keep reports, source expectations, and public wording boundaries aligned.
 - **Contract validation beyond one detection**: the repo includes controlled validation or contract lanes for HO-DET-001, HO-DET-011, HO-DET-012, AWS-DET-001, ID-DET-001 through ID-DET-004, HO-PIPE-001, HO-NDR-001 Security Onion visibility samples, and Wazuh logtest registry contracts.
+- **HO-LAB-WAZUH-001 static Wazuh rule contract lab**: [`validation/wazuh/labs/HO-LAB-WAZUH-001.md`](validation/wazuh/labs/HO-LAB-WAZUH-001.md) gives reviewers a deterministic source/static Wazuh registry and sample-wiring check without requiring live Wazuh manager access.
 
 ## What This Repo Owns
 
@@ -90,6 +92,7 @@ Detailed route notes live in [`validation/successor/ho-det-001/README.md`](valid
 | HO-PIPE-001 | Pipeline route integrity contract fixtures | `python -B scripts/validate-ho-pipe-001.py` | No live Cribl/Wazuh/Splunk route proof |
 | HO-NDR-001 | Security Onion visibility and corroboration samples | `python -B scripts/verify-security-onion-visibility-rollup.py` | Contract samples only |
 | Wazuh logtest | Registry and synthetic sample contract | `python -B scripts/verify_wazuh_logtest_registry.py` | Static CI contract, not live Wazuh routing |
+| HO-LAB-WAZUH-001 | Source/static Wazuh registry lab | `python -B scripts/verify_ho_lab_wazuh_001.py` | Source/static CI contract only |
 
 Run every registry-listed validation package check:
 
@@ -109,6 +112,7 @@ python -B scripts/verify_validation_registry.py
 python -B scripts/verify_all_validation_packages.py
 python -B scripts/verify_validation_contract.py
 python -B scripts/verify_wazuh_logtest_registry.py
+python -B scripts/verify_ho_lab_wazuh_001.py
 python -B -m unittest discover -s tests
 ```
 
@@ -133,13 +137,14 @@ python -B scripts/verify-ho-det-001-result-parity.py
 python -B scripts/scan-ho-det-001-claim-boundaries.py
 python -B scripts/build-ho-det-001-case-packet.py --check
 python -B scripts/verify_case_packet_contract.py
+python -B scripts/verify_ho_lab_wazuh_001.py --source-contract required
 ```
 
 ## CI And Workflow Boundaries
 
 CI workflows make validation repeatable and reviewer-visible:
 
-- [`baseline-validation-contract.yml`](.github/workflows/baseline-validation-contract.yml) checks the validation registry, package verifiers, baseline contract, Wazuh logtest registry, and unit tests.
+- [`baseline-validation-contract.yml`](.github/workflows/baseline-validation-contract.yml) checks the validation registry, package verifiers, baseline contract, Wazuh logtest registry, HO-LAB-WAZUH-001 static contract lab, and unit tests.
 - [`ho-det-001-proof-loop.yml`](.github/workflows/ho-det-001-proof-loop.yml) runs deterministic HO-DET-001 validation, AI boundary checks, claim scans, result parity, case-packet checks, proof-record parity, and reproducible proof-pack checks.
 - [`cross-repo-claim-parity.yml`](.github/workflows/cross-repo-claim-parity.yml) keeps claim surfaces aligned across repositories.
 - [`governance-gate.yml`](.github/workflows/governance-gate.yml) verifies required files and trusted-runner public PR boundaries.
