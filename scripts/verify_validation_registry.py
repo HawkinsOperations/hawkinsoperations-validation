@@ -55,6 +55,19 @@ REQUIRED_FIELDS = {
     "ci_source_dependency_mode",
     "notes",
 }
+BRIDGE_REQUIRED_FIELDS = {
+    "artifact_id",
+    "bridge_record_id",
+    "detection_id",
+    "bridge_kind",
+    "bridge_record_path",
+    "bridge_markdown_path",
+    "validator_script",
+    "proof_ceiling",
+    "public_safe_status",
+    "human_review_required",
+    "notes",
+}
 CONTROLLED_REQUIRED_PATHS = {
     "validation_package_path",
     "fixture_file",
@@ -221,6 +234,44 @@ def _verify_counts(root: Path, package: dict[str, Any]) -> None:
             fail(f"{detection_id} {label} report count mismatch: expected {expected_value}, found {actual}")
 
 
+def _validate_bridge_records(data: dict[str, Any], root: Path) -> list[dict[str, Any]]:
+    bridges = data.get("bridge_records", [])
+    if bridges is None:
+        return []
+    if not isinstance(bridges, list):
+        fail("bridge_records must be a list when present")
+    seen_artifacts: set[str] = set()
+    for bridge in bridges:
+        if not isinstance(bridge, dict):
+            fail("each bridge_records entry must be an object")
+        missing = sorted(BRIDGE_REQUIRED_FIELDS - bridge.keys())
+        artifact_id = str(bridge.get("bridge_record_id", bridge.get("artifact_id", "<unknown>")))
+        if missing:
+            fail(f"{artifact_id} bridge record missing required fields: {', '.join(missing)}")
+        if artifact_id in seen_artifacts:
+            fail(f"duplicate bridge artifact_id exists: {artifact_id}")
+        seen_artifacts.add(artifact_id)
+        if bridge["artifact_id"] != bridge["detection_id"]:
+            fail(f"{artifact_id} bridge artifact_id must match detection_id")
+        if bridge["detection_id"] != "HO-DET-001":
+            fail(f"{artifact_id} bridge detection_id must be HO-DET-001")
+        if bridge["bridge_kind"] != "hoxline_gauntlet_validation_bridge":
+            fail(f"{artifact_id} bridge_kind is invalid")
+        if bridge["proof_ceiling"] != "CONTROLLED_TEST_VALIDATED":
+            fail(f"{artifact_id} bridge proof_ceiling must be CONTROLLED_TEST_VALIDATED")
+        if bridge["public_safe_status"] not in {"BLOCKED", "NOT_PUBLIC_SAFE"}:
+            fail(f"{artifact_id} bridge public_safe_status must remain blocked")
+        if bridge["human_review_required"] is not True:
+            fail(f"{artifact_id} bridge human_review_required must be true")
+        for field in ("bridge_record_path", "bridge_markdown_path", "validator_script"):
+            _require_existing_path(root, bridge, field)
+        notes = str(bridge.get("notes", "")).lower()
+        for term in ("runtime", "signal", "production", "customer", "socaas", "public-safe"):
+            if term in notes and not any(marker in notes for marker in ("does not prove", "blocked", "not ")):
+                fail(f"{artifact_id} bridge notes mention {term} without blocked context")
+    return bridges
+
+
 def validate_registry(data: dict[str, Any], root: Path = ROOT) -> list[dict[str, Any]]:
     if data.get("schema_version") != 1:
         fail("schema_version must be 1")
@@ -231,6 +282,7 @@ def validate_registry(data: dict[str, Any], root: Path = ROOT) -> list[dict[str,
     packages = data.get("packages")
     if not isinstance(packages, list) or not packages:
         fail("packages must be a non-empty list")
+    _validate_bridge_records(data, root)
 
     seen_ids: set[str] = set()
     for package in packages:

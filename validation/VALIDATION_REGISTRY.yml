@@ -2,6 +2,21 @@
   "schema_version": 1,
   "registry_status": "VALIDATION_CONTRACT_ENFORCED",
   "human_review_required": true,
+  "bridge_records": [
+    {
+      "artifact_id": "HO-DET-001",
+      "bridge_record_id": "HO-DET-001_HOXLINE_GAUNTLET_VALIDATION_BRIDGE_V1",
+      "detection_id": "HO-DET-001",
+      "bridge_kind": "hoxline_gauntlet_validation_bridge",
+      "bridge_record_path": "validation/hoxline/ho-det-001-hoxline-gauntlet-validation-bridge-v1.json",
+      "bridge_markdown_path": "validation/hoxline/HO-DET-001_HOXLINE_GAUNTLET_VALIDATION_BRIDGE_V1.md",
+      "validator_script": "scripts/verify_hoxline_gauntlet_validation_bridge.py",
+      "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+      "public_safe_status": "BLOCKED",
+      "human_review_required": true,
+      "notes": "Validation-owned Hoxline Gauntlet reviewer-path bridge only. This does not prove runtime, signal, production, customer, SOCaaS, public-safe, AI-approved, analyst-approved, final authorization, or case-closure status."
+    }
+  ],
   "packages": [
     {
       "detection_id": "HOD-001",
