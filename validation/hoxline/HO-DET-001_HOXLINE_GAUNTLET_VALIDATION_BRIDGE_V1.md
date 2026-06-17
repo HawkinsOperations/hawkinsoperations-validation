@@ -15,20 +15,42 @@
 
 ## Scope
 
-This validation bridge records the Hoxline Gauntlet reviewer path for HO-DET-001 under controlled scope. It links Hoxline Gauntlet output to validation-owned behavior records and keeps proof promotion authority in `hawkinsoperations-proof`.
+This validation bridge records the Hoxline Gauntlet v1 reviewer path for HO-DET-001 under controlled scope. It links Hoxline Gauntlet v1 output to validation-owned behavior records and keeps proof promotion authority in `hawkinsoperations-proof`.
 
-Hoxline and ProofCard material are reviewer-path references here. They do not replace validation records, proof records, human review, or evidence gates.
+Hoxline v1, Claim Authority, and ProofCard material are reviewer-path references here. They do not replace validation records, proof records, human review, or evidence gates.
 
-## Hoxline Source Paths
+## Hoxline Source Manifest
 
 - Hoxline source repo: `HawkinsOperations/aevumguard`
-- Gauntlet run: `docs/gauntlet/HO_DET_001_GAUNTLET_RUN.md`
-- Gauntlet JSON output: `examples/gauntlet/ho-det-001-full-loop-run-v0.json`
-- Gauntlet Markdown output: `examples/gauntlet/ho-det-001-full-loop-run-v0.md`
-- Gauntlet schema: `schemas/gauntlet-full-loop-run-v0.schema.json`
-- ProofCard example: `examples/gauntlet/ho-det-001-proofcard-v0.json`
-- Evidence graph example: `examples/gauntlet/ho-det-001-evidence-graph-v0.json`
-- Promotion-state example: `examples/gauntlet/ho-det-001-promotion-state-v0.json`
+- Remote: `https://github.com/HawkinsOperations/hoxline.git`
+- Branch: `feature/hoxline-gauntlet-v1-engine`
+- Source manifest: `examples/gauntlet/ho-det-001-gauntlet-v1-source-manifest.json`
+- Manifest status: present and primary for this bridge.
+
+## Primary Hoxline v1 Source Paths
+
+- Gauntlet v1 run: `examples/gauntlet/ho-det-001-gauntlet-run-v1.json`
+- Gauntlet v1 schema: `schemas/gauntlet-run-v1.schema.json`
+- Overclaim fail-closed fixture: `examples/gauntlet/ho-det-001-gauntlet-run-v1-overclaim.json`
+- Evidence Graph v1: `examples/gauntlet/ho-det-001-evidence-graph-v1.json`
+- Evidence Graph v1 schema: `schemas/evidence-graph-v1.schema.json`
+- ProofCard v1: `examples/gauntlet/ho-det-001-proofcard-v1.json`
+- ProofCard v1 schema: `schemas/proofcard-v1.schema.json`
+- Claim Authority decision v1: `examples/gauntlet/ho-det-001-claim-decision-v1.json`
+- Claim Authority decision v1 schema: `schemas/claim-authority-decision-v1.schema.json`
+- Gauntlet v1 doc: `docs/gauntlet/HOXLINE_GAUNTLET_V1.md`
+- ProofCard v1 doc: `docs/proofcards/PROOFCARD_V1.md`
+- Claim Authority v1 doc: `docs/claim-authority/CLAIM_AUTHORITY_V1.md`
+
+## Compatibility v0 Paths
+
+These paths are compatibility-only and are not the primary source route:
+
+- Gauntlet v0 run: `examples/gauntlet/ho-det-001-full-loop-run-v0.json`
+- Gauntlet v0 schema: `schemas/gauntlet-full-loop-run-v0.schema.json`
+- ProofCard v0 example: `examples/gauntlet/ho-det-001-proofcard-v0.json`
+- Evidence Graph v0 example: `examples/gauntlet/ho-det-001-evidence-graph-v0.json`
+- Promotion-state v0 example: `examples/gauntlet/ho-det-001-promotion-state-v0.json`
 
 ## Validation Authority References
 
@@ -41,15 +63,15 @@ Hoxline and ProofCard material are reviewer-path references here. They do not re
 
 ## Supported Claim
 
-"HO-DET-001 has Hoxline Gauntlet reviewer-path validation under controlled scope."
+"HO-DET-001 has Hoxline Gauntlet v1 reviewer-path validation under controlled scope."
 
 ## Positive Expectations
 
-- Gauntlet output names artifact_id `HO-DET-001`.
-- Gauntlet output preserves proof_ceiling `CONTROLLED_TEST_VALIDATED`.
-- Gauntlet output keeps public_safe `false`.
-- Gauntlet output keeps human_review_required `true`.
-- Gauntlet output carries controlled-validation allowed wording only.
+- Gauntlet v1 output names artifact_id `HO-DET-001`.
+- Gauntlet v1 output preserves proof_ceiling `CONTROLLED_TEST_VALIDATED`.
+- Gauntlet v1 output keeps public_safe `false`.
+- Gauntlet v1 output keeps human_review_required `true`.
+- Gauntlet v1 output carries structured blocked-claim decisions and controlled-validation allowed wording only.
 
 ## Blocked Claims
 
@@ -73,15 +95,16 @@ Hoxline and ProofCard material are reviewer-path references here. They do not re
 
 ## Missing Evidence
 
-- runtime_evidence
-- signal_observation_evidence
-- public_safe_authorization
-- human_review_gate_complete
 - analyst_review_record
-- customer_deployment_evidence
-- service_deployment_evidence
-- final_authorization_record
 - case_closure_record
+- customer_deployment_evidence
+- deployment_evidence
+- final_authorization_record
+- human_review_gate_complete
+- public_safe_authorization
+- runtime_evidence
+- service_deployment_evidence
+- signal_observation_evidence
 
 ## Reproduction
 
@@ -89,6 +112,7 @@ From `hawkinsoperations-validation`:
 
 ```powershell
 python -B scripts/verify_hoxline_gauntlet_validation_bridge.py --format json
+python -B scripts/verify_hoxline_gauntlet_validation_bridge.py --format json --hoxline-root ..\aevumguard
 python -B scripts/verify_validation_registry.py
 python -B scripts/verify_all_validation_packages.py
 python -B -m unittest discover -s tests
@@ -97,13 +121,24 @@ python -B -m unittest discover -s tests
 From sibling checkout `aevumguard`:
 
 ```powershell
+python -B -m hoxline gauntlet verify --input examples/gauntlet/ho-det-001-gauntlet-run-v1.json --schema schemas/gauntlet-run-v1.schema.json
+python -B -m hoxline gauntlet summarize --input examples/gauntlet/ho-det-001-gauntlet-run-v1.json
+python -B -m hoxline claim-authority decide --input examples/gauntlet/ho-det-001-gauntlet-run-v1.json
+python -B -m hoxline proofcard render --input examples/gauntlet/ho-det-001-gauntlet-run-v1.json
+python -B -m hoxline gauntlet verify --input examples/gauntlet/ho-det-001-gauntlet-run-v1-overclaim.json --schema schemas/gauntlet-run-v1.schema.json
 python -B -m hoxline gauntlet verify --input examples/gauntlet/ho-det-001-full-loop-run-v0.json --schema schemas/gauntlet-full-loop-run-v0.schema.json
 ```
 
+The overclaim fixture is expected to fail closed with a nonzero verifier result.
+
+## Website Boundary
+
+Website rendering is not validation authority. No website edit is required for this bridge.
+
 ## Proof Ceiling
 
-This sprint adds source-owned validation/proof bridge records only. It does not create runtime truth, signal truth, public-safe status, customer deployment, SOCaaS deployment, production readiness, AI-approved disposition, analyst-approved disposition, final authorization, or case closure.
+This follow-up reconciles validation/proof bridge records to Hoxline Gauntlet v1 only. It does not create runtime truth, signal truth, public-safe status, customer deployment, SOCaaS deployment, production readiness, AI-approved disposition, analyst-approved disposition, final authorization, or case closure.
 
 ## Next Gate
 
-Create the proof-owned bridge record and proof map reference, then complete human review before any stronger public wording.
+`human_review_gate`
