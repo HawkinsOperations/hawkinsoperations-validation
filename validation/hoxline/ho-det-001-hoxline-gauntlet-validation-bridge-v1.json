@@ -7,10 +7,12 @@
   "controlled_validation_status": "VALIDATION_BRIDGE_REVIEWER_PATH_RECORDED",
   "validation_scope": "Hoxline Gauntlet v1 reviewer-path bridge for HO-DET-001 controlled-validation evidence only.",
   "hoxline_source": {
-    "repo": "HawkinsOperations/aevumguard",
+    "repo": "HawkinsOperations/hoxline",
     "remote": "https://github.com/HawkinsOperations/hoxline.git",
     "branch": "feature/hoxline-gauntlet-v1-engine",
     "read_only_local_checkout_role": "hoxline_source_reference_only",
+    "local_checkout_compatibility_name": "aevumguard",
+    "primary_source_manifest": "HawkinsOperations/hoxline/examples/gauntlet/ho-det-001-gauntlet-v1-source-manifest.json",
     "source_manifest_path": "examples/gauntlet/ho-det-001-gauntlet-v1-source-manifest.json",
     "primary_v1_paths": {
       "gauntlet_run": "examples/gauntlet/ho-det-001-gauntlet-run-v1.json",
@@ -41,7 +43,8 @@
   },
   "gauntlet_paths": {
     "source_manifest_path": "examples/gauntlet/ho-det-001-gauntlet-v1-source-manifest.json",
-    "hoxline_primary_v1_run_path": "HawkinsOperations/aevumguard/examples/gauntlet/ho-det-001-gauntlet-run-v1.json",
+    "hoxline_primary_source_manifest": "HawkinsOperations/hoxline/examples/gauntlet/ho-det-001-gauntlet-v1-source-manifest.json",
+    "hoxline_primary_v1_run_path": "HawkinsOperations/hoxline/examples/gauntlet/ho-det-001-gauntlet-run-v1.json",
     "primary_v1_run_path": "examples/gauntlet/ho-det-001-gauntlet-run-v1.json",
     "primary_v1_schema_path": "schemas/gauntlet-run-v1.schema.json",
     "primary_v1_overclaim_path": "examples/gauntlet/ho-det-001-gauntlet-run-v1-overclaim.json",
@@ -120,7 +123,8 @@
   "cross_repo_consistency": {
     "artifact_id": "HO-DET-001",
     "detection_id": "HO-DET-001",
-    "hoxline_primary_v1_run_path": "HawkinsOperations/aevumguard/examples/gauntlet/ho-det-001-gauntlet-run-v1.json",
+    "hoxline_primary_source_manifest": "HawkinsOperations/hoxline/examples/gauntlet/ho-det-001-gauntlet-v1-source-manifest.json",
+    "hoxline_primary_v1_run_path": "HawkinsOperations/hoxline/examples/gauntlet/ho-det-001-gauntlet-run-v1.json",
     "hoxline_primary_v1_schema_path": "schemas/gauntlet-run-v1.schema.json",
     "source_manifest_path": "examples/gauntlet/ho-det-001-gauntlet-v1-source-manifest.json",
     "proof_ceiling": "CONTROLLED_TEST_VALIDATED",

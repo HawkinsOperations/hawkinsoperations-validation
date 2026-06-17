@@ -17,6 +17,7 @@ BRIDGE_MD = ROOT / "validation" / "hoxline" / "HO-DET-001_HOXLINE_GAUNTLET_VALID
 
 EXPECTED_ALLOWED_CLAIM = "HO-DET-001 has Hoxline Gauntlet v1 reviewer-path validation under controlled scope."
 EXPECTED_MANIFEST = "examples/gauntlet/ho-det-001-gauntlet-v1-source-manifest.json"
+EXPECTED_PRIMARY_MANIFEST = "HawkinsOperations/hoxline/" + EXPECTED_MANIFEST
 EXPECTED_V1_RUN = "examples/gauntlet/ho-det-001-gauntlet-run-v1.json"
 EXPECTED_V1_SCHEMA = "schemas/gauntlet-run-v1.schema.json"
 EXPECTED_V0_RUN = "examples/gauntlet/ho-det-001-full-loop-run-v0.json"
@@ -227,8 +228,10 @@ def validate_bridge(
 def _validate_hoxline_source(source: Any) -> None:
     if not isinstance(source, dict):
         fail("hoxline_source must be an object")
-    if source.get("repo") != "HawkinsOperations/aevumguard":
-        fail("hoxline_source.repo must be HawkinsOperations/aevumguard")
+    if source.get("repo") != "HawkinsOperations/hoxline":
+        fail("hoxline_source.repo must be HawkinsOperations/hoxline")
+    if source.get("primary_source_manifest") != EXPECTED_PRIMARY_MANIFEST:
+        fail("primary Hoxline source manifest must use HawkinsOperations/hoxline")
     if source.get("source_manifest_path") != EXPECTED_MANIFEST:
         fail("source manifest path must be primary")
     primary = source.get("primary_v1_paths")
@@ -267,7 +270,9 @@ def _validate_gauntlet_paths(paths: Any) -> None:
     for field, value in expected.items():
         if paths.get(field) != value:
             fail(f"gauntlet_paths.{field} must be {value}")
-    if paths.get("hoxline_primary_v1_run_path") != "HawkinsOperations/aevumguard/" + EXPECTED_V1_RUN:
+    if paths.get("hoxline_primary_source_manifest") != EXPECTED_PRIMARY_MANIFEST:
+        fail("cross-repo Hoxline source manifest is stale")
+    if paths.get("hoxline_primary_v1_run_path") != "HawkinsOperations/hoxline/" + EXPECTED_V1_RUN:
         fail("cross-repo Hoxline v1 run path is stale")
     compatibility = paths.get("v0_compatibility_check")
     if not isinstance(compatibility, dict):
@@ -284,7 +289,8 @@ def _validate_cross_repo(cross: Any) -> None:
     expected_pairs = {
         "artifact_id": "HO-DET-001",
         "detection_id": "HO-DET-001",
-        "hoxline_primary_v1_run_path": "HawkinsOperations/aevumguard/" + EXPECTED_V1_RUN,
+        "hoxline_primary_source_manifest": EXPECTED_PRIMARY_MANIFEST,
+        "hoxline_primary_v1_run_path": "HawkinsOperations/hoxline/" + EXPECTED_V1_RUN,
         "hoxline_primary_v1_schema_path": EXPECTED_V1_SCHEMA,
         "source_manifest_path": EXPECTED_MANIFEST,
         "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
