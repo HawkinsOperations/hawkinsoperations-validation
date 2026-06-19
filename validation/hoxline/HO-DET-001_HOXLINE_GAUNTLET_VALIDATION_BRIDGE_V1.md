@@ -25,7 +25,7 @@ Hoxline v1, Claim Authority, and ProofCard material are reviewer-path references
 - Remote: `https://github.com/HawkinsOperations/hoxline.git`
 - Branch: `feature/hoxline-gauntlet-v1-engine`
 - Primary source manifest: `HawkinsOperations/hoxline/examples/gauntlet/ho-det-001-gauntlet-v1-source-manifest.json`
-- Local checkout compatibility name: `aevumguard`
+- Local checkout name: `hoxline`
 - Repo-relative manifest path: `examples/gauntlet/ho-det-001-gauntlet-v1-source-manifest.json`
 - Manifest status: present and primary for this bridge.
 
@@ -114,13 +114,13 @@ From `hawkinsoperations-validation`:
 
 ```powershell
 python -B scripts/verify_hoxline_gauntlet_validation_bridge.py --format json
-python -B scripts/verify_hoxline_gauntlet_validation_bridge.py --format json --hoxline-root ..\aevumguard
+python -B scripts/verify_hoxline_gauntlet_validation_bridge.py --format json --hoxline-root ..\hoxline
 python -B scripts/verify_validation_registry.py
 python -B scripts/verify_all_validation_packages.py
 python -B -m unittest discover -s tests
 ```
 
-From sibling checkout `aevumguard`:
+From sibling checkout `hoxline`:
 
 ```powershell
 python -B -m hoxline gauntlet verify --input examples/gauntlet/ho-det-001-gauntlet-run-v1.json --schema schemas/gauntlet-run-v1.schema.json
