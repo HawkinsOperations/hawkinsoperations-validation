@@ -11,7 +11,7 @@
     "remote": "https://github.com/HawkinsOperations/hoxline.git",
     "branch": "feature/hoxline-gauntlet-v1-engine",
     "read_only_local_checkout_role": "hoxline_source_reference_only",
-    "local_checkout_compatibility_name": "aevumguard",
+    "local_checkout_name": "hoxline",
     "primary_source_manifest": "HawkinsOperations/hoxline/examples/gauntlet/ho-det-001-gauntlet-v1-source-manifest.json",
     "source_manifest_path": "examples/gauntlet/ho-det-001-gauntlet-v1-source-manifest.json",
     "primary_v1_paths": {
@@ -163,11 +163,11 @@
   "next_gate": "human_review_gate",
   "laptop_safe_reproduction_commands": [
     "python -B scripts/verify_hoxline_gauntlet_validation_bridge.py --format json",
-    "python -B scripts/verify_hoxline_gauntlet_validation_bridge.py --format json --hoxline-root ..\\aevumguard",
+    "python -B scripts/verify_hoxline_gauntlet_validation_bridge.py --format json --hoxline-root ..\\hoxline",
     "python -B scripts/verify_validation_registry.py",
     "python -B scripts/verify_all_validation_packages.py",
     "python -B -m unittest discover -s tests",
-    "cd ..\\aevumguard",
+    "cd ..\\hoxline",
     "python -B -m hoxline gauntlet verify --input examples/gauntlet/ho-det-001-gauntlet-run-v1.json --schema schemas/gauntlet-run-v1.schema.json",
     "python -B -m hoxline gauntlet summarize --input examples/gauntlet/ho-det-001-gauntlet-run-v1.json",
     "python -B -m hoxline claim-authority decide --input examples/gauntlet/ho-det-001-gauntlet-run-v1.json",
