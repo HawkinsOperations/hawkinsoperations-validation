@@ -1,0 +1,117 @@
+{
+  "status": "pass",
+  "detection_id": "HO-DET-010",
+  "validation_scope": "controlled-test fixtures only",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-010",
+  "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-010/validation-cases.json",
+  "total_cases": 10,
+  "positive_cases": 5,
+  "negative_cases": 5,
+  "matched_positive_count": 5,
+  "missed_positive_cases": [],
+  "false_positive_negative_cases": [],
+  "positive": [
+    {
+      "id": "pos-001-security-4732-admin-add",
+      "matched": true,
+      "pass": true,
+      "behavior": "member added to local Administrators group",
+      "telemetry_source": "Windows Security 4732"
+    },
+    {
+      "id": "pos-002-security-4733-admin-remove",
+      "matched": true,
+      "pass": true,
+      "behavior": "member removed from local Administrators group",
+      "telemetry_source": "Windows Security 4733"
+    },
+    {
+      "id": "pos-003-sysmon-net-localgroup-add",
+      "matched": true,
+      "pass": true,
+      "behavior": "net.exe local Administrators membership add command",
+      "telemetry_source": "Sysmon Event ID 1"
+    },
+    {
+      "id": "pos-004-sysmon-powershell-add-localgroupmember",
+      "matched": true,
+      "pass": true,
+      "behavior": "PowerShell local Administrators membership add command",
+      "telemetry_source": "Sysmon Event ID 1"
+    },
+    {
+      "id": "pos-005-sysmon-powershell-remove-localgroupmember",
+      "matched": true,
+      "pass": true,
+      "behavior": "PowerShell local Administrators membership remove command",
+      "telemetry_source": "Sysmon Event ID 1"
+    }
+  ],
+  "negative": [
+    {
+      "id": "neg-001-approved-helpdesk-admin-add",
+      "matched": false,
+      "pass": true,
+      "behavior": "approved local admin workflow",
+      "telemetry_source": "Windows Security 4732"
+    },
+    {
+      "id": "neg-002-non-admin-group-add",
+      "matched": false,
+      "pass": true,
+      "behavior": "non-admin group membership change",
+      "telemetry_source": "Windows Security 4732"
+    },
+    {
+      "id": "neg-003-account-change-not-group-membership",
+      "matched": false,
+      "pass": true,
+      "behavior": "account change only",
+      "telemetry_source": "Windows Security 4738"
+    },
+    {
+      "id": "neg-004-net-localgroup-query",
+      "matched": false,
+      "pass": true,
+      "behavior": "group membership query only",
+      "telemetry_source": "Sysmon Event ID 1"
+    },
+    {
+      "id": "neg-005-approved-endpoint-remediation-remove",
+      "matched": false,
+      "pass": true,
+      "behavior": "approved remediation removal",
+      "telemetry_source": "Windows Security 4733"
+    }
+  ],
+  "exact_claim_supported": "HO-DET-010 passed controlled-test validation against controlled Windows local Administrators group membership fixtures.",
+  "blocked_claims": [
+    "runtime-active",
+    "signal-observed",
+    "public-safe",
+    "evidence-linked public proof",
+    "public-safe runtime proof",
+    "live SIEM ingestion",
+    "live Splunk proof",
+    "live Wazuh proof",
+    "production-ready",
+    "fleet-wide",
+    "privilege-management coverage completeness",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition"
+  ],
+  "runtime_active": false,
+  "signal_observed": false,
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "splunk_fired": false,
+  "wazuh_routed": false,
+  "production_ready": false,
+  "fleet_wide": false,
+  "autonomous_soc": false,
+  "ai_approved_disposition": false,
+  "analyst_approved_disposition": false,
+  "trust_boundary": "Controlled-test Windows local Administrators group membership fixture validation only. This does not prove runtime, signal, public-safe proof, live SIEM ingestion, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
+  "privacy_status": "Controlled-test fixtures only; no sensitive operational material or live telemetry intentionally included."
+}

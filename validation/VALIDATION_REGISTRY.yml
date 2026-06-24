@@ -82,6 +82,27 @@
       "notes": "Controlled process-creation fixture validation only. Sibling source contract is checked when present and skipped only when the entire sibling source surface is absent from a single-repo CI checkout."
     },
     {
+      "detection_id": "HO-DET-010",
+      "validation_kind": "controlled_validation",
+      "validation_package_path": "validation/successor/ho-det-010",
+      "fixture_file": "validation/successor/ho-det-010/validation-cases.json",
+      "report_json": "reports/ho-det-010/validation-result.json",
+      "report_markdown": "reports/ho-det-010/validation-result.md",
+      "validator_script": "scripts/validate-ho-det-010.py",
+      "parity_script": "scripts/verify-ho-det-010-result-parity.py",
+      "claim_boundary_script": "scripts/scan-ho-det-010-claim-boundaries.py",
+      "expected_fixture_count": 10,
+      "expected_positive_count": 5,
+      "expected_negative_count": 5,
+      "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+      "public_safe_status": "NOT_PUBLIC_SAFE",
+      "runtime_status": false,
+      "signal_status": false,
+      "source_dependency_required": true,
+      "ci_source_dependency_mode": "skip_if_missing",
+      "notes": "Controlled Windows local Administrators group membership fixture validation only. Sibling source contract is checked when present and skipped only when the entire sibling source surface is absent from a single-repo CI checkout. This does not prove runtime-active, signal-observed, production-ready, or public-safe status."
+    },
+    {
       "detection_id": "HO-DET-011",
       "validation_kind": "controlled_validation",
       "validation_package_path": "validation/successor/ho-det-011",

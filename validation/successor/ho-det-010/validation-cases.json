@@ -1,0 +1,155 @@
+{
+  "detection_id": "HO-DET-010",
+  "case_scope": "controlled-test_windows_local_administrators_group_membership_change",
+  "validation_scope": "controlled-test fixtures only",
+  "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-010",
+  "cases": {
+    "positive": [
+      {
+        "id": "pos-001-security-4732-admin-add",
+        "description": "Security 4732 member added to local Administrators",
+        "telemetry_source": "Windows Security 4732",
+        "behavior": "member added to local Administrators group",
+        "expected_match": true,
+        "event": {
+          "EventID": 4732,
+          "Channel": "Security",
+          "TargetUserName": "Administrators",
+          "TargetSid": "S-1-5-32-544",
+          "MemberName": "hoxline-temp-admin",
+          "SubjectUserName": "controlled-test-admin"
+        }
+      },
+      {
+        "id": "pos-002-security-4733-admin-remove",
+        "description": "Security 4733 member removed from local Administrators",
+        "telemetry_source": "Windows Security 4733",
+        "behavior": "member removed from local Administrators group",
+        "expected_match": true,
+        "event": {
+          "EventID": 4733,
+          "Channel": "Security",
+          "TargetUserName": "BUILTIN\\Administrators",
+          "TargetSid": "S-1-5-32-544",
+          "MemberName": "hoxline-temp-admin",
+          "SubjectUserName": "controlled-test-admin"
+        }
+      },
+      {
+        "id": "pos-003-sysmon-net-localgroup-add",
+        "description": "Sysmon process context for net localgroup administrators add",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "net.exe local Administrators membership add command",
+        "expected_match": true,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Provider_Name": "Microsoft-Windows-Sysmon",
+          "Image": "\\Windows\\System32\\net.exe",
+          "CommandLine": "net localgroup Administrators hoxline-temp-admin /add"
+        }
+      },
+      {
+        "id": "pos-004-sysmon-powershell-add-localgroupmember",
+        "description": "PowerShell Add-LocalGroupMember process context",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "PowerShell local Administrators membership add command",
+        "expected_match": true,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Provider_Name": "Microsoft-Windows-Sysmon",
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "CommandLine": "Add-LocalGroupMember -Group Administrators -Member hoxline-temp-admin"
+        }
+      },
+      {
+        "id": "pos-005-sysmon-powershell-remove-localgroupmember",
+        "description": "PowerShell Remove-LocalGroupMember process context",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "PowerShell local Administrators membership remove command",
+        "expected_match": true,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Provider_Name": "Microsoft-Windows-Sysmon",
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "CommandLine": "Remove-LocalGroupMember -Group Administrators -Member hoxline-temp-admin"
+        }
+      }
+    ],
+    "negative": [
+      {
+        "id": "neg-001-approved-helpdesk-admin-add",
+        "description": "Approved helpdesk admin provisioning",
+        "telemetry_source": "Windows Security 4732",
+        "behavior": "approved local admin workflow",
+        "expected_match": false,
+        "event": {
+          "EventID": 4732,
+          "Channel": "Security",
+          "TargetUserName": "Administrators",
+          "TargetSid": "S-1-5-32-544",
+          "MemberName": "helpdesk-user",
+          "SubjectUserName": "helpdesk-admin",
+          "ChangeWindow": "approved-helpdesk"
+        }
+      },
+      {
+        "id": "neg-002-non-admin-group-add",
+        "description": "Member added to non-admin local group",
+        "telemetry_source": "Windows Security 4732",
+        "behavior": "non-admin group membership change",
+        "expected_match": false,
+        "event": {
+          "EventID": 4732,
+          "Channel": "Security",
+          "TargetUserName": "Remote Desktop Users",
+          "TargetSid": "S-1-5-32-555",
+          "MemberName": "regular-user"
+        }
+      },
+      {
+        "id": "neg-003-account-change-not-group-membership",
+        "description": "Account changed event, not group membership",
+        "telemetry_source": "Windows Security 4738",
+        "behavior": "account change only",
+        "expected_match": false,
+        "event": {
+          "EventID": 4738,
+          "Channel": "Security",
+          "TargetUserName": "existing-user"
+        }
+      },
+      {
+        "id": "neg-004-net-localgroup-query",
+        "description": "net localgroup query without add/delete",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "group membership query only",
+        "expected_match": false,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Image": "\\Windows\\System32\\net.exe",
+          "CommandLine": "net localgroup Administrators"
+        }
+      },
+      {
+        "id": "neg-005-approved-endpoint-remediation-remove",
+        "description": "Approved endpoint management removal",
+        "telemetry_source": "Windows Security 4733",
+        "behavior": "approved remediation removal",
+        "expected_match": false,
+        "event": {
+          "EventID": 4733,
+          "Channel": "Security",
+          "TargetUserName": "Administrators",
+          "TargetSid": "S-1-5-32-544",
+          "MemberName": "temporary-admin",
+          "SubjectUserName": "endpoint-management",
+          "ChangeWindow": "approved-endpoint-remediation"
+        }
+      }
+    ]
+  }
+}
