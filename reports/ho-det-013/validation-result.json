@@ -1,0 +1,118 @@
+{
+  "status": "pass",
+  "detection_id": "HO-DET-013",
+  "validation_scope": "controlled-test fixtures only",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-013",
+  "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-013/validation-cases.json",
+  "total_cases": 10,
+  "positive_cases": 5,
+  "negative_cases": 5,
+  "matched_positive_count": 5,
+  "missed_positive_cases": [],
+  "false_positive_negative_cases": [],
+  "positive": [
+    {
+      "id": "pos-001-sysmon-sc-stop-wazuh",
+      "matched": true,
+      "pass": true,
+      "behavior": "service stop targeting telemetry agent",
+      "telemetry_source": "Sysmon Event ID 1"
+    },
+    {
+      "id": "pos-002-security-1102-log-clear",
+      "matched": true,
+      "pass": true,
+      "behavior": "security event log cleared",
+      "telemetry_source": "Windows Security 1102"
+    },
+    {
+      "id": "pos-003-powershell-defender-disable",
+      "matched": true,
+      "pass": true,
+      "behavior": "Defender preference tamper pattern",
+      "telemetry_source": "Sysmon Event ID 1"
+    },
+    {
+      "id": "pos-004-auditpol-disable-success",
+      "matched": true,
+      "pass": true,
+      "behavior": "audit policy disable pattern",
+      "telemetry_source": "Sysmon Event ID 1"
+    },
+    {
+      "id": "pos-005-system-7040-sysmon-disabled",
+      "matched": true,
+      "pass": true,
+      "behavior": "telemetry service disabled",
+      "telemetry_source": "Windows System 7040"
+    }
+  ],
+  "negative": [
+    {
+      "id": "neg-001-approved-agent-restart",
+      "matched": false,
+      "pass": true,
+      "behavior": "documented maintenance restart",
+      "telemetry_source": "Windows System 7036"
+    },
+    {
+      "id": "neg-002-service-query-only",
+      "matched": false,
+      "pass": true,
+      "behavior": "service query only",
+      "telemetry_source": "Sysmon Event ID 1"
+    },
+    {
+      "id": "neg-003-non-security-service-restart",
+      "matched": false,
+      "pass": true,
+      "behavior": "non-security service state change",
+      "telemetry_source": "Windows System 7036"
+    },
+    {
+      "id": "neg-004-approved-defender-policy",
+      "matched": false,
+      "pass": true,
+      "behavior": "approved policy context",
+      "telemetry_source": "Defender Operational"
+    },
+    {
+      "id": "neg-005-lab-maintenance-log-query",
+      "matched": false,
+      "pass": true,
+      "behavior": "log query without clear",
+      "telemetry_source": "Sysmon Event ID 1"
+    }
+  ],
+  "exact_claim_supported": "HO-DET-013 passed controlled-test validation against controlled telemetry/security-control tamper fixtures.",
+  "blocked_claims": [
+    "runtime-active",
+    "signal-observed",
+    "public-safe",
+    "evidence-linked public proof",
+    "public-safe runtime proof",
+    "live SIEM ingestion",
+    "live Splunk proof",
+    "live Wazuh proof",
+    "live Defender proof",
+    "production-ready",
+    "fleet-wide",
+    "complete telemetry coverage",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition"
+  ],
+  "runtime_active": false,
+  "signal_observed": false,
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "splunk_fired": false,
+  "wazuh_routed": false,
+  "production_ready": false,
+  "fleet_wide": false,
+  "autonomous_soc": false,
+  "ai_approved_disposition": false,
+  "analyst_approved_disposition": false,
+  "trust_boundary": "Controlled-test telemetry/security-control tamper fixture validation only. This does not prove runtime, signal, public-safe proof, live SIEM ingestion, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
+  "privacy_status": "Controlled-test fixtures only; no sensitive operational material or live telemetry intentionally included."
+}

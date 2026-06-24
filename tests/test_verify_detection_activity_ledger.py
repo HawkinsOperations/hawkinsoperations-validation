@@ -22,10 +22,10 @@ class DetectionActivityLedgerTests(unittest.TestCase):
     def test_repo_ledger_matches_validation_registry_counts(self) -> None:
         result = verifier.verify_ledger(LEDGER_PATH, REGISTRY_PATH, ROOT)
 
-        self.assertEqual(result["controlled_validation_fire_count"], 49)
-        self.assertEqual(result["controlled_negative_test_count"], 57)
-        self.assertEqual(result["validation_case_count"], 106)
-        self.assertEqual(result["detection_activity_count"], 49)
+        self.assertEqual(result["controlled_validation_fire_count"], 59)
+        self.assertEqual(result["controlled_negative_test_count"], 67)
+        self.assertEqual(result["validation_case_count"], 126)
+        self.assertEqual(result["detection_activity_count"], 59)
         self.assertEqual(result["public_safe_status"], "NOT_PUBLIC_SAFE")
         self.assertEqual(result["runtime_public_safe_count"], 0)
 

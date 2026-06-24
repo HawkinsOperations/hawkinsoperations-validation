@@ -1,0 +1,117 @@
+{
+  "status": "pass",
+  "detection_id": "HO-DET-009",
+  "validation_scope": "controlled-test fixtures only",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-009",
+  "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-009/validation-cases.json",
+  "total_cases": 10,
+  "positive_cases": 5,
+  "negative_cases": 5,
+  "matched_positive_count": 5,
+  "missed_positive_cases": [],
+  "false_positive_negative_cases": [],
+  "positive": [
+    {
+      "id": "pos-001-security-4720-support-account",
+      "matched": true,
+      "pass": true,
+      "behavior": "local user creation with support-like account name",
+      "telemetry_source": "Windows Security 4720"
+    },
+    {
+      "id": "pos-002-security-4720-service-account",
+      "matched": true,
+      "pass": true,
+      "behavior": "local user creation with service-like account name",
+      "telemetry_source": "Windows Security 4720"
+    },
+    {
+      "id": "pos-003-sysmon-net-user-add",
+      "matched": true,
+      "pass": true,
+      "behavior": "net.exe local user creation command",
+      "telemetry_source": "Sysmon Event ID 1"
+    },
+    {
+      "id": "pos-004-sysmon-powershell-new-localuser",
+      "matched": true,
+      "pass": true,
+      "behavior": "PowerShell local user creation command",
+      "telemetry_source": "Sysmon Event ID 1"
+    },
+    {
+      "id": "pos-005-security-4720-admin-adjacent",
+      "matched": true,
+      "pass": true,
+      "behavior": "admin-adjacent local account creation",
+      "telemetry_source": "Windows Security 4720"
+    }
+  ],
+  "negative": [
+    {
+      "id": "neg-001-approved-helpdesk-onboarding",
+      "matched": false,
+      "pass": true,
+      "behavior": "approved onboarding context",
+      "telemetry_source": "Windows Security 4720"
+    },
+    {
+      "id": "neg-002-account-change-not-creation",
+      "matched": false,
+      "pass": true,
+      "behavior": "related account change context only",
+      "telemetry_source": "Windows Security 4738"
+    },
+    {
+      "id": "neg-003-net-user-query",
+      "matched": false,
+      "pass": true,
+      "behavior": "account query only",
+      "telemetry_source": "Sysmon Event ID 1"
+    },
+    {
+      "id": "neg-004-approved-lab-reset-account",
+      "matched": false,
+      "pass": true,
+      "behavior": "approved lab reset",
+      "telemetry_source": "Windows Security 4720"
+    },
+    {
+      "id": "neg-005-powershell-get-localuser",
+      "matched": false,
+      "pass": true,
+      "behavior": "local user query only",
+      "telemetry_source": "Sysmon Event ID 1"
+    }
+  ],
+  "exact_claim_supported": "HO-DET-009 passed controlled-test validation against controlled Windows local user creation fixtures.",
+  "blocked_claims": [
+    "runtime-active",
+    "signal-observed",
+    "public-safe",
+    "evidence-linked public proof",
+    "public-safe runtime proof",
+    "live SIEM ingestion",
+    "live Splunk proof",
+    "live Wazuh proof",
+    "production-ready",
+    "fleet-wide",
+    "account-lifecycle coverage completeness",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition"
+  ],
+  "runtime_active": false,
+  "signal_observed": false,
+  "public_safe_status": "NOT_PUBLIC_SAFE",
+  "splunk_fired": false,
+  "wazuh_routed": false,
+  "production_ready": false,
+  "fleet_wide": false,
+  "autonomous_soc": false,
+  "ai_approved_disposition": false,
+  "analyst_approved_disposition": false,
+  "trust_boundary": "Controlled-test Windows local user creation fixture validation only. This does not prove runtime, signal, public-safe proof, live SIEM ingestion, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
+  "privacy_status": "Controlled-test fixtures only; no sensitive operational material or live telemetry intentionally included."
+}
