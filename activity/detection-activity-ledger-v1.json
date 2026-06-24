@@ -6,11 +6,11 @@
   "generated_by": "manual_v1_from_validation_registry",
   "activity_boundary": "Controlled validation activity only. This is not the Lifetime Case Ledger and does not append governed cases.",
   "aggregate_metrics": {
-    "detection_activity_count": 49,
-    "controlled_validation_fire_count": 49,
-    "controlled_negative_test_count": 57,
-    "validation_case_count": 106,
-    "activity_entry_count": 10,
+    "detection_activity_count": 59,
+    "controlled_validation_fire_count": 59,
+    "controlled_negative_test_count": 67,
+    "validation_case_count": 126,
+    "activity_entry_count": 12,
     "runtime_public_safe_count": 0,
     "public_safe_count": 0
   },
@@ -35,14 +35,26 @@
       "activity_type": "controlled validation positive fixture match",
       "count": 5,
       "count_basis": "expected_positive_count in validation registry",
-      "source_artifacts": ["validation/VALIDATION_REGISTRY.yml", "reports/hero001-validation-report.json"],
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/hero001-validation-report.json"
+      ],
       "authority_repo": "hawkinsoperations-validation",
       "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "runtime_truth_status": "NOT_PROVEN",
       "signal_truth_status": "NOT_PROVEN",
-      "does_not_prove": ["runtime activity", "signal observation", "public-safe proof", "governed case append"],
-      "blocked_claims": ["runtime-active", "signal-observed", "public-safe"]
+      "does_not_prove": [
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "governed case append"
+      ],
+      "blocked_claims": [
+        "runtime-active",
+        "signal-observed",
+        "public-safe"
+      ]
     },
     {
       "detection_id": "AWS-DET-001",
@@ -50,14 +62,28 @@
       "activity_type": "controlled validation positive fixture match",
       "count": 3,
       "count_basis": "expected_positive_count in validation registry",
-      "source_artifacts": ["validation/VALIDATION_REGISTRY.yml", "reports/aws-det-001/validation-result.json"],
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/aws-det-001/validation-result.json"
+      ],
       "authority_repo": "hawkinsoperations-validation",
       "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "runtime_truth_status": "NOT_PROVEN",
       "signal_truth_status": "NOT_PROVEN",
-      "does_not_prove": ["AWS-live", "runtime activity", "signal observation", "public-safe proof", "governed case append"],
-      "blocked_claims": ["AWS-live", "runtime-active", "signal-observed", "public-safe"]
+      "does_not_prove": [
+        "AWS-live",
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "governed case append"
+      ],
+      "blocked_claims": [
+        "AWS-live",
+        "runtime-active",
+        "signal-observed",
+        "public-safe"
+      ]
     },
     {
       "detection_id": "HO-DET-001",
@@ -65,14 +91,27 @@
       "activity_type": "controlled validation positive fixture match",
       "count": 7,
       "count_basis": "expected_positive_count in validation registry",
-      "source_artifacts": ["validation/VALIDATION_REGISTRY.yml", "reports/ho-det-001/validation-result.json"],
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/ho-det-001/validation-result.json"
+      ],
       "authority_repo": "hawkinsoperations-validation",
       "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "runtime_truth_status": "NOT_PROVEN",
       "signal_truth_status": "NOT_PROVEN",
-      "does_not_prove": ["runtime activity", "signal observation", "public-safe proof", "governed case append"],
-      "blocked_claims": ["runtime-active", "signal-observed", "public-safe", "live Splunk firing"]
+      "does_not_prove": [
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "governed case append"
+      ],
+      "blocked_claims": [
+        "runtime-active",
+        "signal-observed",
+        "public-safe",
+        "live Splunk firing"
+      ]
     },
     {
       "detection_id": "HO-DET-011",
@@ -80,14 +119,28 @@
       "activity_type": "controlled validation positive fixture match",
       "count": 7,
       "count_basis": "expected_positive_count in validation registry",
-      "source_artifacts": ["validation/VALIDATION_REGISTRY.yml", "reports/ho-det-011/validation-result.json"],
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/ho-det-011/validation-result.json"
+      ],
       "authority_repo": "hawkinsoperations-validation",
       "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "runtime_truth_status": "NOT_PROVEN",
       "signal_truth_status": "NOT_PROVEN",
-      "does_not_prove": ["runtime activity", "signal observation", "public-safe proof", "governed case append"],
-      "blocked_claims": ["runtime-active", "signal-observed", "public-safe", "Wazuh-routed", "Cribl-routed"]
+      "does_not_prove": [
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "governed case append"
+      ],
+      "blocked_claims": [
+        "runtime-active",
+        "signal-observed",
+        "public-safe",
+        "Wazuh-routed",
+        "Cribl-routed"
+      ]
     },
     {
       "detection_id": "HO-DET-012",
@@ -95,14 +148,86 @@
       "activity_type": "controlled validation positive fixture match",
       "count": 4,
       "count_basis": "expected_positive_count in validation registry",
-      "source_artifacts": ["validation/VALIDATION_REGISTRY.yml", "reports/ho-det-012/validation-result.json"],
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/ho-det-012/validation-result.json"
+      ],
       "authority_repo": "hawkinsoperations-validation",
       "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "runtime_truth_status": "NOT_PROVEN",
       "signal_truth_status": "NOT_PROVEN",
-      "does_not_prove": ["runtime activity", "signal observation", "public-safe proof", "governed case append"],
-      "blocked_claims": ["runtime-active", "signal-observed", "public-safe"]
+      "does_not_prove": [
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "governed case append"
+      ],
+      "blocked_claims": [
+        "runtime-active",
+        "signal-observed",
+        "public-safe"
+      ]
+    },
+    {
+      "detection_id": "HO-DET-009",
+      "activity_scope": "CONTROLLED_VALIDATION_FIRE",
+      "activity_type": "controlled validation positive fixture match",
+      "count": 5,
+      "count_basis": "expected_positive_count in validation registry",
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/ho-det-009/validation-result.json"
+      ],
+      "authority_repo": "hawkinsoperations-validation",
+      "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+      "public_safe_status": "NOT_PUBLIC_SAFE",
+      "runtime_truth_status": "NOT_PROVEN",
+      "signal_truth_status": "NOT_PROVEN",
+      "does_not_prove": [
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "governed case append",
+        "account lifecycle coverage completeness"
+      ],
+      "blocked_claims": [
+        "runtime-active",
+        "signal-observed",
+        "public-safe",
+        "Wazuh-routed",
+        "account-lifecycle coverage completeness"
+      ]
+    },
+    {
+      "detection_id": "HO-DET-013",
+      "activity_scope": "CONTROLLED_VALIDATION_FIRE",
+      "activity_type": "controlled validation positive fixture match",
+      "count": 5,
+      "count_basis": "expected_positive_count in validation registry",
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/ho-det-013/validation-result.json"
+      ],
+      "authority_repo": "hawkinsoperations-validation",
+      "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+      "public_safe_status": "NOT_PUBLIC_SAFE",
+      "runtime_truth_status": "NOT_PROVEN",
+      "signal_truth_status": "NOT_PROVEN",
+      "does_not_prove": [
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "governed case append",
+        "control coverage completeness"
+      ],
+      "blocked_claims": [
+        "runtime-active",
+        "signal-observed",
+        "public-safe",
+        "Wazuh-routed",
+        "control coverage completeness"
+      ]
     },
     {
       "detection_id": "ID-DET-001",
@@ -110,14 +235,28 @@
       "activity_type": "controlled validation positive fixture match",
       "count": 5,
       "count_basis": "expected_positive_count in validation registry",
-      "source_artifacts": ["validation/VALIDATION_REGISTRY.yml", "reports/id-det-001/validation-result.json"],
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/id-det-001/validation-result.json"
+      ],
       "authority_repo": "hawkinsoperations-validation",
       "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "runtime_truth_status": "NOT_PROVEN",
       "signal_truth_status": "NOT_PROVEN",
-      "does_not_prove": ["live IdP proof", "runtime activity", "signal observation", "public-safe proof", "governed case append"],
-      "blocked_claims": ["live IdP proof", "runtime-active", "signal-observed", "public-safe"]
+      "does_not_prove": [
+        "live IdP proof",
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "governed case append"
+      ],
+      "blocked_claims": [
+        "live IdP proof",
+        "runtime-active",
+        "signal-observed",
+        "public-safe"
+      ]
     },
     {
       "detection_id": "ID-DET-002",
@@ -125,14 +264,28 @@
       "activity_type": "controlled validation positive fixture match",
       "count": 5,
       "count_basis": "expected_positive_count in validation registry",
-      "source_artifacts": ["validation/VALIDATION_REGISTRY.yml", "reports/id-det-002/validation-result.json"],
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/id-det-002/validation-result.json"
+      ],
       "authority_repo": "hawkinsoperations-validation",
       "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "runtime_truth_status": "NOT_PROVEN",
       "signal_truth_status": "NOT_PROVEN",
-      "does_not_prove": ["live IdP proof", "runtime activity", "signal observation", "public-safe proof", "governed case append"],
-      "blocked_claims": ["live IdP proof", "runtime-active", "signal-observed", "public-safe"]
+      "does_not_prove": [
+        "live IdP proof",
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "governed case append"
+      ],
+      "blocked_claims": [
+        "live IdP proof",
+        "runtime-active",
+        "signal-observed",
+        "public-safe"
+      ]
     },
     {
       "detection_id": "ID-DET-003",
@@ -140,14 +293,28 @@
       "activity_type": "controlled validation positive fixture match",
       "count": 5,
       "count_basis": "expected_positive_count in validation registry",
-      "source_artifacts": ["validation/VALIDATION_REGISTRY.yml", "reports/id-det-003/validation-result.json"],
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/id-det-003/validation-result.json"
+      ],
       "authority_repo": "hawkinsoperations-validation",
       "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "runtime_truth_status": "NOT_PROVEN",
       "signal_truth_status": "NOT_PROVEN",
-      "does_not_prove": ["live IdP proof", "runtime activity", "signal observation", "public-safe proof", "governed case append"],
-      "blocked_claims": ["live IdP proof", "runtime-active", "signal-observed", "public-safe"]
+      "does_not_prove": [
+        "live IdP proof",
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "governed case append"
+      ],
+      "blocked_claims": [
+        "live IdP proof",
+        "runtime-active",
+        "signal-observed",
+        "public-safe"
+      ]
     },
     {
       "detection_id": "ID-DET-004",
@@ -155,14 +322,28 @@
       "activity_type": "controlled validation positive fixture match",
       "count": 5,
       "count_basis": "expected_positive_count in validation registry",
-      "source_artifacts": ["validation/VALIDATION_REGISTRY.yml", "reports/id-det-004/validation-result.json"],
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/id-det-004/validation-result.json"
+      ],
       "authority_repo": "hawkinsoperations-validation",
       "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "runtime_truth_status": "NOT_PROVEN",
       "signal_truth_status": "NOT_PROVEN",
-      "does_not_prove": ["live IdP proof", "runtime activity", "signal observation", "public-safe proof", "governed case append"],
-      "blocked_claims": ["live IdP proof", "runtime-active", "signal-observed", "public-safe"]
+      "does_not_prove": [
+        "live IdP proof",
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "governed case append"
+      ],
+      "blocked_claims": [
+        "live IdP proof",
+        "runtime-active",
+        "signal-observed",
+        "public-safe"
+      ]
     },
     {
       "detection_id": "HO-PIPE-001",
@@ -170,14 +351,28 @@
       "activity_type": "controlled validation positive fixture match",
       "count": 3,
       "count_basis": "expected_positive_count in validation registry",
-      "source_artifacts": ["validation/VALIDATION_REGISTRY.yml", "reports/ho-pipe-001/validation-result.json"],
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/ho-pipe-001/validation-result.json"
+      ],
       "authority_repo": "hawkinsoperations-validation",
       "proof_ceiling": "VALIDATION_CONTRACT_ENFORCED",
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "runtime_truth_status": "NOT_PROVEN",
       "signal_truth_status": "NOT_PROVEN",
-      "does_not_prove": ["runtime activity", "signal observation", "public-safe proof", "Cribl-routed proof", "governed case append"],
-      "blocked_claims": ["Cribl-routed", "runtime-active", "signal-observed", "public-safe"]
+      "does_not_prove": [
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "Cribl-routed proof",
+        "governed case append"
+      ],
+      "blocked_claims": [
+        "Cribl-routed",
+        "runtime-active",
+        "signal-observed",
+        "public-safe"
+      ]
     }
   ],
   "excluded_validation_packages": [

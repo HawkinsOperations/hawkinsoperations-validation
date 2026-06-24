@@ -1,0 +1,145 @@
+{
+  "detection_id": "HO-DET-009",
+  "case_scope": "controlled-test_windows_local_user_creation",
+  "validation_scope": "controlled-test fixtures only",
+  "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-009",
+  "cases": {
+    "positive": [
+      {
+        "id": "pos-001-security-4720-support-account",
+        "description": "Security 4720 local support account creation",
+        "telemetry_source": "Windows Security 4720",
+        "behavior": "local user creation with support-like account name",
+        "expected_match": true,
+        "event": {
+          "EventID": 4720,
+          "Channel": "Security",
+          "TargetUserName": "hoxline-support-tmp",
+          "SubjectUserName": "controlled-test-admin"
+        }
+      },
+      {
+        "id": "pos-002-security-4720-service-account",
+        "description": "Security 4720 local service-like account creation",
+        "telemetry_source": "Windows Security 4720",
+        "behavior": "local user creation with service-like account name",
+        "expected_match": true,
+        "event": {
+          "EventID": 4720,
+          "Channel": "Security",
+          "TargetUserName": "svc-hoxline-lab",
+          "SubjectUserName": "controlled-test-admin"
+        }
+      },
+      {
+        "id": "pos-003-sysmon-net-user-add",
+        "description": "Sysmon process context for net user add",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "net.exe local user creation command",
+        "expected_match": true,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Provider_Name": "Microsoft-Windows-Sysmon",
+          "Image": "\\Windows\\System32\\net.exe",
+          "CommandLine": "net user hoxline-temp-user ExampleRedacted1! /add"
+        }
+      },
+      {
+        "id": "pos-004-sysmon-powershell-new-localuser",
+        "description": "PowerShell New-LocalUser process context",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "PowerShell local user creation command",
+        "expected_match": true,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Provider_Name": "Microsoft-Windows-Sysmon",
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "CommandLine": "New-LocalUser -Name hoxline-temp-user -Description controlled-test"
+        }
+      },
+      {
+        "id": "pos-005-security-4720-admin-adjacent",
+        "description": "Security 4720 administrator-adjacent account name",
+        "telemetry_source": "Windows Security 4720",
+        "behavior": "admin-adjacent local account creation",
+        "expected_match": true,
+        "event": {
+          "EventID": 4720,
+          "Channel": "Security",
+          "TargetUserName": "admin-backup-local",
+          "SubjectUserName": "controlled-test-admin"
+        }
+      }
+    ],
+    "negative": [
+      {
+        "id": "neg-001-approved-helpdesk-onboarding",
+        "description": "Approved helpdesk onboarding account",
+        "telemetry_source": "Windows Security 4720",
+        "behavior": "approved onboarding context",
+        "expected_match": false,
+        "event": {
+          "EventID": 4720,
+          "Channel": "Security",
+          "TargetUserName": "student-lab-01",
+          "SubjectUserName": "helpdesk-admin",
+          "ChangeWindow": "approved-onboarding"
+        }
+      },
+      {
+        "id": "neg-002-account-change-not-creation",
+        "description": "Account changed event, not account created",
+        "telemetry_source": "Windows Security 4738",
+        "behavior": "related account change context only",
+        "expected_match": false,
+        "event": {
+          "EventID": 4738,
+          "Channel": "Security",
+          "TargetUserName": "existing-user"
+        }
+      },
+      {
+        "id": "neg-003-net-user-query",
+        "description": "net user query without add",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "account query only",
+        "expected_match": false,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Image": "\\Windows\\System32\\net.exe",
+          "CommandLine": "net user existing-user"
+        }
+      },
+      {
+        "id": "neg-004-approved-lab-reset-account",
+        "description": "Documented lab reset account creation",
+        "telemetry_source": "Windows Security 4720",
+        "behavior": "approved lab reset",
+        "expected_match": false,
+        "event": {
+          "EventID": 4720,
+          "Channel": "Security",
+          "TargetUserName": "lab-reset-user",
+          "SubjectUserName": "lab-admin",
+          "ChangeWindow": "approved-lab-reset"
+        }
+      },
+      {
+        "id": "neg-005-powershell-get-localuser",
+        "description": "PowerShell local user query without creation",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "local user query only",
+        "expected_match": false,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "CommandLine": "Get-LocalUser -Name existing-user"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,244 @@
+#!/usr/bin/env python3
+"""Controlled-test validation runner for HO-DET-009."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+DETECTIONS_ROOT = ROOT.parent / "hawkinsoperations-detections"
+SOURCE_DIR = DETECTIONS_ROOT / "detections" / "successor" / "ho-det-009"
+CASES_FILE = ROOT / "validation" / "successor" / "ho-det-009" / "validation-cases.json"
+REPORT_DIR = ROOT / "reports" / "ho-det-009"
+REPORT_JSON = REPORT_DIR / "validation-result.json"
+REPORT_MD = REPORT_DIR / "validation-result.md"
+SUPPORTED_CLAIM = "HO-DET-009 passed controlled-test validation against controlled Windows local user creation fixtures."
+PROOF_CEILING = "CONTROLLED_TEST_VALIDATED"
+EXPECTED_POSITIVE_COUNT = 5
+EXPECTED_NEGATIVE_COUNT = 5
+BLOCKED_CLAIMS = [
+    "runtime-active",
+    "signal-observed",
+    "public-safe",
+    "evidence-linked public proof",
+    "public-safe runtime proof",
+    "live SIEM ingestion",
+    "live Splunk proof",
+    "live Wazuh proof",
+    "production-ready",
+    "fleet-wide",
+    "account-lifecycle coverage completeness",
+    "autonomous SOC",
+    "AI-approved disposition",
+    "analyst-approved disposition",
+]
+ACCOUNT_NAME_MARKERS = ("svc", "support", "backup", "temp", "admin", "$")
+APPROVED_MARKERS = ("approved", "change-approved", "approved-onboarding", "approved-lab-reset")
+
+
+def fail(message: str) -> None:
+    print(f"FAIL: {message}", file=sys.stderr)
+    raise SystemExit(1)
+
+
+def load_json(path: Path, label: str) -> dict[str, Any]:
+    if not path.exists():
+        fail(f"missing {label}: {path}")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        fail(f"invalid JSON in {label}: {exc}")
+    if not isinstance(data, dict):
+        fail(f"{label} must be a JSON object")
+    return data
+
+
+def event_id(event: dict[str, Any]) -> int | None:
+    try:
+        return int(event.get("EventID", event.get("EventCode")))
+    except (TypeError, ValueError):
+        return None
+
+
+def lower(event: dict[str, Any], key: str) -> str:
+    return str(event.get(key, "") or "").lower()
+
+
+def approved_context(event: dict[str, Any]) -> bool:
+    text = " ".join(str(event.get(key, "") or "") for key in ("ChangeWindow", "Approval", "Context", "Description")).lower()
+    return any(marker in text for marker in APPROVED_MARKERS)
+
+
+def account_name(event: dict[str, Any]) -> str:
+    return str(event.get("TargetUserName", event.get("AccountName", "")) or "").lower()
+
+
+def command_text(event: dict[str, Any]) -> str:
+    return " ".join(str(event.get(key, "") or "") for key in ("CommandLine", "Image", "ParentImage")).lower()
+
+
+def process_creation_matches(event: dict[str, Any]) -> bool:
+    text = command_text(event)
+    if not any(tool in text for tool in ("\\net.exe", "\\net1.exe", "powershell", "pwsh", "cmd.exe", "net user", "new-localuser")):
+        return False
+    return ("new-localuser" in text) or ("net user" in text and "/add" in text)
+
+
+def event_matches(event: dict[str, Any]) -> bool:
+    if approved_context(event):
+        return False
+    eid = event_id(event)
+    if eid == 4720:
+        name = account_name(event)
+        return bool(name) and any(marker in name for marker in ACCOUNT_NAME_MARKERS)
+    if eid == 1:
+        return process_creation_matches(event)
+    return False
+
+
+def validate_source_contract(mode: str) -> None:
+    required = [
+        SOURCE_DIR / "README.md",
+        SOURCE_DIR / "rule.yml",
+        SOURCE_DIR / "event-mapping.yml",
+        SOURCE_DIR / "status.yml",
+        SOURCE_DIR / "wazuh.xml",
+        SOURCE_DIR / "splunk.spl",
+    ]
+    missing = [path for path in required if not path.exists()]
+    if missing:
+        if mode == "skip-if-missing" and len(missing) == len(required):
+            print("SOURCE_CONTRACT=skipped")
+            return
+        fail("missing source contract paths: " + ";".join(str(path) for path in missing))
+    rule = (SOURCE_DIR / "rule.yml").read_text(encoding="utf-8")
+    for fragment in ("detection_id: HO-DET-009", "selection_security_4720", "selection_account_creation_command", "T1136.001"):
+        if fragment not in rule:
+            fail(f"source rule missing tuned fragment: {fragment}")
+    wazuh = (SOURCE_DIR / "wazuh.xml").read_text(encoding="utf-8")
+    for fragment in ("910091", "910092", "910093"):
+        if fragment not in wazuh:
+            fail(f"Wazuh source missing expected rule id: {fragment}")
+
+
+def validate_fixture_contract(cases: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if cases.get("detection_id") != "HO-DET-009":
+        fail("validation cases detection_id must be HO-DET-009")
+    groups = cases.get("cases")
+    if not isinstance(groups, dict):
+        fail("validation cases must include cases object")
+    positives = groups.get("positive")
+    negatives = groups.get("negative")
+    if not isinstance(positives, list) or not isinstance(negatives, list):
+        fail("positive and negative cases must be arrays")
+    if len(positives) != EXPECTED_POSITIVE_COUNT or len(negatives) != EXPECTED_NEGATIVE_COUNT:
+        fail("unexpected HO-DET-009 fixture counts")
+    return positives, negatives
+
+
+def result_row(item: dict[str, Any], expected: bool) -> dict[str, Any]:
+    matched = event_matches(item["event"])
+    return {
+        "id": item["id"],
+        "matched": matched,
+        "pass": matched is expected,
+        "behavior": item["behavior"],
+        "telemetry_source": item["telemetry_source"],
+    }
+
+
+def build_report(cases: dict[str, Any], source_contract: str = "required") -> dict[str, Any]:
+    validate_source_contract(source_contract)
+    positives, negatives = validate_fixture_contract(cases)
+    pos_results = [result_row(item, True) for item in positives]
+    neg_results = [result_row(item, False) for item in negatives]
+    missed = [item["id"] for item in pos_results if not item["pass"]]
+    false_positive = [item["id"] for item in neg_results if not item["pass"]]
+    status = "pass" if not missed and not false_positive else "fail"
+    return {
+        "status": status,
+        "detection_id": "HO-DET-009",
+        "validation_scope": "controlled-test fixtures only",
+        "proof_ceiling": PROOF_CEILING if status == "pass" else "VALIDATION_DRAFT",
+        "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-009",
+        "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-009/validation-cases.json",
+        "total_cases": len(pos_results) + len(neg_results),
+        "positive_cases": len(pos_results),
+        "negative_cases": len(neg_results),
+        "matched_positive_count": sum(1 for item in pos_results if item["matched"]),
+        "missed_positive_cases": missed,
+        "false_positive_negative_cases": false_positive,
+        "positive": pos_results,
+        "negative": neg_results,
+        "exact_claim_supported": SUPPORTED_CLAIM if status == "pass" else "",
+        "blocked_claims": BLOCKED_CLAIMS,
+        "runtime_active": False,
+        "signal_observed": False,
+        "public_safe_status": "NOT_PUBLIC_SAFE",
+        "splunk_fired": False,
+        "wazuh_routed": False,
+        "production_ready": False,
+        "fleet_wide": False,
+        "autonomous_soc": False,
+        "ai_approved_disposition": False,
+        "analyst_approved_disposition": False,
+        "trust_boundary": "Controlled-test Windows local user creation fixture validation only. This does not prove runtime, signal, public-safe proof, live SIEM ingestion, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.",
+        "privacy_status": "Controlled-test fixtures only; no sensitive operational material or live telemetry intentionally included.",
+    }
+
+
+def write_reports(report: dict[str, Any]) -> None:
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    REPORT_JSON.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    lines = [
+        "# HO-DET-009 Controlled-test Validation Result",
+        "",
+        f"- Status: {report['status']}",
+        f"- Detection ID: {report['detection_id']}",
+        f"- Proof ceiling: {report['proof_ceiling']}",
+        f"- Total cases: {report['total_cases']}",
+        f"- Positive cases: {report['positive_cases']}",
+        f"- Negative cases: {report['negative_cases']}",
+        f"- Missed positives: {', '.join(report['missed_positive_cases']) if report['missed_positive_cases'] else 'none'}",
+        f"- False-positive negatives: {', '.join(report['false_positive_negative_cases']) if report['false_positive_negative_cases'] else 'none'}",
+        "",
+        "## Supported Claim",
+        f"- {report['exact_claim_supported']}",
+        "",
+        "## Blocked Claims",
+    ]
+    lines.extend(f"- Not supported: {claim}" for claim in report["blocked_claims"])
+    lines.extend(["", "## Boundary", report["trust_boundary"]])
+    REPORT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Validate HO-DET-009 controlled local-account fixtures.")
+    parser.add_argument("--write", action="store_true")
+    parser.add_argument("--source-contract", choices=("required", "skip-if-missing"), default="required")
+    args = parser.parse_args()
+    cases = load_json(CASES_FILE, "HO-DET-009 validation cases")
+    report = build_report(cases, source_contract=args.source_contract)
+    if args.write:
+        write_reports(report)
+    elif not REPORT_JSON.exists() or load_json(REPORT_JSON, "HO-DET-009 validation result") != report:
+        fail("reports/ho-det-009/validation-result.json is out of date; run with --write")
+    print(f"STATUS={report['status']}")
+    print("DETECTION_ID=HO-DET-009")
+    print(f"TOTAL_CASES={report['total_cases']}")
+    print(f"POSITIVE_CASES={report['positive_cases']}")
+    print(f"NEGATIVE_CASES={report['negative_cases']}")
+    print(f"PROOF_CEILING={report['proof_ceiling']}")
+    print("RUNTIME_ACTIVE=false")
+    print("SIGNAL_OBSERVED=false")
+    print("PUBLIC_SAFE_STATUS=NOT_PUBLIC_SAFE")
+    return 0 if report["status"] == "pass" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

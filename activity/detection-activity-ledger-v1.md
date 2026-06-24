@@ -6,10 +6,10 @@ The Lifetime Case Ledger remains strict and platform-owned. This validation-owne
 
 | Metric | Count | Basis |
 | --- | ---: | --- |
-| Detection Activity Count | 49 | Sum of `expected_positive_count` values in `validation/VALIDATION_REGISTRY.yml`. |
-| Controlled Validation Fire Count | 49 | Same source as Detection Activity Count for v1. |
-| Controlled Negative Test Count | 57 | Sum of `expected_negative_count` values in `validation/VALIDATION_REGISTRY.yml`. |
-| Validation Case Count | 106 | Sum of all expected controlled validation fixture counts. |
+| Detection Activity Count | 59 | Sum of `expected_positive_count` values in `validation/VALIDATION_REGISTRY.yml`. |
+| Controlled Validation Fire Count | 59 | Same source as Detection Activity Count for v1. |
+| Controlled Negative Test Count | 67 | Sum of `expected_negative_count` values in `validation/VALIDATION_REGISTRY.yml`. |
+| Validation Case Count | 126 | Sum of all expected controlled validation fixture counts. |
 | Runtime Public-Safe Count | 0 | No runtime-public-safe fire is approved here. |
 | Public-Safe Count | 0 | All activity remains `NOT_PUBLIC_SAFE`. |
 

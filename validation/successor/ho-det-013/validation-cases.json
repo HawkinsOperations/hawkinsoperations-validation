@@ -1,0 +1,148 @@
+{
+  "detection_id": "HO-DET-013",
+  "case_scope": "controlled-test_security_control_tamper",
+  "validation_scope": "controlled-test fixtures only",
+  "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-013",
+  "cases": {
+    "positive": [
+      {
+        "id": "pos-001-sysmon-sc-stop-wazuh",
+        "description": "Process context stopping Wazuh service",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "service stop targeting telemetry agent",
+        "expected_match": true,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Provider_Name": "Microsoft-Windows-Sysmon",
+          "Image": "\\Windows\\System32\\sc.exe",
+          "CommandLine": "sc.exe stop WazuhSvc",
+          "TargetService": "WazuhSvc"
+        }
+      },
+      {
+        "id": "pos-002-security-1102-log-clear",
+        "description": "Security log clear event",
+        "telemetry_source": "Windows Security 1102",
+        "behavior": "security event log cleared",
+        "expected_match": true,
+        "event": {
+          "EventID": 1102,
+          "Channel": "Security",
+          "SubjectUserName": "controlled-test-admin"
+        }
+      },
+      {
+        "id": "pos-003-powershell-defender-disable",
+        "description": "Defender preference disable command",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "Defender preference tamper pattern",
+        "expected_match": true,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Image": "\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "CommandLine": "Set-MpPreference -DisableRealtimeMonitoring $true"
+        }
+      },
+      {
+        "id": "pos-004-auditpol-disable-success",
+        "description": "Audit policy success disable command",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "audit policy disable pattern",
+        "expected_match": true,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Image": "\\Windows\\System32\\auditpol.exe",
+          "CommandLine": "auditpol /set /subcategory:\"Other Object Access Events\" /success:disable"
+        }
+      },
+      {
+        "id": "pos-005-system-7040-sysmon-disabled",
+        "description": "Service start type changed to disabled for Sysmon",
+        "telemetry_source": "Windows System 7040",
+        "behavior": "telemetry service disabled",
+        "expected_match": true,
+        "event": {
+          "EventID": 7040,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "Sysmon64",
+          "StartType": "disabled"
+        }
+      }
+    ],
+    "negative": [
+      {
+        "id": "neg-001-approved-agent-restart",
+        "description": "Approved endpoint management restart of an agent",
+        "telemetry_source": "Windows System 7036",
+        "behavior": "documented maintenance restart",
+        "expected_match": false,
+        "event": {
+          "EventID": 7036,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "WazuhSvc",
+          "ServiceState": "running",
+          "ChangeWindow": "approved-maintenance"
+        }
+      },
+      {
+        "id": "neg-002-service-query-only",
+        "description": "Service status query without stop or disable",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "service query only",
+        "expected_match": false,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Image": "\\Windows\\System32\\sc.exe",
+          "CommandLine": "sc.exe query WazuhSvc"
+        }
+      },
+      {
+        "id": "neg-003-non-security-service-restart",
+        "description": "Non-security vendor service restart",
+        "telemetry_source": "Windows System 7036",
+        "behavior": "non-security service state change",
+        "expected_match": false,
+        "event": {
+          "EventID": 7036,
+          "Channel": "System",
+          "Provider_Name": "Service Control Manager",
+          "ServiceName": "VendorUpdater",
+          "ServiceState": "stopped"
+        }
+      },
+      {
+        "id": "neg-004-approved-defender-policy",
+        "description": "Approved Defender policy baseline marker without disable string",
+        "telemetry_source": "Defender Operational",
+        "behavior": "approved policy context",
+        "expected_match": false,
+        "event": {
+          "EventID": 5007,
+          "Channel": "Microsoft-Windows-Windows Defender/Operational",
+          "Action": "PolicyApplied",
+          "ChangeWindow": "approved-policy"
+        }
+      },
+      {
+        "id": "neg-005-lab-maintenance-log-query",
+        "description": "Documented lab maintenance querying logs",
+        "telemetry_source": "Sysmon Event ID 1",
+        "behavior": "log query without clear",
+        "expected_match": false,
+        "event": {
+          "EventID": 1,
+          "Channel": "Microsoft-Windows-Sysmon/Operational",
+          "Image": "\\Windows\\System32\\wevtutil.exe",
+          "CommandLine": "wevtutil qe Security /c:1",
+          "ChangeWindow": "approved-lab-maintenance"
+        }
+      }
+    ]
+  }
+}
