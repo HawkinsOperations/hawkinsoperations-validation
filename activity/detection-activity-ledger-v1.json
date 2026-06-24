@@ -6,11 +6,11 @@
   "generated_by": "manual_v1_from_validation_registry",
   "activity_boundary": "Controlled validation activity only. This is not the Lifetime Case Ledger and does not append governed cases.",
   "aggregate_metrics": {
-    "detection_activity_count": 59,
-    "controlled_validation_fire_count": 59,
-    "controlled_negative_test_count": 67,
-    "validation_case_count": 126,
-    "activity_entry_count": 12,
+    "detection_activity_count": 64,
+    "controlled_validation_fire_count": 64,
+    "controlled_negative_test_count": 72,
+    "validation_case_count": 136,
+    "activity_entry_count": 13,
     "runtime_public_safe_count": 0,
     "public_safe_count": 0
   },
@@ -111,6 +111,35 @@
         "signal-observed",
         "public-safe",
         "live Splunk firing"
+      ]
+    },
+    {
+      "detection_id": "HO-DET-010",
+      "activity_scope": "CONTROLLED_VALIDATION_FIRE",
+      "activity_type": "controlled validation positive fixture match",
+      "count": 5,
+      "count_basis": "expected_positive_count in validation registry",
+      "source_artifacts": [
+        "validation/VALIDATION_REGISTRY.yml",
+        "reports/ho-det-010/validation-result.json"
+      ],
+      "authority_repo": "hawkinsoperations-validation",
+      "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+      "public_safe_status": "NOT_PUBLIC_SAFE",
+      "runtime_truth_status": "NOT_PROVEN",
+      "signal_truth_status": "NOT_PROVEN",
+      "does_not_prove": [
+        "runtime activity",
+        "signal observation",
+        "public-safe proof",
+        "governed case append"
+      ],
+      "blocked_claims": [
+        "runtime-active",
+        "signal-observed",
+        "public-safe",
+        "Wazuh-routed",
+        "live SIEM ingestion"
       ]
     },
     {
