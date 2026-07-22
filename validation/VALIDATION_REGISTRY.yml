@@ -2,6 +2,7 @@
   "schema_version": 1,
   "registry_status": "VALIDATION_CONTRACT_ENFORCED",
   "human_review_required": true,
+  "ai_disposition_authority": false,
   "bridge_records": [
     {
       "artifact_id": "HO-DET-001",

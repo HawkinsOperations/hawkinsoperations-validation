@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "scripts" / "verify_validation_registry.py"
@@ -47,10 +48,15 @@ class VerifyValidationRegistryTests(unittest.TestCase):
             "scripts/scan-example-claims.py",
         ):
             (self.root / rel).write_text("print('ok')\n", encoding="utf-8")
+        (self.root / "scripts/validate-example.py").write_text(
+            "# implements --source-contract\nprint('ok')\n",
+            encoding="utf-8",
+        )
         self.registry = {
             "schema_version": 1,
             "registry_status": "VALIDATION_CONTRACT_ENFORCED",
             "human_review_required": True,
+            "ai_disposition_authority": False,
             "packages": [self._package()],
         }
 
@@ -94,6 +100,29 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         with self.assertRaisesRegex(module.RegistryFailure, "duplicate detection_id"):
             module.validate_registry(registry, self.root)
 
+    def test_duplicate_authoritative_path_fails(self):
+        registry = copy.deepcopy(self.registry)
+        duplicate = copy.deepcopy(registry["packages"][0])
+        duplicate["detection_id"] = "EX-DET-002"
+        registry["packages"].append(duplicate)
+        with self.assertRaisesRegex(module.RegistryFailure, "reuses .* already owned"):
+            module.validate_registry(registry, self.root)
+
+    def test_duplicate_authoritative_path_alias_fails(self):
+        registry = copy.deepcopy(self.registry)
+        duplicate = copy.deepcopy(registry["packages"][0])
+        duplicate["detection_id"] = "EX-DET-002"
+        duplicate["fixture_file"] = "VALIDATION/EXAMPLE/VALIDATION-CASES.JSON"
+        registry["packages"].append(duplicate)
+        with self.assertRaisesRegex(module.RegistryFailure, "reuses .* already owned"):
+            module.validate_registry(registry, self.root)
+
+    def test_authoritative_path_escape_fails(self):
+        registry = copy.deepcopy(self.registry)
+        registry["packages"][0]["fixture_file"] = "../outside.json"
+        with self.assertRaisesRegex(module.RegistryFailure, "repo-relative"):
+            module.validate_registry(registry, self.root)
+
     def test_missing_file_fails(self):
         registry = copy.deepcopy(self.registry)
         registry["packages"][0]["validator_script"] = "scripts/missing.py"
@@ -109,6 +138,17 @@ class VerifyValidationRegistryTests(unittest.TestCase):
             with self.subTest(field=field):
                 registry = copy.deepcopy(self.registry)
                 registry["packages"][0][field] = value
+                with self.assertRaises(module.RegistryFailure):
+                    module.validate_registry(registry, self.root)
+
+    def test_registry_requires_human_review_and_blocks_ai_authority(self):
+        for field, value in (
+            ("human_review_required", False),
+            ("ai_disposition_authority", True),
+        ):
+            with self.subTest(field=field):
+                registry = copy.deepcopy(self.registry)
+                registry[field] = value
                 with self.assertRaises(module.RegistryFailure):
                     module.validate_registry(registry, self.root)
 
@@ -138,6 +178,96 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         registry["packages"][0]["ci_source_dependency_mode"] = "skip_if_missing"
         packages = module.validate_registry(registry, self.root)
         self.assertTrue(packages[0]["source_dependency_required"])
+
+    def test_source_dependency_requires_validator_contract_behavior(self):
+        registry = copy.deepcopy(self.registry)
+        registry["packages"][0]["source_dependency_required"] = True
+        registry["packages"][0]["ci_source_dependency_mode"] = "skip_if_missing"
+        (self.root / "scripts/validate-example.py").write_text("print('no source mode')\n", encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "does not implement --source-contract"):
+            module.validate_registry(registry, self.root)
+
+    def test_controlled_validation_requires_positive_and_negative_cases(self):
+        registry = copy.deepcopy(self.registry)
+        registry["packages"][0]["expected_negative_count"] = 0
+        registry["packages"][0]["expected_fixture_count"] = 1
+        with self.assertRaisesRegex(module.RegistryFailure, "positive integer fixture counts"):
+            module.validate_registry(registry, self.root)
+
+    def test_report_cannot_promote_ai_disposition_authority(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report["ai_disposition_authority"] = True
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "AI disposition authority"):
+            module.validate_registry(self.registry, self.root)
+
+    def test_visibility_contract_is_explicitly_blocked_for_fixture_review(self):
+        package = self._package()
+        package["validation_kind"] = "visibility_contract"
+        self.assertEqual(module.review_eligibility(package), "BLOCKED")
+
+    def test_contract_only_inventory_is_expected_blocked(self):
+        package = self._package()
+        package["validation_kind"] = "baseline_contract"
+        registry_path = self.root / "validation" / "VALIDATION_REGISTRY.yml"
+        registry_path.parent.mkdir(parents=True, exist_ok=True)
+        registry_path.write_text(json.dumps(self.registry), encoding="utf-8")
+        inventory = module.build_inventory([package], self.root)
+        self.assertEqual(inventory["packages"][0]["review_eligibility"], "CONTRACT_ONLY")
+        self.assertEqual(inventory["packages"][0]["expected_fixture_review_outcome"], "BLOCKED")
+
+    def test_inventory_is_revision_linked_and_contains_fingerprints(self):
+        registry_path = self.root / "validation" / "VALIDATION_REGISTRY.yml"
+        registry_path.parent.mkdir(parents=True, exist_ok=True)
+        registry_path.write_text(json.dumps(self.registry), encoding="utf-8")
+        packages = module.validate_registry(self.registry, self.root)
+        inventory = module.build_inventory(packages, self.root)
+        item = inventory["packages"][0]
+        self.assertEqual(inventory["authority_role"], "controlled_validation")
+        self.assertEqual(len(inventory["authoritative_fingerprint"]), 64)
+        self.assertIn(inventory["source_freshness_state"], {"CURRENT", "WORKTREE_MODIFIED_OR_UNRESOLVED"})
+        self.assertIn("worktree_clean", inventory)
+        self.assertEqual(item["review_eligibility"], "PASS_CAPABLE")
+        self.assertFalse(item["ai_disposition_authority"])
+        self.assertIn("fixture_file", item["source_fingerprints"])
+        self.assertNotIn(str(self.root), str(inventory))
+
+    def test_source_matrix_status_disagreement_fails(self):
+        detections_root = self.root / "detections-repo"
+        status_dir = detections_root / "detections" / "example"
+        status_dir.mkdir(parents=True)
+        matrix_data = {
+            "entries": [
+                {
+                    "detection_id": "EX-DET-001",
+                    "package_path": "detections/example",
+                    "validation_expected_owner": "hawkinsoperations-validation",
+                    "validation_status_if_known": "VALIDATION_PLANNED",
+                }
+            ]
+        }
+        (detections_root / "detections" / "DETECTION_PROMOTION_MATRIX.yml").write_text(
+            yaml.safe_dump(matrix_data),
+            encoding="utf-8",
+        )
+        (status_dir / "status.yml").write_text(
+            yaml.safe_dump(
+                {
+                    "detection_id": "EX-DET-001",
+                    "validation_status": "VALIDATION_PLANNED",
+                    "public_safe_status": "NOT_PUBLIC_SAFE",
+                    "runtime_active": False,
+                    "signal_observed": False,
+                }
+            ),
+            encoding="utf-8",
+        )
+        package = self._package()
+        package["source_dependency_required"] = True
+        package["ci_source_dependency_mode"] = "skip_if_missing"
+        with self.assertRaisesRegex(module.RegistryFailure, "source/validation status disagreement"):
+            module.validate_source_parity([package], detections_root)
 
 
 if __name__ == "__main__":

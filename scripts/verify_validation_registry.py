@@ -4,10 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +31,9 @@ FALSEY_STATUSES = {
     None,
     "",
     "false",
+    "no",
+    "0",
+    "off",
     "blocked",
     "none",
     "not_proven",
@@ -90,6 +97,16 @@ VISIBILITY_REQUIRED_PATHS = {
     "validator_script",
     "parity_script",
 }
+UNIQUE_OWNERSHIP_FIELDS = {
+    "validation_package_path",
+    "fixture_file",
+    "report_json",
+    "report_markdown",
+}
+EXPECTED_MATRIX_VALIDATION_STATUS = {
+    "CONTROLLED_TEST_VALIDATED": "CONTROLLED_TEST_VALIDATED_IN_VALIDATION_REPO",
+    "VALIDATION_CONTRACT_ENFORCED": "VALIDATION_CONTRACT_ENFORCED_IN_VALIDATION_REPO",
+}
 
 
 class RegistryFailure(Exception):
@@ -112,11 +129,52 @@ def load_registry(path: Path = REGISTRY_PATH) -> dict[str, Any]:
     return data
 
 
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _repository_state(root: Path) -> dict[str, str]:
+    def git(*args: str) -> str:
+        result = subprocess.run(
+            ["git", "-C", str(root), *args],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return result.stdout.strip() if result.returncode == 0 else "UNRESOLVED"
+
+    status = git("status", "--porcelain")
+    status_lines = [] if status == "UNRESOLVED" else status.splitlines()
+    meaningful_status = [
+        line for line in status_lines
+        if "__pycache__/" not in line.replace("\\", "/") and not line.rstrip().endswith(".pyc")
+    ]
+    worktree_clean = not meaningful_status if status != "UNRESOLVED" else False
+    return {
+        "repository": "hawkinsoperations-validation",
+        "authority_role": "controlled_validation",
+        "resolved_ref": git("branch", "--show-current"),
+        "source_commit_sha": git("rev-parse", "HEAD"),
+        "worktree_clean": worktree_clean,
+        "source_freshness_state": "CURRENT" if worktree_clean else "WORKTREE_MODIFIED_OR_UNRESOLVED",
+    }
+
+
 def _rel_path(root: Path, value: str, field: str, detection_id: str) -> Path:
     path = Path(value)
     if path.is_absolute() or ".." in path.parts:
         fail(f"{detection_id} {field} must be a repo-relative path")
-    return root / path
+    resolved_root = root.resolve()
+    resolved = (resolved_root / path).resolve()
+    try:
+        resolved.relative_to(resolved_root)
+    except ValueError:
+        fail(f"{detection_id} {field} escapes its owning repository")
+    return resolved
 
 
 def _require_existing_path(root: Path, package: dict[str, Any], field: str) -> None:
@@ -124,8 +182,13 @@ def _require_existing_path(root: Path, package: dict[str, Any], field: str) -> N
     detection_id = str(package.get("detection_id", "<unknown>"))
     if not isinstance(value, str) or not value:
         fail(f"{detection_id} missing required path field: {field}")
-    if not _rel_path(root, value, field, detection_id).exists():
+    resolved = _rel_path(root, value, field, detection_id)
+    if not resolved.exists():
         fail(f"{detection_id} listed file or directory is missing: {field}={value}")
+    if field == "validation_package_path" and not resolved.is_dir():
+        fail(f"{detection_id} validation_package_path must be a directory: {value}")
+    if field != "validation_package_path" and not resolved.is_file():
+        fail(f"{detection_id} {field} must be a file: {value}")
 
 
 def _truthy(value: Any) -> bool:
@@ -206,6 +269,12 @@ def _verify_counts(root: Path, package: dict[str, Any]) -> None:
         fail(f"{detection_id} expected fixture counts must be integers or null")
     if all(value is None for value in expected):
         return
+    if package["validation_kind"] == "controlled_validation":
+        total, positive, negative = expected
+        if not all(isinstance(value, int) and value > 0 for value in (total, positive, negative)):
+            fail(f"{detection_id} controlled validation requires positive integer fixture counts")
+        if positive + negative != total:
+            fail(f"{detection_id} expected positive and negative counts must sum to total fixtures")
 
     fixture_data = _load_json(_rel_path(root, package["fixture_file"], "fixture_file", detection_id), f"{detection_id} fixture file")
     fixture_counts = _count_case_groups(fixture_data)
@@ -228,6 +297,16 @@ def _verify_counts(root: Path, package: dict[str, Any]) -> None:
         fail(f"{detection_id} report promotes runtime status")
     if _truthy(report.get("signal_observed", report.get("signal_status", False))):
         fail(f"{detection_id} report promotes signal status")
+    if report.get("human_review_required") not in {None, True}:
+        fail(f"{detection_id} report disables human review")
+    if _truthy(report.get("ai_disposition_authority", False)):
+        fail(f"{detection_id} report promotes AI disposition authority")
+    report_ceiling = report.get("proof_ceiling")
+    if report_ceiling is not None and report_ceiling != package["proof_ceiling"]:
+        fail(
+            f"{detection_id} report proof ceiling disagreement: "
+            f"registry={package['proof_ceiling']}, report={report_ceiling}"
+        )
 
     for label, actual, expected_value in zip(("fixture", "positive", "negative"), _report_counts(report), expected, strict=True):
         if expected_value is not None and actual is not None and actual != expected_value:
@@ -279,12 +358,15 @@ def validate_registry(data: dict[str, Any], root: Path = ROOT) -> list[dict[str,
         fail("registry_status must be VALIDATION_CONTRACT_ENFORCED")
     if data.get("human_review_required") is not True:
         fail("human_review_required must be true")
+    if data.get("ai_disposition_authority") is not False:
+        fail("ai_disposition_authority must be false")
     packages = data.get("packages")
     if not isinstance(packages, list) or not packages:
         fail("packages must be a non-empty list")
     _validate_bridge_records(data, root)
 
     seen_ids: set[str] = set()
+    path_owners: dict[tuple[str, str], str] = {}
     for package in packages:
         if not isinstance(package, dict):
             fail("each package entry must be an object")
@@ -313,6 +395,12 @@ def validate_registry(data: dict[str, Any], root: Path = ROOT) -> list[dict[str,
             fail(f"{detection_id} ci_source_dependency_mode is invalid")
         if package["source_dependency_required"] is False and package["ci_source_dependency_mode"] != "none":
             fail(f"{detection_id} ci_source_dependency_mode must be none when source_dependency_required is false")
+        if package["source_dependency_required"] is True:
+            if package["ci_source_dependency_mode"] not in {"required", "skip-if-missing", "skip_if_missing"}:
+                fail(f"{detection_id} source-backed validation must declare an enforceable source dependency mode")
+            validator_path = _rel_path(root, package["validator_script"], "validator_script", detection_id)
+            if validator_path.exists() and "--source-contract" not in validator_path.read_text(encoding="utf-8"):
+                fail(f"{detection_id} source-backed validator does not implement --source-contract")
 
         required_paths = {
             "baseline_contract": BASELINE_REQUIRED_PATHS,
@@ -325,6 +413,13 @@ def validate_registry(data: dict[str, Any], root: Path = ROOT) -> list[dict[str,
             value = package.get(field)
             if value is not None and isinstance(value, str):
                 _require_existing_path(root, package, field)
+                if field in UNIQUE_OWNERSHIP_FIELDS:
+                    resolved = _rel_path(root, value, field, detection_id)
+                    key = (field, str(resolved).replace("\\", "/").casefold())
+                    previous = path_owners.get(key)
+                    if previous is not None:
+                        fail(f"{detection_id} reuses {field} already owned by {previous}: {value}")
+                    path_owners[key] = detection_id
 
         if validation_kind == "controlled_validation":
             for field in ("validator_script", "parity_script", "claim_boundary_script", "report_json"):
@@ -335,16 +430,137 @@ def validate_registry(data: dict[str, Any], root: Path = ROOT) -> list[dict[str,
     return packages
 
 
+def review_eligibility(package: dict[str, Any]) -> str:
+    if package["validation_kind"] == "visibility_contract":
+        return "BLOCKED"
+    if package["validation_kind"] == "controlled_validation":
+        return "PASS_CAPABLE"
+    return "CONTRACT_ONLY"
+
+
+def validate_source_parity(packages: list[dict[str, Any]], detections_root: Path) -> None:
+    """Fail closed when validation registry truth disagrees with sibling source truth."""
+    matrix_path = detections_root / "detections" / "DETECTION_PROMOTION_MATRIX.yml"
+    if not matrix_path.is_file():
+        fail(f"detection promotion matrix is missing: {matrix_path}")
+    try:
+        matrix = yaml.safe_load(matrix_path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        fail(f"detection promotion matrix is malformed: {exc}")
+    entries = matrix.get("entries") if isinstance(matrix, dict) else None
+    if not isinstance(entries, list):
+        fail("detection promotion matrix entries must be a list")
+    by_id: dict[str, dict[str, Any]] = {}
+    for entry in entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("detection_id"), str):
+            fail("detection promotion matrix contains an invalid entry")
+        detection_id = entry["detection_id"]
+        if detection_id in by_id:
+            fail(f"detection promotion matrix duplicates detection_id: {detection_id}")
+        by_id[detection_id] = entry
+
+    for package in packages:
+        if package["source_dependency_required"] is not True:
+            continue
+        detection_id = package["detection_id"]
+        entry = by_id.get(detection_id)
+        if entry is None:
+            fail(f"{detection_id} validation source dependency is missing from detection matrix")
+        if entry.get("validation_expected_owner") != "hawkinsoperations-validation":
+            fail(f"{detection_id} detection matrix validation owner disagreement")
+        expected_matrix_status = EXPECTED_MATRIX_VALIDATION_STATUS[package["proof_ceiling"]]
+        if entry.get("validation_status_if_known") != expected_matrix_status:
+            fail(
+                f"{detection_id} source/validation status disagreement: "
+                f"expected={expected_matrix_status}, matrix={entry.get('validation_status_if_known')}"
+            )
+        package_path = entry.get("package_path")
+        if not isinstance(package_path, str) or "://" in package_path:
+            fail(f"{detection_id} source-backed validation requires a local detection package")
+        status_path = detections_root / package_path / "status.yml"
+        if not status_path.is_file():
+            fail(f"{detection_id} source status file is missing: {package_path}/status.yml")
+        try:
+            status = yaml.safe_load(status_path.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:
+            fail(f"{detection_id} source status file is malformed: {exc}")
+        if not isinstance(status, dict) or status.get("detection_id") != detection_id:
+            fail(f"{detection_id} source status file identity disagreement")
+        expected_status = expected_matrix_status.removesuffix("_IN_VALIDATION_REPO")
+        if status.get("validation_status") != expected_status:
+            fail(
+                f"{detection_id} source status validation disagreement: "
+                f"expected={expected_status}, status.yml={status.get('validation_status')}"
+            )
+        if status.get("public_safe_status") != "NOT_PUBLIC_SAFE":
+            fail(f"{detection_id} source status promotes public-safe state")
+        if _truthy(status.get("runtime_active")) or _truthy(status.get("signal_observed")):
+            fail(f"{detection_id} source status promotes runtime or signal state")
+
+
+def build_inventory(packages: list[dict[str, Any]], root: Path = ROOT) -> dict[str, Any]:
+    state = _repository_state(root)
+    items: list[dict[str, Any]] = []
+    fingerprint_fields = (
+        "fixture_file",
+        "report_json",
+        "report_markdown",
+        "validator_script",
+        "parity_script",
+        "claim_boundary_script",
+    )
+    for package in packages:
+        fingerprints: dict[str, str] = {}
+        for field in fingerprint_fields:
+            value = package.get(field)
+            if isinstance(value, str):
+                fingerprints[field] = _sha256_file(root / value)
+        eligibility = review_eligibility(package)
+        items.append(
+            {
+                "detection_id": package["detection_id"],
+                "validation_kind": package["validation_kind"],
+                "proof_ceiling": package["proof_ceiling"],
+                "review_eligibility": eligibility,
+                "expected_fixture_review_outcome": "PASS" if eligibility == "PASS_CAPABLE" else "BLOCKED",
+                "human_review_required": True,
+                "ai_disposition_authority": False,
+                "public_safe_status": package["public_safe_status"],
+                "source_dependency_required": package["source_dependency_required"],
+                "source_fingerprints": dict(sorted(fingerprints.items())),
+            }
+        )
+    return {
+        **state,
+        "authoritative_path": "validation/VALIDATION_REGISTRY.yml",
+        "authoritative_fingerprint": _sha256_file(root / "validation" / "VALIDATION_REGISTRY.yml"),
+        "package_count": len(items),
+        "packages": items,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Verify validation package registry contract.")
     parser.add_argument("--registry", type=Path, default=REGISTRY_PATH)
+    parser.add_argument("--format", choices=("text", "json"), default="text")
+    parser.add_argument("--detections-root", type=Path)
     args = parser.parse_args()
     try:
         packages = validate_registry(load_registry(args.registry), ROOT)
+        detections_root = args.detections_root
+        if detections_root is None:
+            sibling = ROOT.parent / "hawkinsoperations-detections"
+            if sibling.is_dir():
+                detections_root = sibling
+        if detections_root is not None:
+            validate_source_parity(packages, detections_root.resolve())
     except RegistryFailure as exc:
         print(f"VALIDATION_REGISTRY=fail: {exc}", file=sys.stderr)
         return 1
 
+    if args.format == "json":
+        print(json.dumps(build_inventory(packages, ROOT), indent=2, sort_keys=True))
+        return 0
     print("VALIDATION_REGISTRY=pass")
     print(f"REGISTERED_PACKAGES={len(packages)}")
     for package in packages:
@@ -355,6 +571,9 @@ def main() -> int:
                 ceiling=package["proof_ceiling"],
                 public=package["public_safe_status"],
             )
+        )
+        print(
+            f"REVIEW_ELIGIBILITY={package['detection_id']}:{review_eligibility(package)}"
         )
     return 0
 
