@@ -127,6 +127,8 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         registry = copy.deepcopy(self.registry)
         duplicate = copy.deepcopy(registry["packages"][0])
         duplicate["detection_id"] = "EX-DET-002"
+        duplicate["report_identity"] = "EX-DET-002_VALIDATION_RESULT_V1"
+        duplicate["parity_identity"] = "EX-DET-002_RESULT_PARITY_V1"
         registry["packages"].append(duplicate)
         with self.assertRaisesRegex(module.RegistryFailure, "reuses .* already owned"):
             module.validate_registry(registry, self.root)
@@ -135,6 +137,8 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         registry = copy.deepcopy(self.registry)
         duplicate = copy.deepcopy(registry["packages"][0])
         duplicate["detection_id"] = "EX-DET-002"
+        duplicate["report_identity"] = "EX-DET-002_VALIDATION_RESULT_V1"
+        duplicate["parity_identity"] = "EX-DET-002_RESULT_PARITY_V1"
         duplicate["fixture_file"] = "validation/example/./validation-cases.json"
         registry["packages"].append(duplicate)
         with self.assertRaisesRegex(module.RegistryFailure, "unsafe or ambiguous"):
@@ -260,6 +264,19 @@ class VerifyValidationRegistryTests(unittest.TestCase):
                 with self.assertRaisesRegex(module.RegistryFailure, "missing required fields"):
                     module.validate_registry(registry, self.root)
 
+    def test_report_and_parity_identities_are_bound_to_owned_case(self):
+        for field, value in (
+            ("report_identity", "FORGED_UNBOUND_REPORT"),
+            ("parity_identity", "FORGED_UNBOUND_PARITY"),
+        ):
+            with self.subTest(field=field):
+                registry = copy.deepcopy(self.registry)
+                registry["packages"][0][field] = value
+                with self.assertRaisesRegex(
+                    module.RegistryFailure, rf"{field} must bind"
+                ):
+                    module.validate_registry(registry, self.root)
+
     def test_missing_validator_parity_boundary_script_fails(self):
         for field in ("validator_script", "parity_script", "claim_boundary_script"):
             with self.subTest(field=field):
@@ -325,6 +342,46 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         with self.assertRaisesRegex(module.RegistryFailure, "contains a blocked authority claim"):
             module.validate_registry(self.registry, self.root)
 
+    def test_affirmative_authority_prose_variants_fail(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        attacks = (
+            "customer deployment is active",
+            "analyst approval granted",
+            "SOCaaS deployment is live",
+            "public safe runtime proof established",
+        )
+        original = json.loads(report_path.read_text(encoding="utf-8"))
+        for attack in attacks:
+            with self.subTest(attack=attack):
+                report = copy.deepcopy(original)
+                report["future_gated_phases"] = [{"message": attack}]
+                report_path.write_text(json.dumps(report), encoding="utf-8")
+                with self.assertRaisesRegex(
+                    module.RegistryFailure, "contains a blocked authority claim"
+                ):
+                    module.validate_registry(self.registry, self.root)
+
+    def test_report_rejects_ambiguous_dual_result_shapes(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report["fixture_results"] = copy.deepcopy(report["positive"] + report["negative"])
+        for item in report["fixture_results"]:
+            item["expected_result"] = (
+                "match" if item["id"].casefold().startswith("pos") else "no_match"
+            )
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "exactly one result shape"):
+            module.validate_registry(self.registry, self.root)
+
+    def test_fixture_rejects_ambiguous_dual_case_shapes(self):
+        fixture_path = self.root / "validation/example/validation-cases.json"
+        fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+        fixture["positives"] = copy.deepcopy(fixture["cases"]["positive"])
+        fixture["negatives"] = copy.deepcopy(fixture["cases"]["negative"])
+        fixture_path.write_text(json.dumps(fixture), encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "exactly one case shape"):
+            module.validate_registry(self.registry, self.root)
+
     def test_unknown_report_field_fails_closed(self):
         report_path = self.root / "reports/example/validation-result.json"
         report = json.loads(report_path.read_text(encoding="utf-8"))
@@ -368,6 +425,10 @@ class VerifyValidationRegistryTests(unittest.TestCase):
     def test_contract_only_entry_cannot_expect_pass(self):
         registry = copy.deepcopy(self.registry)
         registry["packages"][0]["validation_kind"] = "baseline_contract"
+        registry["packages"][0]["report_identity"] = (
+            "EX-DET-001_BASELINE_VALIDATION_RESULT_V1"
+        )
+        registry["packages"][0]["parity_identity"] = None
         with self.assertRaisesRegex(module.RegistryFailure, "expected_result must be BLOCKED"):
             module.validate_registry(registry, self.root)
 

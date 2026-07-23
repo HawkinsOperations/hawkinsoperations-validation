@@ -159,6 +159,17 @@ BLOCKED_SCALARS = {
     "off",
     "0",
 }
+AFFIRMATIVE_AUTHORITY_CLAIM_RE = re.compile(
+    r"\b(?:"
+    r"(?:customer|socaas)\s+deployment\s+(?:is\s+)?(?:active|live|confirmed|approved)"
+    r"|analyst\s+approval\s+(?:is\s+)?(?:granted|approved)"
+    r"|final\s+authorization\s+(?:is\s+)?(?:granted|approved)"
+    r"|case\s+(?:closure\s+(?:is\s+)?approved|is\s+closed|closed)"
+    r"|public[\s_-]*safe\s+runtime\s+proof\s+(?:is\s+)?(?:established|confirmed)"
+    r"|production\s+(?:deployment\s+)?(?:is\s+)?(?:active|ready|confirmed)"
+    r")\b",
+    re.IGNORECASE,
+)
 REPORT_ALLOWED_FIELDS = {
     "ai_approved",
     "ai_approved_disposition",
@@ -598,14 +609,12 @@ def _scan_authority_boundaries(value: Any, path: str = "$") -> None:
             "ai disposition authority enabled",
             "ai-approved disposition granted",
             "analyst-approved disposition granted",
-            "final authorization granted",
-            "case closure approved",
-            "case closed",
             "public-safe approved",
-            "production deployment confirmed",
-            "customer deployment confirmed",
         )
-        if not blocked_context and any(phrase in lowered for phrase in positive_phrases):
+        if not blocked_context and (
+            any(phrase in lowered for phrase in positive_phrases)
+            or AFFIRMATIVE_AUTHORITY_CLAIM_RE.search(lowered)
+        ):
             fail(f"{path} contains a blocked authority claim")
 
 
@@ -666,6 +675,10 @@ def _case_ids(case_data: dict[str, Any]) -> tuple[set[str], set[str]]:
     unknown_root = sorted(set(case_data) - FIXTURE_ALLOWED_FIELDS)
     if unknown_root:
         fail(f"fixture contains unknown fields: {', '.join(unknown_root)}")
+    has_grouped = "cases" in case_data
+    has_split = "positives" in case_data or "negatives" in case_data
+    if has_grouped and has_split:
+        fail("fixture must use exactly one case shape, not both cases and positives/negatives")
     groups = case_data.get("cases")
     if not isinstance(groups, dict):
         groups = {
@@ -700,7 +713,13 @@ def _case_ids(case_data: dict[str, Any]) -> tuple[set[str], set[str]]:
 def _report_case_ids(report: dict[str, Any]) -> tuple[set[str], set[str]]:
     positive = report.get("positive")
     negative = report.get("negative")
-    if isinstance(positive, list) and isinstance(negative, list):
+    has_grouped = "positive" in report or "negative" in report
+    has_flat = "fixture_results" in report
+    if has_grouped and has_flat:
+        fail("report must use exactly one result shape, not both positive/negative and fixture_results")
+    if has_grouped:
+        if not isinstance(positive, list) or not isinstance(negative, list):
+            fail("report positive and negative arrays must both be present")
         groups = (positive, negative)
     else:
         results = report.get("fixture_results")
@@ -737,6 +756,22 @@ def _report_case_ids(report: dict[str, Any]) -> tuple[set[str], set[str]]:
             ids.add(canonical)
         output.append(ids)
     return output[0], output[1]
+
+
+def _expected_report_identity(detection_id: str, validation_kind: str) -> str:
+    if validation_kind == "baseline_contract":
+        return f"{detection_id}_BASELINE_VALIDATION_RESULT_V1"
+    if validation_kind == "visibility_contract":
+        return f"{detection_id}_VISIBILITY_CONTRACT_V1"
+    return f"{detection_id}_VALIDATION_RESULT_V1"
+
+
+def _expected_parity_identity(detection_id: str, validation_kind: str) -> str | None:
+    if validation_kind == "baseline_contract":
+        return None
+    if validation_kind == "visibility_contract":
+        return f"{detection_id}_VISIBILITY_PARITY_V1"
+    return f"{detection_id}_RESULT_PARITY_V1"
 
 
 def _validate_report_shape(
@@ -975,6 +1010,18 @@ def validate_registry(data: dict[str, Any], root: Path = ROOT) -> list[dict[str,
         validation_kind = package["validation_kind"]
         if validation_kind not in ALLOWED_KINDS:
             fail(f"{detection_id} unknown validation_kind: {validation_kind}")
+        expected_report_identity = _expected_report_identity(detection_id, validation_kind)
+        if package["report_identity"] != expected_report_identity:
+            fail(
+                f"{detection_id} report_identity must bind the owned report as "
+                f"{expected_report_identity}"
+            )
+        expected_parity_identity = _expected_parity_identity(detection_id, validation_kind)
+        if package["parity_identity"] != expected_parity_identity:
+            fail(
+                f"{detection_id} parity_identity must bind the owned parity contract as "
+                f"{expected_parity_identity!r}"
+            )
         if package["proof_ceiling"] not in ALLOWED_PROOF_CEILINGS:
             fail(f"{detection_id} unknown proof ceiling: {package['proof_ceiling']}")
         if package["public_safe_status"] != "NOT_PUBLIC_SAFE":
