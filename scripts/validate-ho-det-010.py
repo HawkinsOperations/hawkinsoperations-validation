@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from validation_report_contract import controlled_report_contract
+
 ROOT = Path(__file__).resolve().parents[1]
 DETECTIONS_ROOT = ROOT.parent / "hawkinsoperations-detections"
 SOURCE_DIR = DETECTIONS_ROOT / "detections" / "successor" / "ho-det-010"
@@ -115,7 +117,7 @@ def validate_fixture_contract(cases: dict[str, Any]) -> tuple[list[dict[str, Any
 
 def result_row(item: dict[str, Any], expected: bool) -> dict[str, Any]:
     matched = event_matches(item["event"])
-    return {"id": item["id"], "matched": matched, "pass": matched is expected, "behavior": item["behavior"], "telemetry_source": item["telemetry_source"]}
+    return {"id": item["id"], "expected": expected, "matched": matched, "pass": matched is expected, "behavior": item["behavior"], "telemetry_source": item["telemetry_source"]}
 
 
 def build_report(cases: dict[str, Any], source_contract: str = "required") -> dict[str, Any]:
@@ -126,7 +128,7 @@ def build_report(cases: dict[str, Any], source_contract: str = "required") -> di
     missed = [item["id"] for item in pos_results if not item["pass"]]
     false_positive = [item["id"] for item in neg_results if not item["pass"]]
     status = "pass" if not missed and not false_positive else "fail"
-    return {"status": status, "detection_id": "HO-DET-010", "validation_scope": "controlled-test fixtures only", "proof_ceiling": PROOF_CEILING if status == "pass" else "VALIDATION_DRAFT", "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-010", "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-010/validation-cases.json", "total_cases": len(pos_results) + len(neg_results), "positive_cases": len(pos_results), "negative_cases": len(neg_results), "matched_positive_count": sum(1 for item in pos_results if item["matched"]), "missed_positive_cases": missed, "false_positive_negative_cases": false_positive, "positive": pos_results, "negative": neg_results, "exact_claim_supported": SUPPORTED_CLAIM if status == "pass" else "", "blocked_claims": BLOCKED_CLAIMS, "runtime_active": False, "signal_observed": False, "public_safe_status": "NOT_PUBLIC_SAFE", "splunk_fired": False, "wazuh_routed": False, "production_ready": False, "fleet_wide": False, "autonomous_soc": False, "ai_approved_disposition": False, "analyst_approved_disposition": False, "trust_boundary": "Controlled-test Windows local Administrators group membership fixture validation only. This does not prove runtime, signal, public-safe proof, live SIEM ingestion, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.", "privacy_status": "Controlled-test fixtures only; no sensitive operational material or live telemetry intentionally included."}
+    return {**controlled_report_contract("HO-DET-010", PROOF_CEILING if status == "pass" else "VALIDATION_DRAFT", passed=status == "pass"), "status": status, "detection_id": "HO-DET-010", "validation_scope": "controlled-test fixtures only", "proof_ceiling": PROOF_CEILING if status == "pass" else "VALIDATION_DRAFT", "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-010", "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-010/validation-cases.json", "total_cases": len(pos_results) + len(neg_results), "positive_cases": len(pos_results), "negative_cases": len(neg_results), "matched_positive_count": sum(1 for item in pos_results if item["matched"]), "missed_positive_cases": missed, "false_positive_negative_cases": false_positive, "positive": pos_results, "negative": neg_results, "exact_claim_supported": SUPPORTED_CLAIM if status == "pass" else "", "blocked_claims": BLOCKED_CLAIMS, "runtime_active": False, "signal_observed": False, "public_safe_status": "NOT_PUBLIC_SAFE", "splunk_fired": False, "wazuh_routed": False, "production_ready": False, "fleet_wide": False, "autonomous_soc": False, "ai_approved_disposition": False, "analyst_approved_disposition": False, "trust_boundary": "Controlled-test Windows local Administrators group membership fixture validation only. This does not prove runtime, signal, public-safe proof, live SIEM ingestion, production readiness, fleet-wide deployment, autonomous SOC behavior, AI-approved disposition, or analyst-approved disposition.", "privacy_status": "Controlled-test fixtures only; no sensitive operational material or live telemetry intentionally included."}
 
 
 def write_reports(report: dict[str, Any]) -> None:

@@ -160,17 +160,29 @@ BLOCKED_SCALARS = {
     "0",
 }
 AFFIRMATIVE_AUTHORITY_CLAIM_RE = re.compile(
-    r"\b(?:"
-    r"(?:customer|socaas)\s+deployment\s+(?:is\s+)?(?:active|live|confirmed|approved)"
-    r"|analyst\s+approval\s+(?:is\s+)?(?:granted|approved)"
-    r"|final\s+authorization\s+(?:is\s+)?(?:granted|approved)"
-    r"|case\s+(?:closure\s+(?:is\s+)?approved|is\s+closed|closed)"
-    r"|public[\s_-]*safe\s+runtime\s+proof\s+(?:is\s+)?(?:established|confirmed)"
-    r"|production\s+(?:deployment\s+)?(?:is\s+)?(?:active|ready|confirmed)"
-    r")\b",
+    r"(?:"
+    r"\b(?:customer|socaas)\b.{0,48}\bdeploy(?:ed|ment|ing)?\b"
+    r"|\bdeploy(?:ed|ment|ing)?\b.{0,48}\b(?:customer|socaas)\b"
+    r"|\bproduction\b.{0,32}\b(?:active|confirmed|deployed|live|ready)\b"
+    r"|\b(?:ai|analyst)\b.{0,40}\b(?:approval|authority|disposition)\b.{0,24}\b(?:approved|enabled|granted)\b"
+    r"|\b(?:ai|analyst)\b.{0,40}\b(?:approved|authori[sz]ed)\b.{0,24}\b(?:case|decision|disposition)\b"
+    r"|\bfinal\s+authori[sz]ation\b.{0,32}\b(?:approved|complete|granted|received)\b"
+    r"|\bcase\s+closure\b.{0,32}\b(?:approved|complete|granted|received)\b"
+    r"|\bcase\b.{0,16}\b(?:is|was)?\s*closed\b"
+    r"|\bpublic[\s_-]*safe\b.{0,32}\b(?:approved|confirmed|established|release|runtime\s+proof)\b"
+    r"|\bruntime\b.{0,24}\b(?:active|live)\b"
+    r"|\bsignal\b.{0,24}\b(?:active|observed)\b"
+    r")",
     re.IGNORECASE,
 )
+NEGATED_AUTHORITY_CONTEXT_RE = re.compile(
+    r"\b(?:blocked|denied|false|future|not|never|no|pending|prohibited|"
+    r"reject(?:ed|s)?|requires?\s+separate|remain(?:s)?\s+(?:a\s+)?separate|unsupported|without)\b",
+    re.IGNORECASE,
+)
+AUTHORITY_CLAUSE_SPLIT_RE = re.compile(r"[;\r\n]+|(?<=[.!?])\s+")
 REPORT_ALLOWED_FIELDS = {
+    "actual_result",
     "ai_approved",
     "ai_approved_disposition",
     "ai_disposition_authority",
@@ -186,13 +198,16 @@ REPORT_ALLOWED_FIELDS = {
     "current_scope",
     "detection_id",
     "exact_claim_supported",
+    "expected_result",
     "executed_at",
     "false_positive_negative_cases",
     "false_positive_negative_count",
     "fixture_count",
     "fixture_results",
+    "fixture_version",
     "fleet_wide",
     "future_gated_phases",
+    "human_review_required",
     "jsonpath_file",
     "live_idp_proof",
     "live_splunk",
@@ -212,6 +227,8 @@ REPORT_ALLOWED_FIELDS = {
     "proof_level_after",
     "proof_level_before",
     "proof_promotion",
+    "report_identity",
+    "parity_identity",
     "public_safe_runtime",
     "public_safe_status",
     "runtime_active",
@@ -221,6 +238,7 @@ REPORT_ALLOWED_FIELDS = {
     "security_onion_observed_proof",
     "signal_observed",
     "source_file",
+    "source_owner",
     "source_reference",
     "splunk_fired",
     "splunk_source_file",
@@ -229,6 +247,7 @@ REPORT_ALLOWED_FIELDS = {
     "total_cases",
     "totals",
     "trust_boundary",
+    "validation_owner",
     "validation_cases_file",
     "validation_scope",
     "wazuh_routed",
@@ -597,25 +616,79 @@ def _scan_authority_boundaries(value: Any, path: str = "$") -> None:
             _scan_authority_boundaries(child, f"{path}[{index}]")
         return
     if isinstance(value, str):
-        lowered = unicodedata.normalize("NFKC", value).casefold()
-        blocked_context = any(
-            marker in lowered
-            for marker in ("blocked", "does not", "not ", "without ", "false")
-        ) or any(
-            marker in _normalized_key(path)
-            for marker in ("blockedclaims", "claimsnot", "notclaimed")
-        )
-        positive_phrases = (
-            "ai disposition authority enabled",
-            "ai-approved disposition granted",
-            "analyst-approved disposition granted",
-            "public-safe approved",
-        )
-        if not blocked_context and (
-            any(phrase in lowered for phrase in positive_phrases)
-            or AFFIRMATIVE_AUTHORITY_CLAIM_RE.search(lowered)
+        normalized = unicodedata.normalize("NFKC", value)
+        if (
+            _normalized_key(path.rsplit(".", 1)[-1]).endswith("id")
+            and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", normalized)
         ):
-            fail(f"{path} contains a blocked authority claim")
+            return
+        normalized_parent = _normalized_key(path.rsplit("[", 1)[0])
+        exact_blocked_leaf = (
+            path.endswith("]")
+            and normalized_parent.endswith(
+                ("blockedclaims", "claimsnotsupported", "notclaimedhere")
+            )
+            and not re.search(
+                r"\b(?:is|was|has|enabled|granted|received)\b",
+                normalized,
+                re.IGNORECASE,
+            )
+        )
+        for clause in AUTHORITY_CLAUSE_SPLIT_RE.split(normalized):
+            if (
+                clause.strip()
+                and AFFIRMATIVE_AUTHORITY_CLAIM_RE.search(clause)
+                and not NEGATED_AUTHORITY_CONTEXT_RE.search(clause)
+                and not exact_blocked_leaf
+            ):
+                fail(f"{path} contains a blocked authority claim")
+
+
+def _scan_authority_markdown(text: str, path: str) -> None:
+    """Scan Markdown by semantic block while allowing exact blocked-claim lists."""
+    current_heading = ""
+    block: list[tuple[int, str]] = []
+
+    def flush() -> None:
+        nonlocal block
+        if not block:
+            return
+        bounded_heading = current_heading in {
+            _normalized_key("Blocked Claims"),
+            _normalized_key("Claims Not Supported"),
+            _normalized_key("Not Claimed"),
+            _normalized_key("Out of Scope"),
+        }
+        for line_number, line in block:
+            stripped = line.strip()
+            safe_blocked_leaf = (
+                bounded_heading
+                and stripped.startswith("- ")
+                and not re.search(
+                    r"\b(?:is|was|has|enabled|granted|received)\b",
+                    stripped[2:],
+                    re.IGNORECASE,
+                )
+            )
+            if not safe_blocked_leaf:
+                _scan_authority_boundaries(
+                    " ".join(item for _, item in block),
+                    f"{path}:line-{line_number}",
+                )
+                break
+        block = []
+
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        heading = re.fullmatch(r"\s*#{1,6}\s+(.+?)\s*", line)
+        if heading:
+            flush()
+            current_heading = _normalized_key(heading.group(1))
+            continue
+        if not line.strip():
+            flush()
+            continue
+        block.append((line_number, line))
+    flush()
 
 
 def _first_int(*values: Any) -> int | None:
@@ -753,6 +826,28 @@ def _report_case_ids(report: dict[str, Any]) -> tuple[set[str], set[str]]:
                 fail(f"report duplicates normalized {side} result id: {case_id}")
             if item.get("pass") is not True:
                 fail(f"report {side}[{case_id}] is not an explicit passing result")
+            if has_grouped:
+                expected = side == "positive"
+                if item.get("expected") is not expected:
+                    fail(
+                        f"report {side}[{case_id}] expected must be {expected}"
+                    )
+                if item.get("matched") is not expected:
+                    fail(
+                        f"report {side}[{case_id}] matched must be {expected}"
+                    )
+            else:
+                expected_result = "match" if side == "positive" else "no_match"
+                expected_match = side == "positive"
+                if str(item.get("expected_result", "")).casefold() != expected_result:
+                    fail(
+                        f"report {side}[{case_id}] expected_result must be "
+                        f"{expected_result}"
+                    )
+                if item.get("matched") is not expected_match:
+                    fail(
+                        f"report {side}[{case_id}] matched must be {expected_match}"
+                    )
             ids.add(canonical)
         output.append(ids)
     return output[0], output[1]
@@ -785,16 +880,29 @@ def _validate_report_shape(
         fail(f"{detection_id} report contains unknown fields: {', '.join(unknown)}")
     if report.get("detection_id", report.get("rule_id")) != detection_id:
         fail(f"{detection_id} report identity is missing or contradictory")
+    if package["validation_kind"] == "controlled_validation":
+        required_contract = {
+            "validation_owner": package["validation_owner"],
+            "source_owner": package["source_owner"],
+            "fixture_version": package["fixture_version"],
+            "expected_result": package["expected_result"],
+            "actual_result": package["actual_result"],
+            "report_identity": package["report_identity"],
+            "parity_identity": package["parity_identity"],
+            "proof_ceiling": package["proof_ceiling"],
+            "human_review_required": True,
+            "ai_disposition_authority": False,
+        }
+        for field, expected in required_contract.items():
+            if field not in report:
+                fail(f"{detection_id} report is missing required field: {field}")
+            if report[field] != expected:
+                fail(
+                    f"{detection_id} report {field} disagreement: "
+                    f"expected={expected!r}, actual={report[field]!r}"
+                )
     if report.get("status") != "pass":
         fail(f"{detection_id} report actual result must be explicit pass")
-    proof_values = [
-        report.get("proof_ceiling"),
-        report.get("claim_ceiling"),
-        report.get("proof_level_after"),
-    ]
-    present_proof_values = {value for value in proof_values if value is not None}
-    if present_proof_values and package["proof_ceiling"] not in present_proof_values:
-        fail(f"{detection_id} report does not carry the registry proof ceiling")
     _scan_authority_boundaries(report, f"report[{detection_id}]")
     fixture_positive, fixture_negative = _case_ids(fixture_data)
     report_positive, report_negative = _report_case_ids(report)
@@ -854,6 +962,9 @@ def _verify_counts(root: Path, package: dict[str, Any]) -> None:
         ).read_text(encoding="utf-8")
         if detection_id not in markdown_text:
             fail(f"{detection_id} report Markdown identity is missing or contradictory")
+        _scan_authority_markdown(
+            markdown_text, f"report_markdown[{detection_id}]"
+        )
     report_detection_id = report.get("detection_id", report.get("rule_id"))
     if report_detection_id and report_detection_id != detection_id:
         fail(f"{detection_id} report JSON id mismatch: {report_detection_id}")
@@ -865,10 +976,11 @@ def _verify_counts(root: Path, package: dict[str, Any]) -> None:
         fail(f"{detection_id} report promotes runtime status")
     if _truthy(report.get("signal_observed", report.get("signal_status", False))):
         fail(f"{detection_id} report promotes signal status")
-    if report.get("human_review_required") not in {None, True}:
-        fail(f"{detection_id} report disables human review")
-    if _truthy(report.get("ai_disposition_authority", False)):
-        fail(f"{detection_id} report promotes AI disposition authority")
+    if package["validation_kind"] == "controlled_validation":
+        if report.get("human_review_required") is not True:
+            fail(f"{detection_id} report disables human review")
+        if report.get("ai_disposition_authority") is not False:
+            fail(f"{detection_id} report promotes AI disposition authority")
     report_ceiling = report.get("proof_ceiling")
     if report_ceiling is not None and report_ceiling != package["proof_ceiling"]:
         fail(

@@ -13,6 +13,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from validation_report_contract import controlled_report_contract
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DETECTIONS_ROOT = ROOT.parent / "hawkinsoperations-detections"
@@ -142,6 +144,9 @@ def build_report(cases: dict[str, Any]) -> dict[str, Any]:
     status = "pass" if fail_count == 0 else "fail"
     proof_ceiling = "CONTROLLED_TEST_VALIDATED" if status == "pass" else "TEST_DEFINED"
     return {
+        **controlled_report_contract(
+            "AWS-DET-001", proof_ceiling, passed=status == "pass"
+        ),
         "status": status,
         "detection_id": "AWS-DET-001",
         "source_file": "hawkinsoperations-detections/detections/cloud/aws/aws-det-001/rule.yml",

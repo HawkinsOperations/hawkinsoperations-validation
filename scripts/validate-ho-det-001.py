@@ -15,6 +15,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from validation_report_contract import controlled_report_contract
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DETECTIONS_ROOT = ROOT.parent / "hawkinsoperations-detections"
@@ -256,6 +258,11 @@ def main() -> int:
     status = "pass" if fail_count == 0 else "fail"
 
     report = {
+        **controlled_report_contract(
+            "HO-DET-001",
+            "CONTROLLED_TEST_VALIDATED",
+            passed=status == "pass",
+        ),
         "status": status,
         "detection_id": "HO-DET-001",
         "source_file": "hawkinsoperations-detections/detections/successor/ho-det-001/rule.yml",

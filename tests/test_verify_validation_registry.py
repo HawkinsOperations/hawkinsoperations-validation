@@ -42,6 +42,16 @@ class VerifyValidationRegistryTests(unittest.TestCase):
                 "public_safe_status": "NOT_PUBLIC_SAFE",
                 "runtime_active": False,
                 "signal_observed": False,
+                "validation_owner": "hawkinsoperations-validation",
+                "source_owner": "hawkinsoperations-validation",
+                "fixture_version": 1,
+                "expected_result": "PASS",
+                "actual_result": "PASS",
+                "report_identity": "EX-DET-001_VALIDATION_RESULT_V1",
+                "parity_identity": "EX-DET-001_RESULT_PARITY_V1",
+                "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+                "human_review_required": True,
+                "ai_disposition_authority": False,
             },
         )
         (self.root / "reports/example/validation-result.md").write_text(
@@ -322,8 +332,88 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         report = json.loads(report_path.read_text(encoding="utf-8"))
         report["ai_disposition_authority"] = True
         report_path.write_text(json.dumps(report), encoding="utf-8")
-        with self.assertRaisesRegex(module.RegistryFailure, "promotes a blocked authority"):
+        with self.assertRaisesRegex(
+            module.RegistryFailure,
+            "ai_disposition_authority disagreement|promotes a blocked authority",
+        ):
             module.validate_registry(self.registry, self.root)
+
+    def test_report_requires_explicit_authority_and_identity_fields(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        original = json.loads(report_path.read_text(encoding="utf-8"))
+        for field in (
+            "validation_owner",
+            "source_owner",
+            "fixture_version",
+            "expected_result",
+            "actual_result",
+            "report_identity",
+            "parity_identity",
+            "proof_ceiling",
+            "human_review_required",
+            "ai_disposition_authority",
+        ):
+            with self.subTest(field=field):
+                report = copy.deepcopy(original)
+                report.pop(field)
+                report_path.write_text(json.dumps(report), encoding="utf-8")
+                with self.assertRaisesRegex(
+                    module.RegistryFailure, rf"missing required field: {field}"
+                ):
+                    module.validate_registry(self.registry, self.root)
+
+    def test_report_result_semantics_cannot_be_reduced_or_inverted(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        original = json.loads(report_path.read_text(encoding="utf-8"))
+
+        reduced = copy.deepcopy(original)
+        reduced["positive"][0] = {"id": "pos-001", "pass": True}
+        report_path.write_text(json.dumps(reduced), encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "expected must be True"):
+            module.validate_registry(self.registry, self.root)
+
+        inverted = copy.deepcopy(original)
+        inverted["positive"][0]["matched"] = False
+        inverted["negative"][0]["matched"] = True
+        report_path.write_text(json.dumps(inverted), encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "matched must be True"):
+            module.validate_registry(self.registry, self.root)
+
+    def test_report_markdown_authority_claims_fail_closed(self):
+        markdown_path = self.root / "reports/example/validation-result.md"
+        attacks = (
+            "customer deployment is active",
+            "final authorization is granted",
+            "case is closed",
+            "AI disposition authority enabled",
+            "not public safe; customer deployment is active",
+        )
+        for attack in attacks:
+            with self.subTest(attack=attack):
+                markdown_path.write_text(
+                    f"# EX-DET-001 validation result\n\n{attack}\n",
+                    encoding="utf-8",
+                )
+                with self.assertRaisesRegex(
+                    module.RegistryFailure, "contains a blocked authority claim"
+                ):
+                    module.validate_registry(self.registry, self.root)
+
+    def test_blocked_claim_container_cannot_exempt_nested_affirmative_prose(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        for payload in (
+            {"claims_not_supported": [{"detail": "customer deployment is active"}]},
+            {"blocked_claims": [{"detail": "public-safe approved"}]},
+        ):
+            with self.subTest(payload=payload):
+                hostile = copy.deepcopy(report)
+                hostile.update(payload)
+                report_path.write_text(json.dumps(hostile), encoding="utf-8")
+                with self.assertRaisesRegex(
+                    module.RegistryFailure, "contains a blocked authority claim"
+                ):
+                    module.validate_registry(self.registry, self.root)
 
     def test_nested_authority_laundering_in_report_fails(self):
         report_path = self.root / "reports/example/validation-result.json"
@@ -346,9 +436,19 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         report_path = self.root / "reports/example/validation-result.json"
         attacks = (
             "customer deployment is active",
+            "deployed to customer Acme",
+            "customer environment deployed",
             "analyst approval granted",
+            "analyst approved this disposition",
             "SOCaaS deployment is live",
+            "SOCaaS is deployed",
             "public safe runtime proof established",
+            "public safe for release",
+            "production is live",
+            "final authorization received",
+            "case closure complete",
+            "runtime is active",
+            "signal was observed",
         )
         original = json.loads(report_path.read_text(encoding="utf-8"))
         for attack in attacks:

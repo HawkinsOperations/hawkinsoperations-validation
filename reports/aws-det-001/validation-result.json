@@ -1,4 +1,14 @@
 {
+  "validation_owner": "hawkinsoperations-validation",
+  "source_owner": "hawkinsoperations-detections",
+  "fixture_version": 1,
+  "expected_result": "PASS",
+  "actual_result": "PASS",
+  "report_identity": "AWS-DET-001_VALIDATION_RESULT_V1",
+  "parity_identity": "AWS-DET-001_RESULT_PARITY_V1",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "human_review_required": true,
+  "ai_disposition_authority": false,
   "status": "pass",
   "detection_id": "AWS-DET-001",
   "source_file": "hawkinsoperations-detections/detections/cloud/aws/aws-det-001/rule.yml",
@@ -55,7 +65,6 @@
     }
   ],
   "exact_claim_supported": "AWS-DET-001 passed fixture-only validation against controlled CloudTrail-style IAM denial fixtures.",
-  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
   "aws_live_status": "BLOCKED",
   "public_safe_status": "NOT_PUBLIC_SAFE",
   "claims_not_supported": [
