@@ -180,8 +180,28 @@ NEGATED_AUTHORITY_CONTEXT_RE = re.compile(
     r"reject(?:ed|s)?|requires?\s+separate|remain(?:s)?\s+(?:a\s+)?separate|unsupported|without)\b",
     re.IGNORECASE,
 )
-AUTHORITY_CLAUSE_SPLIT_RE = re.compile(
-    r"[,;:/\r\n—–]+|\b(?:but|however|although|yet|while|whereas)\b|(?<=[.!?])\s+",
+AUTHORITY_STRONG_CLAUSE_SPLIT_RE = re.compile(
+    r"[;:/\r\n—–]+|\b(?:but|however|although|yet|while|whereas)\b|(?<=[.!?])\s+",
+    re.IGNORECASE,
+)
+NEGATIVE_LIST_INTRO_RE = re.compile(
+    r"\b(?:does|do|did|must|is|are|was|were|can|cannot|could|should|will|would)\s+not\s+"
+    r"(?:prove|establish|claim|promote|authorize|assert)\b"
+    r"|\b(?:is|are|was|were)\s+not\b|\bwithout\s+claiming\b",
+    re.IGNORECASE,
+)
+AFFIRMATIVE_ACTION_AFTER_NEGATIVE_LIST_RE = re.compile(
+    r"\b(?:customer|socaas)\b.{0,48}\b(?:is|was)?\s*deployed\b"
+    r"|\bproduction\b.{0,24}\b(?:is|was)\s+(?:active|live|ready)\b"
+    r"|\bruntime\b.{0,16}\b(?:is|was)\s+active\b"
+    r"|\bsignal\b.{0,16}\b(?:is|was)\s+observed\b"
+    r"|\b(?:ai|analyst)\b.{0,32}\b(?:(?:is|was)\s+approved|approval\s+(?:is\s+)?granted|authority\s+(?:is\s+)?enabled)\b"
+    r"|\bfinal\s+authori[sz]ation\b.{0,16}\b(?:is|was)?\s*(?:approved|granted|received)\b"
+    r"|\bcase\b.{0,16}\b(?:is|was)\s+closed\b",
+    re.IGNORECASE,
+)
+NEGATIVE_LIST_SUFFIX_RE = re.compile(
+    r"\bclaims?\s+(?:remain|remains|are|is)\s+(?:blocked|unsupported|not\s+approved)\.?$",
     re.IGNORECASE,
 )
 REPORT_ALLOWED_FIELDS = {
@@ -514,7 +534,63 @@ def _repository_state(root: Path) -> dict[str, str]:
 
 
 def _normalized_key(value: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", unicodedata.normalize("NFKC", value).casefold())
+    decoded = value
+    for _ in range(4):
+        next_value = unquote(decoded)
+        if next_value == decoded:
+            break
+        decoded = next_value
+    return re.sub(r"[^a-z0-9]", "", unicodedata.normalize("NFKC", decoded).casefold())
+
+
+def _compositional_promotion_key(key: str) -> bool:
+    return (
+        ("production" in key and any(part in key for part in ("active", "live", "ready", "deploy", "status")))
+        or (any(part in key for part in ("customer", "socaas")) and "deploy" in key)
+        or ("runtime" in key and any(part in key for part in ("active", "status")))
+        or ("signal" in key and any(part in key for part in ("observed", "status")))
+        or ("publicsafe" in key and not key.endswith("count"))
+        or ("final" in key and "authoriz" in key)
+        or ("case" in key and any(part in key for part in ("closed", "closure")))
+        or any(part in key for part in ("approvalstatus", "closurestatus", "casestatus"))
+        or (
+            key.startswith(("ai", "analyst"))
+            and any(part in key for part in ("approved", "approval", "authority", "disposition"))
+        )
+    )
+
+
+def _explicitly_bounded_authority_value(value: Any) -> bool:
+    if isinstance(value, list) and len(value) == 1:
+        return _explicitly_bounded_authority_value(value[0])
+    if value is False or value is None or value == 0:
+        return True
+    if not isinstance(value, str):
+        return False
+    return _normalized_key(value) in {
+        "blocked",
+        "false",
+        "humanreviewrequired",
+        "missing",
+        "none",
+        "notapproved",
+        "notauthorized",
+        "notclosed",
+        "notproven",
+        "notpublicsafe",
+        "notruntimeactive",
+        "open",
+        "pending",
+        "privateruntimeboundarycontextonly",
+        "privateruntimeevidencecaptured",
+        "privateruntimeevidencecapturedlocalwindowsonly",
+        "publicruntimeblocked",
+        "runtimeactiveprivate",
+        "runtimeblocked",
+        "signalblocked",
+        "signalobservedprivate",
+        "unsupported",
+    }
 
 
 def _decode_path(value: str, field: str, detection_id: str) -> str:
@@ -604,6 +680,11 @@ def _scan_authority_boundaries(value: Any, path: str = "$") -> None:
                 fail(f"{path} contains a non-string key")
             normalized = _normalized_key(key)
             if (
+                _compositional_promotion_key(normalized)
+                and not _explicitly_bounded_authority_value(child)
+            ):
+                fail(f"{path}.{key} promotes a compositional authority state")
+            if (
                 normalized in AUTHORITY_PROMOTION_KEYS
                 or any(marker in normalized for marker in ("finalauthorization", "caseclosure"))
                 or (
@@ -637,12 +718,28 @@ def _scan_authority_boundaries(value: Any, path: str = "$") -> None:
                 re.IGNORECASE,
             )
         )
-        for clause in AUTHORITY_CLAUSE_SPLIT_RE.split(normalized):
+        for segment in AUTHORITY_STRONG_CLAUSE_SPLIT_RE.split(normalized):
+            if not segment.strip():
+                continue
+            intro = NEGATIVE_LIST_INTRO_RE.search(segment)
+            clauses = [segment]
+            suffix = NEGATIVE_LIST_SUFFIX_RE.search(segment)
             if (
+                not suffix
+                and (
+                    not intro
+                    or AFFIRMATIVE_ACTION_AFTER_NEGATIVE_LIST_RE.search(
+                        segment[intro.end():]
+                    )
+                )
+            ):
+                clauses = segment.split(",")
+            if any(
                 clause.strip()
                 and AFFIRMATIVE_AUTHORITY_CLAIM_RE.search(clause)
                 and not NEGATED_AUTHORITY_CONTEXT_RE.search(clause)
                 and not exact_blocked_leaf
+                for clause in clauses
             ):
                 fail(f"{path} contains a blocked authority claim")
 

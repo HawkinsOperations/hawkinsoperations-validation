@@ -417,12 +417,16 @@ class VerifyValidationRegistryTests(unittest.TestCase):
 
     def test_nested_authority_laundering_in_report_fails(self):
         report_path = self.root / "reports/example/validation-result.json"
-        report = json.loads(report_path.read_text(encoding="utf-8"))
+        original = json.loads(report_path.read_text(encoding="utf-8"))
+        report = copy.deepcopy(original)
         report["future_gated_phases"] = [
             {"metadata": {"analyst-disposition-authority": True}}
         ]
         report_path.write_text(json.dumps(report), encoding="utf-8")
-        with self.assertRaisesRegex(module.RegistryFailure, "promotes a blocked authority"):
+        with self.assertRaisesRegex(
+            module.RegistryFailure,
+            "promotes a (?:blocked|compositional) authority",
+        ):
             module.validate_registry(self.registry, self.root)
 
         report["future_gated_phases"] = [
@@ -431,6 +435,30 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         report_path.write_text(json.dumps(report), encoding="utf-8")
         with self.assertRaisesRegex(module.RegistryFailure, "contains a blocked authority claim"):
             module.validate_registry(self.registry, self.root)
+
+        attacks = (
+            ("production_active", True),
+            ("production_live", {"enabled": True}),
+            ("customer_deployment", True),
+            ("socaas_deployment", True),
+            ("runtime_status", "active"),
+            ("signal_status", "observed"),
+            ("approval_status", "approved"),
+            ("closure_status", "closed"),
+            ("case_status", "closed"),
+            ("public_safe_runtime", True),
+            ("final_authorized", True),
+            ("%70roduction_active", True),
+        )
+        for key, value in attacks:
+            with self.subTest(key=key):
+                report = copy.deepcopy(original)
+                report["future_gated_phases"] = [{"metadata": {key: value}}]
+                report_path.write_text(json.dumps(report), encoding="utf-8")
+                with self.assertRaisesRegex(
+                    module.RegistryFailure, "promotes a compositional authority state"
+                ):
+                    module.validate_registry(self.registry, self.root)
 
     def test_affirmative_authority_prose_variants_fail(self):
         report_path = self.root / "reports/example/validation-result.json"
