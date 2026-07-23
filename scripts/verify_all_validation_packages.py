@@ -26,12 +26,6 @@ def _script_command(script_path: str) -> list[str]:
     return [script_path]
 
 
-def _normalize_source_mode(value: Any) -> str:
-    if value == "skip_if_missing":
-        return "skip-if-missing"
-    return str(value)
-
-
 def _script_supports_source_contract(root: Path, script_path: str) -> bool:
     path = root / script_path
     try:
@@ -48,12 +42,16 @@ def build_commands(package: dict[str, Any], root: Path = ROOT) -> list[tuple[str
         if not script_path:
             continue
         command = _script_command(script_path)
-        if (
-            package.get("source_dependency_required") is True
-            and _normalize_source_mode(package.get("ci_source_dependency_mode")) == "skip-if-missing"
-            and _script_supports_source_contract(root, script_path)
-        ):
-            command.extend(["--source-contract", "skip-if-missing"])
+        if label == "validator" and package.get("source_dependency_required") is True:
+            if not _script_supports_source_contract(root, script_path):
+                raise ValueError(
+                    f"{package.get('detection_id')} validator lacks required source-contract support"
+                )
+            if package.get("ci_source_dependency_mode") != "required":
+                raise ValueError(
+                    f"{package.get('detection_id')} source dependency must fail closed in required mode"
+                )
+            command.extend(["--source-contract", "required"])
         commands.append((label, command))
     return commands
 

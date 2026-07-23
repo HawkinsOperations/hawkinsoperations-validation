@@ -1,6 +1,7 @@
 import copy
 import importlib.util
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -36,12 +37,16 @@ class VerifyValidationRegistryTests(unittest.TestCase):
                 "total_cases": 2,
                 "positive_cases": 1,
                 "negative_cases": 1,
+                "positive": [{"id": "pos-001", "expected": True, "matched": True, "pass": True}],
+                "negative": [{"id": "neg-001", "expected": False, "matched": False, "pass": True}],
                 "public_safe_status": "NOT_PUBLIC_SAFE",
                 "runtime_active": False,
                 "signal_observed": False,
             },
         )
-        (self.root / "reports/example/validation-result.md").write_text("ok\n", encoding="utf-8")
+        (self.root / "reports/example/validation-result.md").write_text(
+            "# EX-DET-001 validation result\n", encoding="utf-8"
+        )
         for rel in (
             "scripts/validate-example.py",
             "scripts/verify-example-parity.py",
@@ -52,11 +57,19 @@ class VerifyValidationRegistryTests(unittest.TestCase):
             "# implements --source-contract\nprint('ok')\n",
             encoding="utf-8",
         )
+        (self.root / "scripts/verify-example-parity.py").write_text(
+            "# validation-cases.json validation-result.json\nprint('ok')\n",
+            encoding="utf-8",
+        )
         self.registry = {
-            "schema_version": 1,
+            "schema_version": 2,
+            "owner_repo": "hawkinsoperations-validation",
+            "truth_surface": "controlled_validation",
             "registry_status": "VALIDATION_CONTRACT_ENFORCED",
             "human_review_required": True,
             "ai_disposition_authority": False,
+            "source_authority_manifest": "validation/SOURCE_AUTHORITY_MANIFEST.json",
+            "bridge_records": [],
             "packages": [self._package()],
         }
 
@@ -70,6 +83,16 @@ class VerifyValidationRegistryTests(unittest.TestCase):
     def _package(self):
         return {
             "detection_id": "EX-DET-001",
+            "validation_owner": "hawkinsoperations-validation",
+            "source_owner": "hawkinsoperations-validation",
+            "source_reference": "validation/example",
+            "fixture_version": 1,
+            "expected_result": "PASS",
+            "actual_result": "PASS",
+            "report_identity": "EX-DET-001_VALIDATION_RESULT_V1",
+            "parity_identity": "EX-DET-001_RESULT_PARITY_V1",
+            "human_review_required": True,
+            "ai_disposition_authority": False,
             "validation_kind": "controlled_validation",
             "validation_package_path": "validation/example",
             "fixture_file": "validation/example/validation-cases.json",
@@ -114,13 +137,13 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         duplicate["detection_id"] = "EX-DET-002"
         duplicate["fixture_file"] = "validation/example/./validation-cases.json"
         registry["packages"].append(duplicate)
-        with self.assertRaisesRegex(module.RegistryFailure, "reuses .* already owned"):
+        with self.assertRaisesRegex(module.RegistryFailure, "unsafe or ambiguous"):
             module.validate_registry(registry, self.root)
 
     def test_authoritative_path_escape_fails(self):
         registry = copy.deepcopy(self.registry)
         registry["packages"][0]["fixture_file"] = "../outside.json"
-        with self.assertRaisesRegex(module.RegistryFailure, "repo-relative"):
+        with self.assertRaisesRegex(module.RegistryFailure, "unsafe or ambiguous"):
             module.validate_registry(registry, self.root)
 
     def test_missing_file_fails(self):
@@ -141,6 +164,24 @@ class VerifyValidationRegistryTests(unittest.TestCase):
                 with self.assertRaises(module.RegistryFailure):
                     module.validate_registry(registry, self.root)
 
+    def test_malformed_scalar_and_collection_types_fail_closed(self):
+        registry = copy.deepcopy(self.registry)
+        registry["packages"][0]["runtime_status"] = []
+        with self.assertRaisesRegex(module.RegistryFailure, "runtime_status"):
+            module.validate_registry(registry, self.root)
+
+        registry = copy.deepcopy(self.registry)
+        registry["packages"][0]["expected_fixture_count"] = True
+        with self.assertRaisesRegex(module.RegistryFailure, "counts must be integers"):
+            module.validate_registry(registry, self.root)
+
+        fixture_path = self.root / "validation/example/validation-cases.json"
+        fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+        fixture["cases"]["positive"][0] = "not-an-object"
+        fixture_path.write_text(json.dumps(fixture), encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "entries must be objects|must be an object"):
+            module.validate_registry(self.registry, self.root)
+
     def test_registry_requires_human_review_and_blocks_ai_authority(self):
         for field, value in (
             ("human_review_required", False),
@@ -158,6 +199,67 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         with self.assertRaisesRegex(module.RegistryFailure, "malformed"):
             module.load_registry(bad_path)
 
+    def test_duplicate_registry_key_fails_closed(self):
+        bad_path = self.root / "duplicate.yml"
+        bad_path.write_text('{"schema_version": 2, "schema_version": 1}', encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "duplicate structured key"):
+            module.load_registry(bad_path)
+
+    def test_unknown_registry_and_package_fields_fail_closed(self):
+        for target in ("root", "package"):
+            with self.subTest(target=target):
+                registry = copy.deepcopy(self.registry)
+                if target == "root":
+                    registry["extension"] = {}
+                else:
+                    registry["packages"][0]["extension"] = {}
+                with self.assertRaisesRegex(module.RegistryFailure, "unknown fields"):
+                    module.validate_registry(registry, self.root)
+
+    def test_cross_platform_and_encoded_paths_fail_closed(self):
+        hostile = (
+            r"C:\private\fixture.json",
+            r"\\server\share\fixture.json",
+            "/etc/passwd",
+            r"validation/example\../outside.json",
+            "validation/example/%2e%2e/outside.json",
+            "validation/example/%252e%252e/outside.json",
+            "file:///etc/passwd",
+            "validation/example/mixed\\fixture.json",
+        )
+        for value in hostile:
+            with self.subTest(value=value):
+                registry = copy.deepcopy(self.registry)
+                registry["packages"][0]["fixture_file"] = value
+                with self.assertRaises(module.RegistryFailure):
+                    module.validate_registry(registry, self.root)
+
+    def test_casefolded_detection_alias_fails(self):
+        registry = copy.deepcopy(self.registry)
+        duplicate = copy.deepcopy(registry["packages"][0])
+        duplicate["detection_id"] = "ex-det-001"
+        registry["packages"].append(duplicate)
+        with self.assertRaises(module.RegistryFailure):
+            module.validate_registry(registry, self.root)
+
+    def test_missing_explicit_authority_field_fails(self):
+        for field in (
+            "validation_owner",
+            "source_owner",
+            "fixture_version",
+            "expected_result",
+            "actual_result",
+            "report_identity",
+            "parity_identity",
+            "human_review_required",
+            "ai_disposition_authority",
+        ):
+            with self.subTest(field=field):
+                registry = copy.deepcopy(self.registry)
+                registry["packages"][0].pop(field)
+                with self.assertRaisesRegex(module.RegistryFailure, "missing required fields"):
+                    module.validate_registry(registry, self.root)
+
     def test_missing_validator_parity_boundary_script_fails(self):
         for field in ("validator_script", "parity_script", "claim_boundary_script"):
             with self.subTest(field=field):
@@ -169,20 +271,24 @@ class VerifyValidationRegistryTests(unittest.TestCase):
     def test_ci_source_dependency_mode_must_match_source_dependency_requirement(self):
         registry = copy.deepcopy(self.registry)
         registry["packages"][0]["ci_source_dependency_mode"] = "skip_if_missing"
-        with self.assertRaisesRegex(module.RegistryFailure, "ci_source_dependency_mode must be none"):
+        with self.assertRaisesRegex(module.RegistryFailure, "ci_source_dependency_mode is invalid"):
             module.validate_registry(registry, self.root)
 
     def test_skip_if_missing_mode_allowed_when_source_dependency_required(self):
         registry = copy.deepcopy(self.registry)
         registry["packages"][0]["source_dependency_required"] = True
+        registry["packages"][0]["source_owner"] = "hawkinsoperations-detections"
+        registry["packages"][0]["source_reference"] = "hawkinsoperations-detections/detections/example"
         registry["packages"][0]["ci_source_dependency_mode"] = "skip_if_missing"
-        packages = module.validate_registry(registry, self.root)
-        self.assertTrue(packages[0]["source_dependency_required"])
+        with self.assertRaisesRegex(module.RegistryFailure, "ci_source_dependency_mode is invalid"):
+            module.validate_registry(registry, self.root)
 
     def test_source_dependency_requires_validator_contract_behavior(self):
         registry = copy.deepcopy(self.registry)
         registry["packages"][0]["source_dependency_required"] = True
-        registry["packages"][0]["ci_source_dependency_mode"] = "skip_if_missing"
+        registry["packages"][0]["source_owner"] = "hawkinsoperations-detections"
+        registry["packages"][0]["source_reference"] = "hawkinsoperations-detections/detections/example"
+        registry["packages"][0]["ci_source_dependency_mode"] = "required"
         (self.root / "scripts/validate-example.py").write_text("print('no source mode')\n", encoding="utf-8")
         with self.assertRaisesRegex(module.RegistryFailure, "does not implement --source-contract"):
             module.validate_registry(registry, self.root)
@@ -199,8 +305,71 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         report = json.loads(report_path.read_text(encoding="utf-8"))
         report["ai_disposition_authority"] = True
         report_path.write_text(json.dumps(report), encoding="utf-8")
-        with self.assertRaisesRegex(module.RegistryFailure, "AI disposition authority"):
+        with self.assertRaisesRegex(module.RegistryFailure, "promotes a blocked authority"):
             module.validate_registry(self.registry, self.root)
+
+    def test_nested_authority_laundering_in_report_fails(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report["future_gated_phases"] = [
+            {"metadata": {"analyst-disposition-authority": True}}
+        ]
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "promotes a blocked authority"):
+            module.validate_registry(self.registry, self.root)
+
+        report["future_gated_phases"] = [
+            {"metadata": {"message": "AI disposition authority enabled"}}
+        ]
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "contains a blocked authority claim"):
+            module.validate_registry(self.registry, self.root)
+
+    def test_unknown_report_field_fails_closed(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report["unreviewed_extension"] = {"status": "pass"}
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "report contains unknown fields"):
+            module.validate_registry(self.registry, self.root)
+
+    def test_unknown_result_and_fixture_shapes_fail_closed(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report["positive"][0]["extension"] = {"pass": True}
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "contains unknown fields"):
+            module.validate_registry(self.registry, self.root)
+
+        report["positive"][0].pop("extension")
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        fixture_path = self.root / "validation/example/validation-cases.json"
+        fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+        fixture["extension"] = []
+        fixture_path.write_text(json.dumps(fixture), encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "fixture contains unknown fields"):
+            module.validate_registry(self.registry, self.root)
+
+    def test_report_fixture_identity_mismatch_fails(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report["positive"][0]["id"] = "pos-forged"
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "positive report IDs"):
+            module.validate_registry(self.registry, self.root)
+
+    def test_reverse_inventory_orphan_fixture_fails(self):
+        orphan = self.root / "validation/orphan/validation-cases.json"
+        orphan.parent.mkdir(parents=True)
+        orphan.write_text('{"cases":{"positive":[],"negative":[]}}', encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "unregistered validation fixtures"):
+            module.validate_registry(self.registry, self.root)
+
+    def test_contract_only_entry_cannot_expect_pass(self):
+        registry = copy.deepcopy(self.registry)
+        registry["packages"][0]["validation_kind"] = "baseline_contract"
+        with self.assertRaisesRegex(module.RegistryFailure, "expected_result must be BLOCKED"):
+            module.validate_registry(registry, self.root)
 
     def test_visibility_contract_is_explicitly_blocked_for_fixture_review(self):
         package = self._package()
@@ -210,6 +379,8 @@ class VerifyValidationRegistryTests(unittest.TestCase):
     def test_contract_only_inventory_is_expected_blocked(self):
         package = self._package()
         package["validation_kind"] = "baseline_contract"
+        package["expected_result"] = "BLOCKED"
+        package["actual_result"] = "BLOCKED"
         registry_path = self.root / "validation" / "VALIDATION_REGISTRY.yml"
         registry_path.parent.mkdir(parents=True, exist_ok=True)
         registry_path.write_text(json.dumps(self.registry), encoding="utf-8")
@@ -265,9 +436,134 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         )
         package = self._package()
         package["source_dependency_required"] = True
-        package["ci_source_dependency_mode"] = "skip_if_missing"
+        package["source_owner"] = "hawkinsoperations-detections"
+        package["source_reference"] = "hawkinsoperations-detections/detections/example"
+        package["ci_source_dependency_mode"] = "required"
         with self.assertRaisesRegex(module.RegistryFailure, "source/validation status disagreement"):
             module.validate_source_parity([package], detections_root)
+
+    def test_source_manifest_uses_content_identity_not_unrelated_tip_identity(self):
+        detections_root = self.root / "detections-repo"
+        package_dir = detections_root / "detections/example"
+        package_dir.mkdir(parents=True)
+        matrix = {
+            "entries": [
+                {
+                    "detection_id": "EX-DET-001",
+                    "package_path": "detections/example",
+                    "required_files": ["rule.yml", "status.yml"],
+                }
+            ]
+        }
+        (detections_root / "detections/DETECTION_PROMOTION_MATRIX.yml").write_text(
+            yaml.safe_dump(matrix), encoding="utf-8"
+        )
+        (package_dir / "rule.yml").write_text("detection_id: EX-DET-001\n", encoding="utf-8")
+        (package_dir / "status.yml").write_text("detection_id: EX-DET-001\n", encoding="utf-8")
+        subprocess.run(["git", "init"], cwd=detections_root, check=True, capture_output=True)
+        subprocess.run(["git", "config", "user.name", "test"], cwd=detections_root, check=True)
+        subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=detections_root, check=True)
+        subprocess.run(["git", "add", "."], cwd=detections_root, check=True)
+        subprocess.run(["git", "commit", "-m", "source"], cwd=detections_root, check=True, capture_output=True)
+        package = self._package()
+        package["source_dependency_required"] = True
+        before = module.build_source_authority_manifest([package], detections_root)
+        manifest_package = before["packages"][0]
+        source_inventory = {
+            "repository": "hawkinsoperations-detections",
+            "authority_role": "detection_source",
+            "authoritative_path": before["matrix_path"],
+            "authoritative_git_blob_sha": before["matrix_git_blob_sha"],
+            "authoritative_semantic_fingerprint": before["matrix_semantic_fingerprint"],
+            "current_authority": True,
+            "worktree_clean": True,
+            "entries": [
+                {
+                    "detection_id": "EX-DET-001",
+                    "package_path": manifest_package["package_path"],
+                    "content_matches_observed_head": True,
+                    "required_file_git_blobs": {
+                        item["path"].removeprefix(f"{manifest_package['package_path']}/"): item["git_blob_sha"]
+                        for item in manifest_package["required_files"]
+                    },
+                    "required_file_semantic_fingerprints": {
+                        item["path"].removeprefix(f"{manifest_package['package_path']}/"): item["semantic_fingerprint"]
+                        for item in manifest_package["required_files"]
+                    },
+                }
+            ],
+        }
+        module.validate_detection_source_inventory(source_inventory, before)
+        source_inventory["entries"][0]["content_matches_observed_head"] = False
+        with self.assertRaisesRegex(module.RegistryFailure, "does not match the observed"):
+            module.validate_detection_source_inventory(source_inventory, before)
+        source_inventory["entries"][0]["content_matches_observed_head"] = True
+        (detections_root / "UNRELATED.md").write_text("unrelated\n", encoding="utf-8")
+        subprocess.run(["git", "add", "UNRELATED.md"], cwd=detections_root, check=True)
+        subprocess.run(["git", "commit", "-m", "unrelated"], cwd=detections_root, check=True, capture_output=True)
+        after = module.build_source_authority_manifest([package], detections_root)
+        self.assertEqual(before, after)
+        module.validate_source_authority_manifest(before, [package], detections_root)
+        forged = copy.deepcopy(before)
+        forged["packages"][0]["required_files"][0]["semantic_fingerprint"] = "0" * 64
+        with self.assertRaisesRegex(module.RegistryFailure, "content identity drift"):
+            module.validate_source_authority_manifest(forged, [package], detections_root)
+
+        (package_dir / "rule.yml").write_text("detection_id: EX-DET-001\nchanged: true\n", encoding="utf-8")
+        subprocess.run(["git", "add", "."], cwd=detections_root, check=True)
+        subprocess.run(["git", "commit", "-m", "authority change"], cwd=detections_root, check=True, capture_output=True)
+        changed = module.build_source_authority_manifest([package], detections_root)
+        self.assertNotEqual(after, changed)
+
+    def test_source_repository_rejects_dirty_and_non_tip_authority(self):
+        detections_root = self.root / "source-repo"
+        detections_root.mkdir()
+        subprocess.run(["git", "init"], cwd=detections_root, check=True, capture_output=True)
+        subprocess.run(["git", "config", "user.name", "test"], cwd=detections_root, check=True)
+        subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=detections_root, check=True)
+        subprocess.run(
+            [
+                "git",
+                "remote",
+                "add",
+                "origin",
+                "https://github.com/HawkinsOperations/hawkinsoperations-detections.git",
+            ],
+            cwd=detections_root,
+            check=True,
+        )
+        (detections_root / "source.txt").write_text("one\n", encoding="utf-8")
+        subprocess.run(["git", "add", "."], cwd=detections_root, check=True)
+        subprocess.run(["git", "commit", "-m", "one"], cwd=detections_root, check=True, capture_output=True)
+        first = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=detections_root, check=True, capture_output=True, text=True
+        ).stdout.strip()
+        (detections_root / "source.txt").write_text("two\n", encoding="utf-8")
+        subprocess.run(["git", "commit", "-am", "two"], cwd=detections_root, check=True, capture_output=True)
+        branch = subprocess.run(
+            ["git", "branch", "--show-current"], cwd=detections_root, check=True, capture_output=True, text=True
+        ).stdout.strip()
+        state = module._verify_source_repository(detections_root, f"refs/heads/{branch}")
+        self.assertEqual(len(state["current_observed_head_sha"]), 40)
+        with self.assertRaisesRegex(module.RegistryFailure, "does not equal intended ref"):
+            module._verify_source_repository(detections_root, first)
+        (detections_root / "source.txt").write_text("dirty\n", encoding="utf-8")
+        with self.assertRaisesRegex(module.RegistryFailure, "dirty"):
+            module._verify_source_repository(detections_root, f"refs/heads/{branch}")
+
+    def test_semantic_fingerprint_canonicalizes_yaml_timestamp_scalars(self):
+        source = self.root / "dated-rule.yml"
+        source.write_text(
+            "detection_id: EX-DET-001\ndate: 2026-07-22\n",
+            encoding="utf-8",
+        )
+        first = module._semantic_fingerprint(source)
+        self.assertRegex(first, r"^[0-9a-f]{64}$")
+        source.write_text(
+            "date: 2026-07-22\ndetection_id: EX-DET-001\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(first, module._semantic_fingerprint(source))
 
 
 if __name__ == "__main__":

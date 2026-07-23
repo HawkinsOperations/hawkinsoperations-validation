@@ -11,18 +11,59 @@ permissions:
 jobs:
   baseline-hero-validation-contract:
     runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      DETECTION_SOURCE_BRANCH: ${{ github.event_name == 'pull_request' && 'feature/hoxline-case-growth-convergence-v1' || 'main' }}
+    defaults:
+      run:
+        working-directory: hawkinsoperations-validation
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout validation PR source
+        uses: actions/checkout@v4
+        with:
+          path: hawkinsoperations-validation
+          persist-credentials: false
+      - name: Checkout declared detection source
+        uses: actions/checkout@v4
+        with:
+          repository: HawkinsOperations/hawkinsoperations-detections
+          ref: ${{ env.DETECTION_SOURCE_BRANCH }}
+          path: hawkinsoperations-detections
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Resolve the intended detection branch without fallback
+        working-directory: .
+        run: |
+          git -C hawkinsoperations-detections fetch --no-tags origin \
+            "refs/heads/${DETECTION_SOURCE_BRANCH}:refs/remotes/origin/convergence-source"
+          test "$(git -C hawkinsoperations-detections rev-parse HEAD)" = \
+            "$(git -C hawkinsoperations-detections rev-parse refs/remotes/origin/convergence-source)"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Install workflow parser dependency
         run: python -m pip install PyYAML
-      - name: Validate Registry and Baseline Contract
+      - name: Verify content-addressed source handoff
         run: |
-          python -B scripts/verify_validation_registry.py
+          python -B scripts/refresh_validation_source_manifest.py \
+            --detections-root ../hawkinsoperations-detections \
+            --detections-ref refs/remotes/origin/convergence-source
+          python -B scripts/verify_validation_registry.py \
+            --detections-root ../hawkinsoperations-detections \
+            --detections-ref refs/remotes/origin/convergence-source \
+            --source-manifest validation/SOURCE_AUTHORITY_MANIFEST.json
+      - name: Run every validator, parity check, and claim boundary
+        run: |
           python -B scripts/verify_all_validation_packages.py
+      - name: Run baseline and registry contracts
+        run: |
           python -B scripts/verify_validation_contract.py
           python -B scripts/verify_wazuh_logtest_registry.py
           python -B scripts/verify_ho_lab_wazuh_001.py
+      - name: Run hostile and full unit suites
+        run: |
           python -B -m unittest discover -s tests
+      - name: Verify no generated or whitespace drift
+        run: |
+          git diff --exit-code
+          git diff --check

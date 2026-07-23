@@ -1,0 +1,456 @@
+{
+  "matrix_git_blob_sha": "e1d040134f139d2598c527c3584e1859e9c9553d",
+  "matrix_path": "detections/DETECTION_PROMOTION_MATRIX.yml",
+  "matrix_semantic_fingerprint": "7ca1a5d76ed11de08832dbd074d120295d71d5935be3f10ed3d874d0198bf3e3",
+  "matrix_semantic_fingerprint_method": "canonical-json-sha256",
+  "owner_repo": "hawkinsoperations-validation",
+  "packages": [
+    {
+      "detection_id": "AWS-DET-001",
+      "package_path": "detections/cloud/aws/aws-det-001",
+      "required_files": [
+        {
+          "git_blob_sha": "80b352f20e602e68935b3630b4a9043624bb6102",
+          "path": "detections/cloud/aws/aws-det-001/cloudtrail.jsonpath",
+          "semantic_fingerprint": "8c0a99f41a3f38277143d5a2167dfe812aabcd35f7143a84dced9dd6fbc12103",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "fb9a9756c534aac6acc7f34c57381f4be9144149",
+          "path": "detections/cloud/aws/aws-det-001/README.md",
+          "semantic_fingerprint": "7d483cb47c73d9f88478be716209eb26427d301ceebce5f473a83a70a3bc72b3",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "cd0966970abf0f9706a13ea3d11d01bb9d8ea8d0",
+          "path": "detections/cloud/aws/aws-det-001/rule.yml",
+          "semantic_fingerprint": "3ec176b30cdb09105d11391b1b81c94372b880f3c6a43c19e7c98a506a35adfe",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "d1a5106c2b8b469765cea0a52a362e426d98c1ce",
+          "path": "detections/cloud/aws/aws-det-001/status.yml",
+          "semantic_fingerprint": "4fa27fce4d16c912488abcd433d12414132a7ace929c3daf6b0df2d236e11798",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        }
+      ]
+    },
+    {
+      "detection_id": "HO-DET-001",
+      "package_path": "detections/successor/ho-det-001",
+      "required_files": [
+        {
+          "git_blob_sha": "a1c1025bf7cf125909cb04cad5b0fc50ad93a8ee",
+          "path": "detections/successor/ho-det-001/event-mapping.yml",
+          "semantic_fingerprint": "a00a3483fd15da50032cbeae3289d3a0e26f3e4480669c8836437dcbc2fb39ad",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "5f6afac1d95ea077bb0512a175885506bc6ed643",
+          "path": "detections/successor/ho-det-001/rule.yml",
+          "semantic_fingerprint": "bea00756ee4ee6995900f51d6dc3cf9bb3a12a7b6146aa349d89332e7ff132be",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "d8ee5f8a503f46fb18746754e19b01558c2185ee",
+          "path": "detections/successor/ho-det-001/splunk.spl",
+          "semantic_fingerprint": "a3ea44e538e7bc52c83215ac0f981fa4858dd21c51faf5431c02ce3ede65c9ce",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "f61fe53a44fe600bb0977f47a5d27b1a60930476",
+          "path": "detections/successor/ho-det-001/status.yml",
+          "semantic_fingerprint": "04c2e344e56aefd549dcda4cd3b594dac112a68137568b472fbcd96ee8e97dff",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        }
+      ]
+    },
+    {
+      "detection_id": "HO-DET-009",
+      "package_path": "detections/successor/ho-det-009",
+      "required_files": [
+        {
+          "git_blob_sha": "ebdacad1fb36c5f42d5541ef5eac1008ba535c5c",
+          "path": "detections/successor/ho-det-009/event-mapping.yml",
+          "semantic_fingerprint": "7cdcddda48f86b374270e56c473b274c8574852c594d58b2d9de1c180a09155d",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "dafafb0fad4211f76fab1f1f7d4767eef751fff0",
+          "path": "detections/successor/ho-det-009/README.md",
+          "semantic_fingerprint": "e93350cbea8ae8f4e14cf2ab71a68fd4a7e908a4cc5c4e156bdb18de32b4f509",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "43e5a7b55164a5c8da6e9084a75929e144b11293",
+          "path": "detections/successor/ho-det-009/rule.yml",
+          "semantic_fingerprint": "ae1b0e281e97b2ec48ceebf78cb46c924616cf8275fafd6f375863e2d1c02584",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "adda6bdb95504dfc61a7d4c859fa589d048daab7",
+          "path": "detections/successor/ho-det-009/splunk.spl",
+          "semantic_fingerprint": "a40fc9cd4494c19a8a81ef62d04cb9cdbefb987789f6510ddabfd7888223d291",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "d216218e49c6631364ec734c35562fac7aebb1ef",
+          "path": "detections/successor/ho-det-009/status.yml",
+          "semantic_fingerprint": "e956b4e889652b22aec960ee56f8aa8f420180b554fc181c78f9b159d1c498cf",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "6da7e175c21e69df2ae8dc7c70636436ec6d13e6",
+          "path": "detections/successor/ho-det-009/wazuh.xml",
+          "semantic_fingerprint": "032f8e2fae5daefb0f37400c452bfd0a31349d8d2c3660e1cad7fc2a78081cf2",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        }
+      ]
+    },
+    {
+      "detection_id": "HO-DET-010",
+      "package_path": "detections/successor/ho-det-010",
+      "required_files": [
+        {
+          "git_blob_sha": "664c92add1ccbf4a97e22cc52f25cd0ccb5c1923",
+          "path": "detections/successor/ho-det-010/event-mapping.yml",
+          "semantic_fingerprint": "6f64c21368477c70f13ebd15bdacd92a7bbddde1fe85c1a41c50e85beb506372",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "6d41365f4b9dc56586807180fbb8d122ae8d4371",
+          "path": "detections/successor/ho-det-010/README.md",
+          "semantic_fingerprint": "186d53d1776194bf35b4646796f1da3662189d8bce8f0aac113c17832d6b37b3",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "372f4f24da114e034dba7ed38264741404e81c81",
+          "path": "detections/successor/ho-det-010/rule.yml",
+          "semantic_fingerprint": "c029263826c8023e483109bd9158f6847df4ec2e1c463b5dab8b9c6ef20e3144",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "a91c821036f612ec0da85aa036d9a5ef9704249c",
+          "path": "detections/successor/ho-det-010/splunk.spl",
+          "semantic_fingerprint": "1ca63e0366e112e322a7965aa1afb47b216079d66eb929c4bcd2d99c8c0e2d8a",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "ef6acd72407021bf562e4f7770d34b9b07307bea",
+          "path": "detections/successor/ho-det-010/status.yml",
+          "semantic_fingerprint": "b7c25eb16588657fddd54931b2bde568ca3d8480a132007e98f649550bbe328a",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "4268db3efdbd0b4d8073974f4f1dd966caa607b8",
+          "path": "detections/successor/ho-det-010/wazuh.xml",
+          "semantic_fingerprint": "49023a26a7873e3866c19853b10148649ae9577135f60d06dd508fd224442c39",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        }
+      ]
+    },
+    {
+      "detection_id": "HO-DET-011",
+      "package_path": "detections/successor/ho-det-011",
+      "required_files": [
+        {
+          "git_blob_sha": "fe1023aa830755403010d2dc220ec295f8a73a60",
+          "path": "detections/successor/ho-det-011/event-mapping.yml",
+          "semantic_fingerprint": "2bc2003017d3d1272f347bbe16c9cbd2bf6a99f0635ce33e53452a6971ad556d",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "edc184345f483e69d8000b2cf564cd17de8f474f",
+          "path": "detections/successor/ho-det-011/README.md",
+          "semantic_fingerprint": "daa7a68678f8e32344c2d15f006ca1a4471ce619e97777d2c274cd867fac7f3a",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "d38c9def8e48f716ad0ed768f113ec7b9f5fabda",
+          "path": "detections/successor/ho-det-011/rule.yml",
+          "semantic_fingerprint": "364968aab8bf93cf17d70fc2f91dc3fb41c438472995fb3785a775884310dcca",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "073dc74fb91ac5ad78621695014cf248caa48282",
+          "path": "detections/successor/ho-det-011/splunk.spl",
+          "semantic_fingerprint": "a81c1b25a28a06b8e579853337006e714a3008bbce329dbc18b760031e6ecf7b",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "0095dc3713ee4fd7f53e764db5037d3e4719de34",
+          "path": "detections/successor/ho-det-011/status.yml",
+          "semantic_fingerprint": "44da3eb3f1bb52be86f7b0a3e932fcc65e9acb15b8518e887d2c32cb47a6839c",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "aab2c4b5a82d7242b9596010b39a2e63930e8b7e",
+          "path": "detections/successor/ho-det-011/wazuh.xml",
+          "semantic_fingerprint": "a3a5205b5423cc4ab2db2262c55318bb5cf3f08e185873ecb613f29faa0feba9",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        }
+      ]
+    },
+    {
+      "detection_id": "HO-DET-012",
+      "package_path": "detections/successor/ho-det-012",
+      "required_files": [
+        {
+          "git_blob_sha": "b8ac88265e29b5d1379a58160a3f9922b97eadb4",
+          "path": "detections/successor/ho-det-012/event-mapping.yml",
+          "semantic_fingerprint": "c9d23a0f6b36ff561f8f255bd0e2bc7929b351260899d8ca7615142915e60f59",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "482bdcfad4d063ed451188fdf1ca83aa1437c671",
+          "path": "detections/successor/ho-det-012/README.md",
+          "semantic_fingerprint": "7f1ddc7976158a4c0d4b602d46a00368317fb15c3223e0a88640ec1f9106f210",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "12d4774385379bc234cfd2839e8dae45a4ea8054",
+          "path": "detections/successor/ho-det-012/rule.yml",
+          "semantic_fingerprint": "c3f919045fcef7c8153f19095c5dfdbce2dc5c8b0d5597ac72a0cdbde269ab2b",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "b53db1cffe1b7bd031064aa77ea65eab5da37e43",
+          "path": "detections/successor/ho-det-012/splunk.spl",
+          "semantic_fingerprint": "e4e97b0534c42e5af11cb1b6acac77c6ab9ca39c03dd9cd7cac7b8b4fc800772",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "ed292b3afddc1bb923f3f0f7de6b2e2f4d2b3a27",
+          "path": "detections/successor/ho-det-012/status.yml",
+          "semantic_fingerprint": "8a04edab4594e488c34e546f9e6e651f9ed2b65d84a6e96efb5cc2491bdae2a1",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "8c736d2310eb568f145cc0e2723b4cf124fdfa0e",
+          "path": "detections/successor/ho-det-012/wazuh.xml",
+          "semantic_fingerprint": "612a73610eed7a11433542dd8627b817f8c516d195350b71d04ac44165b4cf64",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        }
+      ]
+    },
+    {
+      "detection_id": "HO-DET-013",
+      "package_path": "detections/successor/ho-det-013",
+      "required_files": [
+        {
+          "git_blob_sha": "74e15784f324d958f853c8407ab8e492dca4e649",
+          "path": "detections/successor/ho-det-013/event-mapping.yml",
+          "semantic_fingerprint": "90e6c6fb4c24132f3fc0e15ccb18ffb4472182eba334e01ada55b9dd284e7eae",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "cb8b66748dd3a2926c1b4e326262c737d5d7857c",
+          "path": "detections/successor/ho-det-013/README.md",
+          "semantic_fingerprint": "2d7d2f338f70e5ee95b792b1fe385b41c3e531ccaf80bd62a06466f2f2e2ab0e",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "f23738dc4d66d1b6e2b7227e217ca0148d575c69",
+          "path": "detections/successor/ho-det-013/rule.yml",
+          "semantic_fingerprint": "d5b91f6eff32db7f002c010ffd3b43edeb6fa206664d7cbfb9bcd2b0cba223b7",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "8381491fc4e16ff817ab5c5a8bb6ba1fe638b279",
+          "path": "detections/successor/ho-det-013/splunk.spl",
+          "semantic_fingerprint": "e7b139eaa02fb5c539bbeb49e99898bcae7f643209f25a9993892eac4f4a2e76",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "2b0b427aaf06c9738e360ee82874e8fbaa4dd2fc",
+          "path": "detections/successor/ho-det-013/status.yml",
+          "semantic_fingerprint": "e03a7b2f0098d28992607108ea620fbd99627c72a7e648a81e45234654024af1",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        }
+      ]
+    },
+    {
+      "detection_id": "HO-PIPE-001",
+      "package_path": "detections/successor/ho-pipe-001",
+      "required_files": [
+        {
+          "git_blob_sha": "075a74f435c578db1987af527d3e6b95786e9e54",
+          "path": "detections/successor/ho-pipe-001/cribl-pipeline.yml",
+          "semantic_fingerprint": "5676d39ca30c25fd236a24b31bcbea1584dbfb7a30738a9562828fcccc3ea3f9",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "6300387891661f4ea944d214f4cac9deea82cc18",
+          "path": "detections/successor/ho-pipe-001/event-mapping.yml",
+          "semantic_fingerprint": "ca92f492a664845da070fca6a200cf1afd89ec62e2e18555ed77be14ef523a98",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "42458ee808b571ab21585351ed3c6c03036e3c05",
+          "path": "detections/successor/ho-pipe-001/field-preservation-matrix.yml",
+          "semantic_fingerprint": "de5f42948a8df5c8c7cd40cabb10e8b13e8cf765dc839d9e87139be295b3ba61",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "be4bd2c186d8cd56159d3b767977a26100b55b02",
+          "path": "detections/successor/ho-pipe-001/rule.yml",
+          "semantic_fingerprint": "4b316b1a639c981cc5db5f1e5af7a51b1a4360c9a6d7261eff6830f3a7cd4720",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "a5d921ff2da5783415157085e312e601a488622c",
+          "path": "detections/successor/ho-pipe-001/status.yml",
+          "semantic_fingerprint": "557340be507afc30f1a806acb6c0c7c6a6b63393aa6f02afa22cd037b26b1f6c",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        }
+      ]
+    },
+    {
+      "detection_id": "ID-DET-001",
+      "package_path": "detections/identity/id-det-001",
+      "required_files": [
+        {
+          "git_blob_sha": "a849bf6797ea2366f6ea46d04d5a1a822b73abb8",
+          "path": "detections/identity/id-det-001/event-mapping.yml",
+          "semantic_fingerprint": "c11616f3ad18db652aff33bb1ecee8f6609c2009f2fa2161adea15d10c8c604f",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "f0fb11d10ce1ee5e3ae01e5049ff1c23fd3afb79",
+          "path": "detections/identity/id-det-001/README.md",
+          "semantic_fingerprint": "1198a8a8a9a2dd4a8073e2360a4997c5241958c528c3f1f33ecf0ce024ff5766",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "b67c3443572880b8ad958c7002f42da6e1758a01",
+          "path": "detections/identity/id-det-001/rule.yml",
+          "semantic_fingerprint": "8cd3c1103c6dda5d0df1cf05c7ba6f7a776f91bf0960b6863aa1046a6e4a81e4",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "c3f36ea783ddb79a371ee32eb0baa5154a8dba99",
+          "path": "detections/identity/id-det-001/splunk.spl",
+          "semantic_fingerprint": "8783e0154bcf8ed6d6b5f03d6b4e5560233604a25d0b72c79fad0739e446d7f2",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "ffbd27fcfec76fd1d95d21532844f14dd00b6f8e",
+          "path": "detections/identity/id-det-001/status.yml",
+          "semantic_fingerprint": "bb5fa6fa7c53ef5bbce299ebe3291883ba3138d47f27581e53856739d763bfe9",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        }
+      ]
+    },
+    {
+      "detection_id": "ID-DET-002",
+      "package_path": "detections/identity/id-det-002",
+      "required_files": [
+        {
+          "git_blob_sha": "d22da4e9c8e6914be361c2def13f2019ef80ed83",
+          "path": "detections/identity/id-det-002/event-mapping.yml",
+          "semantic_fingerprint": "d78ee00d8c2c049555cacb7426dd2e7dda7d98281f2e44ad5ad5e7803c762d98",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "4c79f174ab4ee17e14ac3a0dadf05dc060eff10f",
+          "path": "detections/identity/id-det-002/README.md",
+          "semantic_fingerprint": "f0d4c447cea4e4d5997547b7d79a6e4eadb4ff17532cb1f7de7b2ea34885243d",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "7bb0fb1dd6b2beed6897263698d30d510394f506",
+          "path": "detections/identity/id-det-002/rule.yml",
+          "semantic_fingerprint": "a173fccb0d25b5971453fa5f70d3511157c28109c5902a7f7536ce592a6d5e42",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "5fa867b912510ccaa1ba9c6e8171509ef3c05d35",
+          "path": "detections/identity/id-det-002/splunk.spl",
+          "semantic_fingerprint": "9a3f3e449bf072efb66c952a8821a023068e53a0bd868bbc2aa118d36db4d929",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "9fdf97810b909dc50bb5a9a0c7a5e4cede80fe7b",
+          "path": "detections/identity/id-det-002/status.yml",
+          "semantic_fingerprint": "200d9e9232313793a2a1a2a81f21e99cfcff56fff93c3dd23353e9cc9de345ca",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        }
+      ]
+    },
+    {
+      "detection_id": "ID-DET-003",
+      "package_path": "detections/identity/id-det-003",
+      "required_files": [
+        {
+          "git_blob_sha": "e55fd59b899e83264d407aca9aa45728500a6737",
+          "path": "detections/identity/id-det-003/event-mapping.yml",
+          "semantic_fingerprint": "e90080f75168a4cf3fa32350e9d1177f7250a30bb18a84a9ab8456eed7fe1b60",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "43d27aa08634064f69a46f73b6a4758476775d55",
+          "path": "detections/identity/id-det-003/README.md",
+          "semantic_fingerprint": "123a46d832fa5c36b2bb5e8fc80e8350a7bfac304a17e5f19f1add419a8c0889",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "9c250acda3d456b6ec1a1592e626ba1c7940a9e5",
+          "path": "detections/identity/id-det-003/rule.yml",
+          "semantic_fingerprint": "c1edaa859f45dead5b1680a02e2a55c4873b1a5f51db2639f9d297e8bde09b6b",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "e9d5a8878277fa8916945341c967f79c6535dcb5",
+          "path": "detections/identity/id-det-003/splunk.spl",
+          "semantic_fingerprint": "bad91a818e8ef1f9a409231c66e92544e10c9773075b524b38545d948c8713a2",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "cc02d2adf83fe0af078a91471b2ef4b66eddde9d",
+          "path": "detections/identity/id-det-003/status.yml",
+          "semantic_fingerprint": "aa6a80ba42a4f25992e53bb9b39f2ba7c945d489f9d3904efc302ce811251f18",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        }
+      ]
+    },
+    {
+      "detection_id": "ID-DET-004",
+      "package_path": "detections/identity/id-det-004",
+      "required_files": [
+        {
+          "git_blob_sha": "378466e78aeb65203154941b093acd65e54e57ce",
+          "path": "detections/identity/id-det-004/event-mapping.yml",
+          "semantic_fingerprint": "81b41078ea6cbb9b4693fcd9f494a8ff29c3b6d387d0656c682cbfe049b144af",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "4ba88c6a3f6b3f31a8b803fb15bde23497416097",
+          "path": "detections/identity/id-det-004/README.md",
+          "semantic_fingerprint": "f47a22b86b138218802f194443b384de38396bc12a3b1eada50ff10776a335cf",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "79fd2686018919dc537a2c616bc6dc74d6f48dc6",
+          "path": "detections/identity/id-det-004/rule.yml",
+          "semantic_fingerprint": "dba99d77eb82bda1d3305403c39aa06db5995a95df35ec5bb508aa171581e086",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        },
+        {
+          "git_blob_sha": "e7ea2a062b1c3df0f4041dbeab228514a2a11665",
+          "path": "detections/identity/id-det-004/splunk.spl",
+          "semantic_fingerprint": "a72f285777aa92d9c2f6f3ed886f4a986dec9017f5e29b269d5388fc55659564",
+          "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
+        },
+        {
+          "git_blob_sha": "c98e614ce61bfbfa53e4dccad0fc4d9f04e58379",
+          "path": "detections/identity/id-det-004/status.yml",
+          "semantic_fingerprint": "2a65e78a5817b9fd56ce52240be87d7681fa1119bf5061bd5a81999fe317e776",
+          "semantic_fingerprint_method": "canonical-json-sha256"
+        }
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "source_owner": "hawkinsoperations-detections",
+  "truth_surface": "detection_to_validation_content_handoff"
+}

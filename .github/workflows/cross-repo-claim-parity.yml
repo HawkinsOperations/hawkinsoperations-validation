@@ -12,48 +12,73 @@ permissions:
 jobs:
   cross-repo-claim-parity:
     runs-on: ubuntu-latest
+    env:
+      CONVERGENCE_SOURCE_REF: ${{ github.event_name == 'pull_request' && 'feature/hoxline-case-growth-convergence-v1' || 'main' }}
     steps:
       - name: Checkout validation repo
         uses: actions/checkout@v4
         with:
           path: hawkinsoperations-validation
+          persist-credentials: false
 
       - name: Checkout detections repo
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/hawkinsoperations-detections
+          ref: ${{ env.CONVERGENCE_SOURCE_REF }}
           path: hawkinsoperations-detections
+          persist-credentials: false
 
       - name: Checkout proof repo
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/hawkinsoperations-proof
+          ref: ${{ env.CONVERGENCE_SOURCE_REF }}
           path: hawkinsoperations-proof
+          persist-credentials: false
 
       - name: Checkout website repo
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/hawkinsoperations-website
+          ref: ${{ env.CONVERGENCE_SOURCE_REF }}
           path: hawkinsoperations-website
+          persist-credentials: false
 
       - name: Checkout org front door repo
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/.github
+          ref: ${{ env.CONVERGENCE_SOURCE_REF }}
           path: .github
+          persist-credentials: false
 
       - name: Checkout platform repo
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/hawkinsoperations-platform
+          ref: ${{ env.CONVERGENCE_SOURCE_REF }}
           path: hawkinsoperations-platform
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Run report-only scanner
+      - name: Resolve the declared detection source without fallback
+        run: |
+          git -C hawkinsoperations-detections fetch --no-tags origin \
+            "refs/heads/${CONVERGENCE_SOURCE_REF}:refs/remotes/origin/convergence-source"
+          test "$(git -C hawkinsoperations-detections rev-parse HEAD)" = \
+            "$(git -C hawkinsoperations-detections rev-parse refs/remotes/origin/convergence-source)"
+
+      - name: Run fail-closed source parity and claim-boundary checks
         working-directory: hawkinsoperations-validation
         run: |
-          python -B scripts/verify_cross_repo_claim_parity.py --repo-root "$GITHUB_WORKSPACE" --report-only
+          python -B -m pip install PyYAML
+          python -B scripts/verify_validation_registry.py \
+            --detections-root ../hawkinsoperations-detections \
+            --detections-ref refs/remotes/origin/convergence-source \
+            --source-manifest validation/SOURCE_AUTHORITY_MANIFEST.json
+          python -B scripts/verify_all_validation_packages.py
