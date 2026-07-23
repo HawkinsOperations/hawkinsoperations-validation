@@ -190,8 +190,7 @@ NEGATIVE_LIST_INTRO_RE = re.compile(
     r"|\b(?:is|are|was|were)\s+not\b|\bwithout\s+claiming\b",
     re.IGNORECASE,
 )
-AFFIRMATIVE_RESET_AFTER_NEGATIVE_LIST_RE = re.compile(
-    r"(?:,\s*|\b(?:and|plus|though)\b\s*)"
+AFFIRMATIVE_STATE_AFTER_NEGATIVE_LIST_RE = re.compile(
     r"(?:"
     r"\b(?:customer|socaas)\b.{0,32}\b(?:deployment\s+)?(?:is|was)\s+"
     r"(?:active|confirmed|deployed|live|ready)\b"
@@ -215,11 +214,20 @@ NEGATIVE_LIST_SUFFIX_RE = re.compile(
 
 
 def _normalize_authority_security_text(value: str) -> str:
-    normalized = unicodedata.normalize("NFKC", value)
+    normalized = unicodedata.normalize("NFKD", value).translate(
+        {ord("\t"): " ", ord("\n"): " ", ord("\r"): " "}
+    )
     return "".join(
         character
         for character in normalized
-        if unicodedata.category(character) != "Cf"
+        if not unicodedata.category(character).startswith(("C", "M"))
+    )
+
+
+def _contains_unnegated_affirmative_state(value: str) -> bool:
+    return any(
+        not NEGATED_AUTHORITY_CONTEXT_RE.search(value[:match.start()])
+        for match in AFFIRMATIVE_STATE_AFTER_NEGATIVE_LIST_RE.finditer(value)
     )
 
 
@@ -794,14 +802,14 @@ def _scan_authority_boundaries(
             intro = NEGATIVE_LIST_INTRO_RE.search(segment)
             suffix = NEGATIVE_LIST_SUFFIX_RE.search(segment)
             if suffix:
-                if AFFIRMATIVE_RESET_AFTER_NEGATIVE_LIST_RE.search(
-                    ", " + segment[:suffix.start()]
+                if AFFIRMATIVE_STATE_AFTER_NEGATIVE_LIST_RE.search(
+                    segment[:suffix.start()]
                 ):
                     fail(f"{path} contains a blocked authority claim")
                 continue
             if intro:
                 if (
-                    AFFIRMATIVE_RESET_AFTER_NEGATIVE_LIST_RE.search(
+                    AFFIRMATIVE_STATE_AFTER_NEGATIVE_LIST_RE.search(
                         segment[intro.end():]
                     )
                 ):
@@ -810,8 +818,13 @@ def _scan_authority_boundaries(
             clauses = segment.split(",")
             if any(
                 clause.strip()
-                and AFFIRMATIVE_AUTHORITY_CLAIM_RE.search(clause)
-                and not NEGATED_AUTHORITY_CONTEXT_RE.search(clause)
+                and (
+                    _contains_unnegated_affirmative_state(clause)
+                    or (
+                        AFFIRMATIVE_AUTHORITY_CLAIM_RE.search(clause)
+                        and not NEGATED_AUTHORITY_CONTEXT_RE.search(clause)
+                    )
+                )
                 and not exact_blocked_leaf
                 for clause in clauses
             ):

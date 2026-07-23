@@ -536,6 +536,84 @@ class VerifyValidationRegistryTests(unittest.TestCase):
                 report_path.write_text(json.dumps(report), encoding="utf-8")
                 module.validate_registry(self.registry, self.root)
 
+    def test_combining_mark_obfuscation_in_nested_shapes_fails(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        original = json.loads(report_path.read_text(encoding="utf-8"))
+        templates = (
+            "public\\u{code} safe is confirmed",
+            "case\\u{code} closure approved",
+            "runtime\\u{code} is active",
+            "AI\\u{code} authority is enabled",
+        )
+        for code in ("034f", "0301", "fe0f", "0000", "0008", "001f", "007f"):
+            for template in templates:
+                nested = json.loads(
+                    '{"message":[{"deep":"'
+                    + template.format(code=code)
+                    + '"}]}'
+                )
+                report = copy.deepcopy(original)
+                report["future_gated_phases"] = [nested]
+                report_path.write_text(json.dumps(report), encoding="utf-8")
+                with self.subTest(code=code, template=template):
+                    with self.assertRaisesRegex(
+                        module.RegistryFailure, "contains a blocked authority claim"
+                    ):
+                        module.validate_registry(self.registry, self.root)
+
+        report = copy.deepcopy(original)
+        report["future_gated_phases"] = [
+            {
+                "message": [
+                    "Café résumé – reviewer note.",
+                    {"deep": "Reviewer 👩‍💻️ note."},
+                    {"multiline": "Reviewer note.\n\tStill bounded."},
+                ]
+            }
+        ]
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        module.validate_registry(self.registry, self.root)
+
+    def test_connector_independent_and_trailing_negation_attacks_fail(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        original = json.loads(report_path.read_text(encoding="utf-8"))
+        connectors = (
+            ",", "and", "plus", "though", "because", "therefore",
+            "meanwhile", "furthermore", "also", "nevertheless",
+            "nonetheless", "except", "despite that", "in fact", "so",
+            "consequently", "moreover", "then", "still", "even though",
+        )
+        attacks = [
+            (
+                f"does not prove runtime{connector} customer deployment is active"
+                if connector == ","
+                else f"does not prove runtime {connector} customer deployment is active"
+            )
+            for connector in connectors
+        ]
+        attacks.extend(
+            (
+                "customer deployment is active and not a typo",
+                "runtime is active and not simulated",
+                "final authorization received and no objections",
+                "AI authority is enabled and not revoked",
+                "public safe is confirmed and not disputed",
+                "case closure approved and not provisional",
+                "production is ready and not delayed",
+                "signal is observed and not inferred",
+                "customer deployment is active without ambiguity",
+            )
+        )
+        for attack in attacks:
+            report = copy.deepcopy(original)
+            report["future_gated_phases"] = [{"message": attack}]
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            with self.subTest(attack=attack):
+                with self.assertRaisesRegex(
+                    module.RegistryFailure, "contains a blocked authority claim"
+                ):
+                    module.validate_registry(self.registry, self.root)
+
     def test_split_and_direct_authority_state_paths_fail_closed(self):
         attacks = (
             {"runtime": {"state": True}},
