@@ -76,9 +76,9 @@
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
-          "git_blob_sha": "dafafb0fad4211f76fab1f1f7d4767eef751fff0",
+          "git_blob_sha": "35cddb883e061f1d3dba04e612d0cea5e833cade",
           "path": "detections/successor/ho-det-009/README.md",
-          "semantic_fingerprint": "e93350cbea8ae8f4e14cf2ab71a68fd4a7e908a4cc5c4e156bdb18de32b4f509",
+          "semantic_fingerprint": "4a3ce3e45ac1a5e07464e040ada4194d01665b39e1f6d88f46b2deb6b9a6266b",
           "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
         },
         {
