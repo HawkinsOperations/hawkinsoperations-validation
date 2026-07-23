@@ -15,6 +15,10 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
 BASELINE_WORKFLOW = ROOT / ".github" / "workflows" / "baseline-validation-contract.yml"
 CROSS_REPO_WORKFLOW = ROOT / ".github" / "workflows" / "cross-repo-claim-parity.yml"
 AI_TRIAGE_VERIFIER = ROOT / "scripts" / "verify-ho-det-001-ai-triage-schemas.py"
@@ -25,6 +29,27 @@ AI_TRIAGE_SUMMARY = (
     ROOT / "validation" / "successor" / "ho-det-001" / "llm-summary.json"
 )
 HO_DET_001_RESULT = ROOT / "reports" / "ho-det-001" / "validation-result.json"
+HO_DET_001_CLAIM_SCANNER = ROOT / "scripts" / "scan-ho-det-001-claim-boundaries.py"
+STRICT_HO_DET_001_JSON_PARSERS = (
+    "autosoc-triage-ho-det-001.py",
+    "build-ho-det-001-case-packet.py",
+    "normalize-ho-det-001-splunk-sysmon.py",
+    "offline-llm-summary-ho-det-001.py",
+    "scan-ho-det-001-claim-boundaries.py",
+    "validate-ho-det-001.py",
+    "verify-autosoc-runner-evidence-manifest.py",
+    "verify-closed-autosoc-loop-001.py",
+    "verify-ho-det-001-ai-triage-contract.py",
+    "verify-ho-det-001-ai-triage-schemas.py",
+    "verify-ho-det-001-backend-adapter.py",
+    "verify-ho-det-001-private-runtime-evidence-index.py",
+    "verify-ho-det-001-reproducible-proof-pack.py",
+    "verify-ho-det-001-result-parity.py",
+    "verify-ho-det-001-runtime-packet.py",
+    "verify-ho-det-001-triage-boundary.py",
+    "verify-proof-record-parity.py",
+    "verify_case_packet_contract.py",
+)
 
 
 def load_script(path: Path, module_name: str):
@@ -234,6 +259,48 @@ class ValidationCIAuthorityTests(unittest.TestCase):
         stale_summary["input_packet_hash"] = "0" * 64
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             verifier.verify_llm_summary(output_schema, stale_summary)
+
+    def test_ho_det_001_claim_parsers_reject_duplicate_authority_keys(self):
+        scanner = load_script(HO_DET_001_CLAIM_SCANNER, "ho_det_001_claim_scanner")
+        duplicate_status = (
+            '{"public_safe_status":"BLOCKED","PUBLIC_SAFE_STATUS":"APPROVED"}'
+        )
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            scanner.scan_json_file(Path("duplicate-status.json"), duplicate_status)
+
+        verifier = load_script(AI_TRIAGE_VERIFIER, "ho_det_001_duplicate_key_verifier")
+        duplicate_authority = (
+            '{"ai_decided_disposition":false,'
+            '"ａｉ＿ｄｅｃｉｄｅｄ＿ｄｉｓｐｏｓｉｔｉｏｎ":true}'
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            hostile = Path(temp) / "duplicate-authority.json"
+            hostile.write_text(duplicate_authority, encoding="utf-8")
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(
+                SystemExit
+            ):
+                verifier.load_json(hostile, "duplicate AI authority sample")
+
+    def test_ho_det_001_claim_scanner_rejects_non_standard_numeric_constants(self):
+        scanner = load_script(
+            HO_DET_001_CLAIM_SCANNER,
+            "ho_det_001_non_standard_number_scanner",
+        )
+        for constant in ("NaN", "Infinity", "-Infinity"):
+            with self.subTest(constant=constant), contextlib.redirect_stderr(
+                io.StringIO()
+            ), self.assertRaises(SystemExit):
+                scanner.scan_json_file(
+                    Path("non-standard-number.json"),
+                    f'{{"public_safe_status":"BLOCKED","confidence":{constant}}}',
+                )
+
+    def test_every_ho_det_001_claim_parser_uses_strict_json(self):
+        for filename in STRICT_HO_DET_001_JSON_PARSERS:
+            with self.subTest(filename=filename):
+                source = (ROOT / "scripts" / filename).read_text(encoding="utf-8")
+                self.assertIn("strict_json_", source)
+                self.assertNotIn("json.loads", source)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from validation_lib import ContractFailure, strict_json_object
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCOPED_FILES = [
@@ -138,11 +140,9 @@ def json_context_disallowed(path: str, text: str) -> bool:
 
 def scan_json_file(path: Path, text: str) -> None:
     try:
-        data = json.loads(text)
-    except json.JSONDecodeError as exc:
-        fail(f"{path}: invalid JSON: {exc}")
-    if not isinstance(data, dict):
-        fail(f"{path}: expected JSON object")
+        data = strict_json_object(text, str(path))
+    except ContractFailure as exc:
+        fail(str(exc))
     for field_path, value in iter_json_strings(data):
         lower = value.lower()
         for term in BLOCKED_TERMS:

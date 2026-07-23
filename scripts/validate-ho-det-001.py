@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from validation_report_contract import controlled_report_contract
+from validation_lib import ContractFailure, strict_json_object
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,9 +56,9 @@ def read_text(path: Path, label: str) -> str:
 
 def load_json(path: Path, label: str) -> dict[str, Any]:
     try:
-        return json.loads(read_text(path, label))
-    except json.JSONDecodeError as exc:
-        fail(f"invalid JSON in {label}: {exc}")
+        return strict_json_object(read_text(path, label), label)
+    except ContractFailure as exc:
+        fail(str(exc))
 
 
 def extract_yaml_list(text: str, key: str) -> list[str]:

@@ -49,6 +49,44 @@ class ValidationHelperTests(unittest.TestCase):
             with self.assertRaisesRegex(validation_lib.ContractFailure, "must be a JSON object"):
                 validation_lib.load_json(p, "test payload", root=root)
 
+    def test_strict_json_rejects_normalized_duplicate_claim_authority_keys(self):
+        with self.assertRaisesRegex(
+            validation_lib.ContractFailure,
+            "duplicate object keys after NFKC/casefold normalization",
+        ):
+            validation_lib.strict_json_object(
+                '{"public_safe_status":"BLOCKED","PUBLIC_SAFE_STATUS":"APPROVED"}',
+                "public status sample",
+            )
+
+        with self.assertRaisesRegex(
+            validation_lib.ContractFailure,
+            "duplicate object keys after NFKC/casefold normalization",
+        ):
+            validation_lib.strict_json_object(
+                '{"nested":{"ai_decided_disposition":false,'
+                '"ａｉ＿ｄｅｃｉｄｅｄ＿ｄｉｓｐｏｓｉｔｉｏｎ":true}}',
+                "AI authority sample",
+            )
+
+    def test_strict_json_rejects_non_object_shape(self):
+        with self.assertRaisesRegex(
+            validation_lib.ContractFailure,
+            "must be a JSON object",
+        ):
+            validation_lib.strict_json_object('["public_safe_status"]', "claim sample")
+
+    def test_strict_json_rejects_non_standard_numeric_constants(self):
+        for constant in ("NaN", "Infinity", "-Infinity"):
+            with self.subTest(constant=constant), self.assertRaisesRegex(
+                validation_lib.ContractFailure,
+                f"non-standard JSON numeric constant: {constant}",
+            ):
+                validation_lib.strict_json_object(
+                    f'{{"confidence":{constant}}}',
+                    "claim sample",
+                )
+
     def test_ensure_check_mode_blocks_write(self):
         with self.assertRaisesRegex(validation_lib.ContractFailure, "write mode is blocked"):
             validation_lib.ensure_check_mode(write=True)
