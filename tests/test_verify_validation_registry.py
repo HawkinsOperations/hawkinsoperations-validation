@@ -108,11 +108,11 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         with self.assertRaisesRegex(module.RegistryFailure, "reuses .* already owned"):
             module.validate_registry(registry, self.root)
 
-    def test_duplicate_authoritative_path_alias_fails(self):
+    def test_duplicate_normalized_authoritative_path_alias_fails(self):
         registry = copy.deepcopy(self.registry)
         duplicate = copy.deepcopy(registry["packages"][0])
         duplicate["detection_id"] = "EX-DET-002"
-        duplicate["fixture_file"] = "VALIDATION/EXAMPLE/VALIDATION-CASES.JSON"
+        duplicate["fixture_file"] = "validation/example/./validation-cases.json"
         registry["packages"].append(duplicate)
         with self.assertRaisesRegex(module.RegistryFailure, "reuses .* already owned"):
             module.validate_registry(registry, self.root)
