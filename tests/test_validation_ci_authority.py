@@ -1,3 +1,8 @@
+import contextlib
+import hashlib
+import importlib.util
+import io
+import json
 import re
 import subprocess
 import sys
@@ -12,6 +17,22 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE_WORKFLOW = ROOT / ".github" / "workflows" / "baseline-validation-contract.yml"
 CROSS_REPO_WORKFLOW = ROOT / ".github" / "workflows" / "cross-repo-claim-parity.yml"
+AI_TRIAGE_VERIFIER = ROOT / "scripts" / "verify-ho-det-001-ai-triage-schemas.py"
+AI_TRIAGE_PACKET = (
+    ROOT / "validation" / "successor" / "ho-det-001" / "autosoc-triage-packet.json"
+)
+AI_TRIAGE_SUMMARY = (
+    ROOT / "validation" / "successor" / "ho-det-001" / "llm-summary.json"
+)
+HO_DET_001_RESULT = ROOT / "reports" / "ho-det-001" / "validation-result.json"
+
+
+def load_script(path: Path, module_name: str):
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 def run_workflow_vocabulary_guard(workflow_path: Path, files: dict[str, bytes]):
@@ -183,6 +204,36 @@ class ValidationCIAuthorityTests(unittest.TestCase):
                 f'rev-parse HEAD)" = "${env_name}"',
                 text,
             )
+
+    def test_ho_det_001_triage_packet_binds_current_result_and_rejects_stale_hash(
+        self,
+    ):
+        verifier = load_script(AI_TRIAGE_VERIFIER, "ho_det_001_ai_triage_verifier")
+        schema = json.loads(
+            verifier.INPUT_SCHEMA.read_text(encoding="utf-8")
+        )
+        packet = json.loads(AI_TRIAGE_PACKET.read_text(encoding="utf-8"))
+        result_text = HO_DET_001_RESULT.read_text(encoding="utf-8")
+        expected_hash = hashlib.sha256(result_text.encode("utf-8")).hexdigest()
+        self.assertEqual(expected_hash, packet["validation_result_hash"])
+
+        stale_packet = dict(packet)
+        stale_packet["validation_result_hash"] = "0" * 64
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            verifier.verify_triage_packet(schema, stale_packet)
+
+        output_schema = json.loads(
+            verifier.OUTPUT_SCHEMA.read_text(encoding="utf-8")
+        )
+        summary = json.loads(AI_TRIAGE_SUMMARY.read_text(encoding="utf-8"))
+        packet_text = AI_TRIAGE_PACKET.read_text(encoding="utf-8")
+        expected_packet_hash = hashlib.sha256(packet_text.encode("utf-8")).hexdigest()
+        self.assertEqual(expected_packet_hash, summary["input_packet_hash"])
+
+        stale_summary = dict(summary)
+        stale_summary["input_packet_hash"] = "0" * 64
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            verifier.verify_llm_summary(output_schema, stale_summary)
 
 
 if __name__ == "__main__":
