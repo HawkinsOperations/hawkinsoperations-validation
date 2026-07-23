@@ -545,18 +545,19 @@ def _normalized_key(value: str) -> str:
 
 def _compositional_promotion_key(key: str) -> bool:
     return (
-        ("production" in key and any(part in key for part in ("active", "live", "ready", "deploy", "status")))
-        or (any(part in key for part in ("customer", "socaas")) and "deploy" in key)
-        or ("runtime" in key and any(part in key for part in ("active", "status")))
-        or ("signal" in key and any(part in key for part in ("observed", "status")))
-        or ("publicsafe" in key and not key.endswith("count"))
-        or ("final" in key and "authoriz" in key)
-        or ("case" in key and any(part in key for part in ("closed", "closure")))
-        or any(part in key for part in ("approvalstatus", "closurestatus", "casestatus"))
+        ("production" in key and any(part in key for part in ("active", "live", "ready", "deploy", "state", "status")))
+        or (any(part in key for part in ("customer", "socaas")) and any(part in key for part in ("active", "deploy", "state", "status")))
+        or ("runtime" in key and any(part in key for part in ("active", "state", "status")))
+        or ("signal" in key and any(part in key for part in ("observed", "state", "status")))
+        or ("publicsafe" in key and "count" not in key)
+        or ("final" in key and any(part in key for part in ("authoriz", "authority")))
+        or ("case" in key and "count" not in key and any(part in key for part in ("closed", "closure", "state", "status")))
+        or any(part in key for part in ("approvalstate", "approvalstatus", "closurestatus", "casestate", "casestatus"))
         or (
             key.startswith(("ai", "analyst"))
             and any(part in key for part in ("approved", "approval", "authority", "disposition"))
         )
+        or ("review" in key and "disposition" in key)
     )
 
 
@@ -580,15 +581,19 @@ def _explicitly_bounded_authority_value(value: Any) -> bool:
         "notpublicsafe",
         "notruntimeactive",
         "open",
+        "partial",
         "pending",
+        "existingflowcandidate",
         "privateruntimeboundarycontextonly",
         "privateruntimeevidencecaptured",
         "privateruntimeevidencecapturedlocalwindowsonly",
         "publicruntimeblocked",
         "runtimeactiveprivate",
         "runtimeblocked",
+        "runtimeevidenceverifiedprivate",
         "signalblocked",
         "signalobservedprivate",
+        "sourceexists",
         "unsupported",
     }
 
@@ -673,31 +678,75 @@ def _blocked_scalar(value: Any) -> bool:
         return False
 
 
-def _scan_authority_boundaries(value: Any, path: str = "$") -> None:
+def _scan_authority_boundaries(
+    value: Any,
+    path: str = "$",
+    normalized_path: tuple[str, ...] = (),
+    promotion_context: bool = False,
+) -> None:
     if isinstance(value, dict):
         for key, child in value.items():
             if not isinstance(key, str):
                 fail(f"{path} contains a non-string key")
             normalized = _normalized_key(key)
+            child_normalized_path = (*normalized_path, normalized)
+            cumulative_keys = {normalized}
+            cumulative_keys.update(
+                f"{segment}{normalized}"
+                for segment in normalized_path
+                if segment
+                in {
+                    "runtime",
+                    "signal",
+                    "public",
+                    "approval",
+                    "production",
+                    "customer",
+                    "socaas",
+                    "ai",
+                    "analyst",
+                    "review",
+                    "final",
+                    "case",
+                }
+            )
+            child_promotion_context = promotion_context or any(
+                _compositional_promotion_key(candidate)
+                for candidate in cumulative_keys
+            )
             if (
-                _compositional_promotion_key(normalized)
+                not isinstance(child, (dict, list))
+                and child_promotion_context
                 and not _explicitly_bounded_authority_value(child)
             ):
                 fail(f"{path}.{key} promotes a compositional authority state")
             if (
-                normalized in AUTHORITY_PROMOTION_KEYS
+                not isinstance(child, (dict, list))
+                and (
+                    normalized in AUTHORITY_PROMOTION_KEYS
                 or any(marker in normalized for marker in ("finalauthorization", "caseclosure"))
                 or (
                     any(marker in normalized for marker in ("ai", "analyst"))
                     and any(marker in normalized for marker in ("authority", "approval", "approved", "disposition"))
                 )
+                )
             ) and not _blocked_scalar(child):
                 fail(f"{path}.{key} promotes a blocked authority state")
-            _scan_authority_boundaries(child, f"{path}.{key}")
+            _scan_authority_boundaries(
+                child,
+                f"{path}.{key}",
+                child_normalized_path,
+                child_promotion_context,
+            )
         return
     if isinstance(value, list):
         for index, child in enumerate(value):
-            _scan_authority_boundaries(child, f"{path}[{index}]")
+            _scan_authority_boundaries(
+                child,
+                f"{path}[{index}]",
+                normalized_path,
+                promotion_context,
+            )
         return
     if isinstance(value, str):
         normalized = unicodedata.normalize("NFKC", value)

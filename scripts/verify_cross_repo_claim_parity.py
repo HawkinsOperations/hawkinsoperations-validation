@@ -13,6 +13,7 @@ import argparse
 import json
 import re
 import sys
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -106,10 +107,13 @@ STALE_SNAPSHOT_RE = re.compile(
 )
 
 NEGATIVE_CONTEXT_RE = re.compile(
-    r"\b(block|blocked|blocking|not|no|none|without|cannot|does\s+not|do\s+not|"
-    r"must\s+not|remains\s+blocked|requires|pending|unsupported|not\s+proven|"
+    r"(?<![A-Za-z0-9])(block|blocked|blocking|not|no|none|without|cannot|does\s+not|do\s+not|"
+    r"must\s+not|remain(?:s)?\s+blocked|required|requires|needs|before\s+any|"
+    r"pending|unsupported|not\s+proven|"
     r"not\s+public[-_\s]?safe|claims_not_supported|blocked_claims|blocked_public_claims|"
-    r"claim[_\s-]?boundary|not[_\s-]?approved|not[_\s-]?authorized)\b",
+    r"claim[_\s-]?boundary|not[_\s-]?approved|not[_\s-]?authorized|"
+    r"does[_\s-]?not[_\s-]?support|controlled[-_\s]?test\s+scope\s+only|"
+    r"fixture[-_\s]?only|support[-_\s]?only|review[-_\s]?only)(?![A-Za-z0-9])",
     re.IGNORECASE,
 )
 
@@ -145,10 +149,7 @@ def fail(message: str) -> int:
 
 
 def read_text(path: Path) -> str:
-    try:
-        return path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        return path.read_text(encoding="utf-8", errors="ignore")
+    return path.read_text(encoding="utf-8")
 
 
 def collect_files(root: Path, patterns: Iterable[str]) -> list[Path]:
@@ -197,6 +198,288 @@ def has_negative_context_for_line(lines: list[str], index: int) -> bool:
     return False
 
 
+def line_is_associated_with_detection(
+    lines: list[str],
+    index: int,
+    detection_id: str,
+) -> bool:
+    scoped_ids = {
+        candidate
+        for line in lines
+        for candidate in DETECTION_IDS
+        if candidate.casefold() in line.casefold()
+    }
+    if scoped_ids == {detection_id}:
+        return True
+    current = lines[index].casefold()
+    if detection_id.casefold() in current:
+        return True
+    for offset in range(1, 13):
+        candidate_index = index - offset
+        if candidate_index < 0:
+            break
+        candidate_line = lines[candidate_index]
+        if not candidate_line.strip():
+            break
+        referenced = [
+            candidate
+            for candidate in DETECTION_IDS
+            if candidate.casefold() in candidate_line.casefold()
+        ]
+        if referenced:
+            return referenced == [detection_id]
+    return False
+
+
+def has_negative_context_for_phrase(
+    lines: list[str],
+    index: int,
+    phrase: str,
+) -> bool:
+    line = lines[index]
+    folded = line.casefold()
+    start = folded.find(phrase.casefold())
+    if start < 0:
+        return False
+    end = start + len(phrase)
+    prefix = line[:start].casefold()
+    clause_start = max(
+        prefix.rfind(", but "),
+        prefix.rfind(" but "),
+        prefix.rfind(" however "),
+    )
+    if clause_start >= 0:
+        clause_start += 1
+    else:
+        clause_start = 0
+    local = line[clause_start : min(len(line), end + 96)]
+    if has_negative_context(local):
+        return True
+    for parent_index in range(index - 1, -1, -1):
+        candidate = lines[parent_index]
+        if candidate.strip() and candidate.rstrip().endswith(":") and has_negative_context(candidate):
+            return True
+        if candidate.lstrip().startswith("#"):
+            return has_negative_context(candidate)
+    stripped = line.lstrip()
+    continuation = stripped.startswith(("-", "*")) or line.startswith((" ", "\t"))
+    for offset in range(1, 41):
+        parent_index = index - offset
+        if parent_index < 0:
+            break
+        candidate = lines[parent_index]
+        if not candidate.strip():
+            break
+        if candidate.rstrip().endswith(":") and has_negative_context(candidate):
+            return True
+        candidate_stripped = candidate.lstrip()
+        if (
+            candidate_stripped
+            and not candidate_stripped.startswith(("-", "*"))
+            and not candidate.startswith((" ", "\t"))
+            and candidate.rstrip().endswith(":")
+        ):
+            break
+    if index > 0:
+        previous = lines[index - 1]
+        if (
+            previous.strip()
+            and not previous.rstrip().endswith((".", "?", "!"))
+            and has_negative_context(previous)
+        ):
+            return True
+    paragraph: list[str] = []
+    for parent_index in range(index - 1, -1, -1):
+        candidate = lines[parent_index]
+        if not candidate.strip() or candidate.rstrip().endswith((".", "?", "!")):
+            break
+        paragraph.append(candidate)
+    if paragraph and has_negative_context(" ".join(reversed(paragraph))):
+        return True
+    return False
+
+
+def term_is_nonclaim_structure(line: str, term: str) -> bool:
+    stripped = line.strip()
+    if stripped.startswith("#"):
+        return True
+    if ":" not in stripped:
+        return False
+    key, value = stripped.split(":", 1)
+    return term.casefold() in key.casefold() and not value.strip()
+
+
+def term_is_affirmative_claim(line: str, term: str) -> bool:
+    folded_line = line.casefold()
+    folded_term = term.casefold()
+    escaped = re.escape(folded_term)
+    predicate = (
+        r"(?:is|are|has|have|uses|use|proves|establishes|confirms|"
+        r"claims|declares|enables|enabled|observed|approved|authorized|deployed)"
+    )
+    if re.search(rf"\b{predicate}\b.{{0,120}}{escaped}", folded_line):
+        return True
+    if re.search(rf"{escaped}.{{0,80}}\b(?:is|are|enabled|true|approved|active)\b", folded_line):
+        return True
+    key_pattern = re.escape(
+        re.sub(r"[^a-z0-9]+", "_", folded_term).strip("_")
+    ).replace("_", r"[-_\s]?")
+    return bool(
+        re.search(
+            rf"[\"']?{key_pattern}[\"']?\s*[:=]\s*"
+            r"(?:true|active|approved|authorized|deployed|observed)\b",
+            folded_line,
+        )
+    )
+
+
+def is_public_boundary_contract(text: str) -> bool:
+    folded = text.casefold()
+    return "cross_repo_claim_contract" in folded
+
+
+def normalize_path_key(value: str) -> str:
+    folded = unicodedata.normalize("NFKC", value).casefold()
+    return re.sub(r"[^a-z0-9]+", "_", folded).strip("_")
+
+
+DANGEROUS_AUTHORITY_PATHS = {
+    "runtime_state",
+    "runtime_status",
+    "runtime_active",
+    "signal_state",
+    "signal_status",
+    "signal_observed",
+    "production_state",
+    "production_status",
+    "production_active",
+    "approval_state",
+    "approval_status",
+    "ai_authority",
+    "ai_disposition_authority",
+    "analyst_authority",
+    "analyst_disposition_authority",
+    "final_authority",
+    "final_authorization",
+    "case_state",
+    "case_status",
+    "case_closure",
+    "customer_state",
+    "customer_status",
+    "socaas_state",
+    "socaas_status",
+    "public_safe",
+}
+
+
+def assertive_authority_value(value: object) -> bool:
+    if value is True:
+        return True
+    if value is False or value is None:
+        return False
+    if not isinstance(value, str):
+        return False
+    normalized = normalize_path_key(value)
+    return normalized in {
+        "active",
+        "approved",
+        "authorized",
+        "closed",
+        "complete",
+        "customer_deployed",
+        "deployed",
+        "enabled",
+        "final",
+        "observed",
+        "production",
+        "production_ready",
+        "public_safe",
+        "runtime_active",
+        "signal_observed",
+        "socaas_active",
+    }
+
+
+def structured_claim_items(
+    value: object,
+    detection_ids: list[str],
+    surface: str,
+    rel_path: str,
+    enforce: bool,
+    ancestry: tuple[str, ...] = (),
+) -> list[DriftItem]:
+    items: list[DriftItem] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            normalized = normalize_path_key(str(key))
+            items.extend(
+                structured_claim_items(
+                    child,
+                    detection_ids,
+                    surface,
+                    rel_path,
+                    enforce,
+                    ancestry + (normalized,),
+                )
+            )
+        return items
+    if isinstance(value, list):
+        for child in value:
+            items.extend(
+                structured_claim_items(
+                    child,
+                    detection_ids,
+                    surface,
+                    rel_path,
+                    enforce,
+                    ancestry,
+                )
+            )
+        return items
+
+    cumulative = "_".join(filter(None, ancestry))
+    if (
+        any(
+            cumulative == token
+            for token in DANGEROUS_AUTHORITY_PATHS
+        )
+        and not has_negative_context(cumulative)
+        and assertive_authority_value(value)
+    ):
+        items.append(
+            DriftItem(
+                severity="fail" if enforce else "warning",
+                detection_id="GLOBAL",
+                surface=surface,
+                path=rel_path,
+                message=f"assertive authority value at structured path: {cumulative}",
+            )
+        )
+
+    if isinstance(value, str) and not has_negative_context(cumulative):
+        for detection_id in detection_ids:
+            if detection_id in value:
+                items.extend(
+                    scan_promotion_terms(
+                        text=value,
+                        detection_id=detection_id,
+                        surface=surface,
+                        rel_path=rel_path,
+                        enforce=enforce,
+                    )
+                )
+                items.extend(
+                    scan_status_tokens(
+                        text=value,
+                        detection_id=detection_id,
+                        surface=surface,
+                        rel_path=rel_path,
+                        enforce=enforce,
+                    )
+                )
+    return items
+
+
 def has_boundary(text: str, boundary_re: re.Pattern[str]) -> bool:
     compact = " ".join(text.split())
     return bool(boundary_re.search(compact))
@@ -226,7 +509,13 @@ def scan_promotion_terms(
     for term in PROMOTION_TERMS:
         term_l = term.lower()
         for index, line in enumerate(lines):
-            if term_l in line.lower() and not has_negative_context_for_line(lines, index):
+            if (
+                term_l in line.lower()
+                and line_is_associated_with_detection(lines, index, detection_id)
+                and not term_is_nonclaim_structure(line, term)
+                and not has_negative_context_for_phrase(lines, index, term)
+                and term_is_affirmative_claim(line, term)
+            ):
                 sev = "fail" if enforce else "warning"
                 items.append(
                     DriftItem(
@@ -261,10 +550,15 @@ def scan_status_tokens(
 
     lines = text.splitlines()
     for index, line in enumerate(lines):
+        if not line_is_associated_with_detection(lines, index, detection_id):
+            continue
         for token in extract_candidate_status_tokens(line):
             if token in ALLOWED_PROOF_CEILING_TOKENS:
                 continue
-            if token in DANGEROUS_STATUS_TOKENS and not has_negative_context_for_line(lines, index):
+            if (
+                token in DANGEROUS_STATUS_TOKENS
+                and not has_negative_context_for_phrase(lines, index, token)
+            ):
                 items.append(
                     DriftItem(
                         severity="fail" if enforce else "warning",
@@ -285,6 +579,8 @@ def scan_required_boundaries(
     enforce: bool,
 ) -> list[DriftItem]:
     if detection_id.lower() not in text.lower():
+        return []
+    if not is_public_boundary_contract(text):
         return []
 
     severity = "fail" if enforce else "warning"
@@ -320,6 +616,8 @@ def scan_required_blocked_claims(
     enforce: bool,
 ) -> list[DriftItem]:
     if detection_id.lower() not in text.lower():
+        return []
+    if not is_public_boundary_contract(text):
         return []
 
     severity = "fail" if enforce else "warning"
@@ -408,11 +706,67 @@ def scan_surface(
 
     for file_path in files:
         rel_path = str(file_path.relative_to(repo_root))
-        text = read_text(file_path)
-        tokens = extract_status_tokens(text)
+        try:
+            text = read_text(file_path)
+        except (OSError, UnicodeError) as exc:
+            drift.append(
+                DriftItem(
+                    severity="fail" if enforce else "warning",
+                    detection_id="GLOBAL",
+                    surface=surface,
+                    path=rel_path,
+                    message=f"declared text file is not readable strict UTF-8: {exc}",
+                )
+            )
+            continue
+        if file_path.suffix.casefold() == ".json":
+            try:
+                structured = json.loads(text)
+            except json.JSONDecodeError as exc:
+                drift.append(
+                    DriftItem(
+                        severity="fail" if enforce else "warning",
+                        detection_id="GLOBAL",
+                        surface=surface,
+                        path=rel_path,
+                        message=f"declared JSON is malformed: {exc}",
+                    )
+                )
+                continue
+            drift.extend(
+                structured_claim_items(
+                    structured,
+                    detection_ids,
+                    surface,
+                    rel_path,
+                    enforce,
+                )
+            )
+            serialized = json.dumps(structured, ensure_ascii=True)
+            for detection_id in detection_ids:
+                if detection_id in serialized:
+                    status_by_id[detection_id].update(
+                        extract_status_tokens(serialized)
+                    )
+            continue
+        lines = text.splitlines()
+        prose_contract = is_public_boundary_contract(text)
         for detection_id in detection_ids:
             if detection_id in text:
-                status_by_id[detection_id].update(tokens)
+                associated_text = "\n".join(
+                    line
+                    for index, line in enumerate(lines)
+                    if line_is_associated_with_detection(lines, index, detection_id)
+                )
+                status_by_id[detection_id].update(
+                    extract_status_tokens(associated_text)
+                )
+                if (
+                    file_path.suffix.casefold()
+                    in {".md", ".html", ".ts", ".js", ".mjs"}
+                    and not prose_contract
+                ):
+                    continue
                 drift.extend(
                     scan_promotion_terms(
                         text=text,
@@ -578,9 +932,7 @@ def main(argv: list[str] | None = None) -> int:
     unknown_count = sum(1 for item in drift_items if item.severity == "unknown")
 
     status = "pass"
-    if fail_count > 0:
-        status = "fail"
-    elif warning_count > 0 and not args.report_only:
+    if fail_count > 0 or unknown_count > 0:
         status = "fail"
     if args.report_only:
         status = "pass"

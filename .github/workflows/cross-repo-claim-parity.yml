@@ -20,13 +20,13 @@ jobs:
       PLATFORM_SOURCE_SHA: 0c9fa3654db8691c0730a5ddd1e74a343c62c3a2
     steps:
       - name: Checkout validation repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           path: hawkinsoperations-validation
           persist-credentials: false
 
       - name: Checkout detections repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: HawkinsOperations/hawkinsoperations-detections
           ref: ${{ env.DETECTIONS_SOURCE_SHA }}
@@ -35,7 +35,7 @@ jobs:
           persist-credentials: false
 
       - name: Checkout proof repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: HawkinsOperations/hawkinsoperations-proof
           ref: ${{ env.PROOF_SOURCE_SHA }}
@@ -44,7 +44,7 @@ jobs:
           persist-credentials: false
 
       - name: Checkout website repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: HawkinsOperations/hawkinsoperations-website
           ref: ${{ env.WEBSITE_SOURCE_SHA }}
@@ -53,7 +53,7 @@ jobs:
           persist-credentials: false
 
       - name: Checkout org front door repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: HawkinsOperations/.github
           ref: ${{ env.COMMAND_CENTER_SOURCE_SHA }}
@@ -62,7 +62,7 @@ jobs:
           persist-credentials: false
 
       - name: Checkout platform repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: HawkinsOperations/hawkinsoperations-platform
           ref: ${{ env.PLATFORM_SOURCE_SHA }}
@@ -71,7 +71,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.11"
 
@@ -86,9 +86,12 @@ jobs:
       - name: Run fail-closed source parity and claim-boundary checks
         working-directory: hawkinsoperations-validation
         run: |
-          python -B -m pip install PyYAML
+          python -B -m pip install PyYAML==6.0.2
           python -B scripts/verify_validation_registry.py \
             --detections-root ../hawkinsoperations-detections \
             --detections-ref "$DETECTIONS_SOURCE_SHA" \
             --source-manifest validation/SOURCE_AUTHORITY_MANIFEST.json
           python -B scripts/verify_all_validation_packages.py
+          python -B scripts/verify_cross_repo_claim_parity.py \
+            --repo-root .. \
+            --enforce

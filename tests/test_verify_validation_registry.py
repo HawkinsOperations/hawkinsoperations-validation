@@ -495,6 +495,90 @@ class VerifyValidationRegistryTests(unittest.TestCase):
                 ):
                     module.validate_registry(self.registry, self.root)
 
+    def test_split_and_direct_authority_state_paths_fail_closed(self):
+        attacks = (
+            {"runtime": {"state": True}},
+            {"signal": {"observed": True}},
+            {"public": {"safe": True}},
+            {"approval": {"status": True}},
+            {"production": {"active": True}},
+            {"customer": {"deployed": True}},
+            {"socaas": {"deployed": True}},
+            {"ai": {"authority": True}},
+            {"analyst": {"approval": True}},
+            {"review": {"disposition": "APPROVED"}},
+            {"final": {"authorization": True}},
+            {"case": {"closed": True}},
+            {"extensions": [{"final": {"authorization": True}}]},
+            {"runtime": {"metadata": {"state": True}}},
+            {"final": {"review": {"authorization": True}}},
+            {"ai": {"metadata": {"authority": True}}},
+            {"customer": {"review": {"deployed": True}}},
+            {"review": {"metadata": {"disposition": "APPROVED"}}},
+            {"production_live": {"enabled": True}},
+            {"ai_authority": {"enabled": True}},
+            {"review_disposition": {"approved": True}},
+            {"final_authorization": {"granted": True}},
+            {"runtime_state": True},
+            {"approval_state": True},
+            {"production_state": True},
+            {"customer_state": True},
+            {"socaas_state": True},
+            {"final_authority": True},
+            {"case_state": True},
+        )
+        for attack in attacks:
+            with self.subTest(attack=attack), self.assertRaisesRegex(
+                module.RegistryFailure,
+                "authority",
+            ):
+                module._scan_authority_boundaries(attack)
+
+    def test_split_and_direct_authority_state_bounded_controls_pass(self):
+        controls = (
+            {"runtime": {"state": False}},
+            {"signal": {"observed": False}},
+            {"public": {"safe": "NOT_PUBLIC_SAFE"}},
+            {"approval": {"status": "NOT_APPROVED"}},
+            {"production": {"active": "BLOCKED"}},
+            {"customer": {"deployed": False}},
+            {"socaas": {"deployed": False}},
+            {"ai": {"authority": False}},
+            {"analyst": {"approval": "NOT_APPROVED"}},
+            {"review": {"disposition": "NOT_APPROVED"}},
+            {"final": {"authorization": "BLOCKED"}},
+            {"case": {"closed": False}},
+            {"extensions": [{"final": {"authorization": "BLOCKED"}}]},
+            {"runtime_state": False},
+            {"approval_state": "NOT_APPROVED"},
+            {"production_state": "BLOCKED"},
+            {"customer_state": False},
+            {"socaas_state": False},
+            {"final_authority": False},
+            {"case_state": False},
+            {"production_live": {"enabled": False}},
+            {"ai_authority": {"enabled": False}},
+            {"review_disposition": {"approved": "NOT_APPROVED"}},
+            {"final_authorization": {"granted": "BLOCKED"}},
+        )
+        for control in controls:
+            with self.subTest(control=control):
+                module._scan_authority_boundaries(control)
+
+    def test_compound_owned_context_names_remain_bounded(self):
+        module._scan_authority_boundaries(
+            {
+                "runtime_truth_spine": {
+                    "runtime_truth": {
+                        "state": "RUNTIME_EVIDENCE_VERIFIED_PRIVATE"
+                    }
+                },
+                "socaas_pilot_receipt_flow": {
+                    "pilot_status": "EXISTING_FLOW_CANDIDATE"
+                },
+            }
+        )
+
     def test_report_rejects_ambiguous_dual_result_shapes(self):
         report_path = self.root / "reports/example/validation-result.json"
         report = json.loads(report_path.read_text(encoding="utf-8"))

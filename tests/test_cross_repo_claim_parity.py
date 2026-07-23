@@ -47,7 +47,13 @@ class CrossRepoClaimParityTests(unittest.TestCase):
     def good_parity_body(self) -> str:
         return "\n".join(
             [
-                "HO-DET-001",
+                "HO-DET-001: SOURCE_EXISTS",
+                "HO-DET-011: SOURCE_EXISTS",
+                "HO-DET-012: SOURCE_EXISTS",
+                "AWS-DET-001: SOURCE_EXISTS",
+                "HO-NDR-001: SOURCE_EXISTS",
+                "HO-PIPE-001: SOURCE_EXISTS",
+                "cross_repo_claim_contract: true",
                 "proof_ceiling: CONTROLLED_TEST_VALIDATED",
                 "public_safe_runtime_proof: BLOCKED",
                 "runtime_active_public_proof: BLOCKED",
@@ -124,6 +130,61 @@ class CrossRepoClaimParityTests(unittest.TestCase):
             enforce=True,
         )
         self.assertEqual(items, [])
+
+    def test_multi_case_file_does_not_cross_associate_claims(self):
+        text = "\n".join(
+            [
+                "## HO-DET-001",
+                "status: SOURCE_EXISTS",
+                "",
+                "## AWS-DET-001",
+                "blocked_claims:",
+                "  - production-ready",
+                "  - runtime-active public proof",
+            ]
+        )
+        items = scanner.scan_promotion_terms(
+            text=text,
+            detection_id="HO-DET-001",
+            surface="proof",
+            rel_path="proof/records/multi.md",
+            enforce=True,
+        )
+        self.assertEqual(items, [])
+
+    def test_phrase_local_negation_does_not_launder_later_promotion(self):
+        text = (
+            "HO-DET-001 is not public-safe in review notes, but "
+            "HO-DET-001 is production-ready for deployment."
+        )
+        items = scanner.scan_promotion_terms(
+            text=text,
+            detection_id="HO-DET-001",
+            surface="proof",
+            rel_path="proof/records/HO-DET-001.md",
+            enforce=True,
+        )
+        self.assertTrue(
+            any("production" in item.message for item in items),
+            items,
+        )
+
+    def test_malformed_utf8_declared_text_fails_enforce(self):
+        with tempfile.TemporaryDirectory() as td:
+            org = Path(td)
+            self.build_org(org, self.good_parity_body())
+            hostile = (
+                org
+                / "hawkinsoperations-proof"
+                / "proof"
+                / "records"
+                / "malformed.md"
+            )
+            hostile.write_bytes(b"HO-DET-001\xffproduction-ready")
+
+            rc, output = self.run_main(["--repo-root", str(org), "--enforce"])
+            self.assertEqual(rc, 1)
+            self.assertIn("not readable strict UTF-8", output)
 
     def test_source_surface_missing_public_boundaries_does_not_fail(self):
         with tempfile.TemporaryDirectory() as td:
