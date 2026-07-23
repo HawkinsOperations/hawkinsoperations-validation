@@ -180,7 +180,10 @@ NEGATED_AUTHORITY_CONTEXT_RE = re.compile(
     r"reject(?:ed|s)?|requires?\s+separate|remain(?:s)?\s+(?:a\s+)?separate|unsupported|without)\b",
     re.IGNORECASE,
 )
-AUTHORITY_CLAUSE_SPLIT_RE = re.compile(r"[;\r\n]+|(?<=[.!?])\s+")
+AUTHORITY_CLAUSE_SPLIT_RE = re.compile(
+    r"[,;:/\r\n—–]+|\b(?:but|however|although|yet|while|whereas)\b|(?<=[.!?])\s+",
+    re.IGNORECASE,
+)
 REPORT_ALLOWED_FIELDS = {
     "actual_result",
     "ai_approved",

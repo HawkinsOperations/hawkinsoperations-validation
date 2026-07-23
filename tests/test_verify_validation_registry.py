@@ -449,6 +449,12 @@ class VerifyValidationRegistryTests(unittest.TestCase):
             "case closure complete",
             "runtime is active",
             "signal was observed",
+            "pending documentation, production is live",
+            "unsupported note — customer environment deployed",
+            "future issue: signal was observed",
+            "missing receipt while production is live",
+            "no proof currently, customer environment deployed",
+            "not approved / production is live",
         )
         original = json.loads(report_path.read_text(encoding="utf-8"))
         for attack in attacks:
