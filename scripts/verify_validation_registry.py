@@ -748,6 +748,8 @@ def _scan_authority_boundaries(
                 promotion_context,
             )
         return
+    if promotion_context and not _explicitly_bounded_authority_value(value):
+        fail(f"{path} promotes a compositional authority state")
     if isinstance(value, str):
         normalized = unicodedata.normalize("NFKC", value)
         if (
