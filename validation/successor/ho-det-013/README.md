@@ -1,6 +1,6 @@
 # HO-DET-013 Controlled-test Validation
 
-This package validates controlled, synthetic fixtures for defense tool and telemetry tamper source logic. It does not use live endpoint logs, raw private telemetry, runtime evidence, public proof, or production claims.
+This package validates controlled-test fixtures for defense tool and telemetry tamper source logic. It does not use live endpoint logs, raw private telemetry, runtime evidence, public proof, or production claims.
 
 ## Scope
 

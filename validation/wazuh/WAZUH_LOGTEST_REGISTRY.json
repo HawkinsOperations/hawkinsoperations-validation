@@ -19,7 +19,7 @@
       "signal_status": false,
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "execution_mode": "static_ci_optional_private_logtest",
-      "notes": "Controlled synthetic Wazuh logtest contract only; does not prove live Wazuh signal."
+      "notes": "Controlled-test Wazuh logtest contract only; does not prove live Wazuh signal."
     },
     {
       "detection_id": "HO-DET-012",
@@ -34,7 +34,7 @@
       "signal_status": false,
       "public_safe_status": "NOT_PUBLIC_SAFE",
       "execution_mode": "static_ci_optional_private_logtest",
-      "notes": "Controlled synthetic Wazuh logtest contract only; does not prove live Wazuh signal."
+      "notes": "Controlled-test Wazuh logtest contract only; does not prove live Wazuh signal."
     },
     {
       "detection_id": "HO-DET-001",

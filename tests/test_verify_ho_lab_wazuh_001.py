@@ -111,7 +111,7 @@ class VerifyHOLabWazuh001Tests(unittest.TestCase):
                 self.root / "validation/wazuh/samples" / filename,
                 {
                     "detection_id": detection_id,
-                    "sample_scope": "controlled_synthetic_wazuh_logtest_candidate",
+                    "sample_scope": "controlled_test_wazuh_logtest_candidate",
                     "runtime_status": False,
                     "signal_status": False,
                     "public_safe_status": "NOT_PUBLIC_SAFE",

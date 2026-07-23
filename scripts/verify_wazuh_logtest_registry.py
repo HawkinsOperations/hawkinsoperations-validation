@@ -142,8 +142,8 @@ def verify_sample(root: Path, entry: dict[str, Any]) -> dict[str, Any] | None:
     data = load_json(sample_path, f"{entry['detection_id']} sample_event")
     if data.get("detection_id") != entry["detection_id"]:
         fail(f"{entry['detection_id']} sample detection_id mismatch")
-    if data.get("sample_scope") != "controlled_synthetic_wazuh_logtest_candidate":
-        fail(f"{entry['detection_id']} sample_scope must be controlled synthetic")
+    if data.get("sample_scope") != "controlled_test_wazuh_logtest_candidate":
+        fail(f"{entry['detection_id']} sample_scope must be controlled-test")
     require_false_boundary(data, f"{entry['detection_id']} sample")
     if not isinstance(data.get("logtest_input"), str) or not data["logtest_input"]:
         fail(f"{entry['detection_id']} sample missing logtest_input")

@@ -91,7 +91,7 @@ Detailed route notes live in [`validation/successor/ho-det-001/README.md`](valid
 | ID-DET-001..004 | Identity-event controlled fixtures | `python -B scripts/validate-id-det-001.py` through `validate-id-det-004.py` | No live IdP or SIEM proof |
 | HO-PIPE-001 | Pipeline route integrity contract fixtures | `python -B scripts/validate-ho-pipe-001.py` | No live Cribl/Wazuh/Splunk route proof |
 | HO-NDR-001 | Security Onion visibility and corroboration samples | `python -B scripts/verify-security-onion-visibility-rollup.py` | Contract samples only |
-| Wazuh logtest | Registry and synthetic sample contract | `python -B scripts/verify_wazuh_logtest_registry.py` | Static CI contract, not live Wazuh routing |
+| Wazuh logtest | Registry and controlled-test sample contract | `python -B scripts/verify_wazuh_logtest_registry.py` | Static CI contract, not live Wazuh routing |
 | HO-LAB-WAZUH-001 | Source/static Wazuh registry lab | `python -B scripts/verify_ho_lab_wazuh_001.py` | Source/static CI contract only |
 
 Run every registry-listed validation package check:
