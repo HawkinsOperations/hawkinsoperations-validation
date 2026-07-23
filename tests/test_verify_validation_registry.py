@@ -483,6 +483,19 @@ class VerifyValidationRegistryTests(unittest.TestCase):
             "missing receipt while production is live",
             "no proof currently, customer environment deployed",
             "not approved / production is live",
+            "does not prove runtime, customer deployment is active",
+            "does not prove runtime, AI authority is enabled",
+            "does not prove runtime, analyst approval granted",
+            "does not prove runtime, public safe is confirmed",
+            "does not prove runtime, final authorization received",
+            "does not prove runtime, case closure approved",
+            "does not prove runtime and customer deployment is active",
+            "does not prove runtime plus public safe is confirmed",
+            "does not prove runtime though case closure is approved",
+            "public\u200b safe is confirmed",
+            "case\u200b closure approved",
+            "AI\u200b authority is enabled",
+            "runtime\u200b is active",
         )
         original = json.loads(report_path.read_text(encoding="utf-8"))
         for attack in attacks:
@@ -494,6 +507,34 @@ class VerifyValidationRegistryTests(unittest.TestCase):
                     module.RegistryFailure, "contains a blocked authority claim"
                 ):
                     module.validate_registry(self.registry, self.root)
+
+    def test_bounded_negative_authority_lists_remain_valid(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        original = json.loads(report_path.read_text(encoding="utf-8"))
+        controls = (
+            (
+                "This does not prove runtime-active status, signal-observed "
+                "status, production-ready status, public-safe status, "
+                "AI-approved status, analyst-approved status, final "
+                "authorization, or case closure."
+            ),
+            (
+                "This does not prove customer deployment, public-safe status, "
+                "final authorization, or case closure."
+            ),
+            (
+                "Runtime, signal, public-safe, live IdP, production identity "
+                "coverage, autonomous SOC, AI-approved disposition, and "
+                "analyst-approved disposition claims remain blocked."
+            ),
+            "Café résumé – reviewer note.",
+        )
+        for control in controls:
+            with self.subTest(control=control):
+                report = copy.deepcopy(original)
+                report["future_gated_phases"] = [{"message": control}]
+                report_path.write_text(json.dumps(report), encoding="utf-8")
+                module.validate_registry(self.registry, self.root)
 
     def test_split_and_direct_authority_state_paths_fail_closed(self):
         attacks = (
