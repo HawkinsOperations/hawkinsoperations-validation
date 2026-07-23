@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHONDONTWRITEBYTECODE: "1"
-      DETECTION_SOURCE_BRANCH: ${{ github.event_name == 'pull_request' && 'feature/hoxline-case-growth-convergence-v1' || 'main' }}
+      DETECTION_SOURCE_SHA: eb8d39428c2aa2925db8350ebf586a82a6d109ee
     defaults:
       run:
         working-directory: hawkinsoperations-validation
@@ -27,30 +27,33 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/hawkinsoperations-detections
-          ref: ${{ env.DETECTION_SOURCE_BRANCH }}
+          ref: ${{ env.DETECTION_SOURCE_SHA }}
           path: hawkinsoperations-detections
           fetch-depth: 0
           persist-credentials: false
-      - name: Resolve the intended detection branch without fallback
+      - name: Verify the exact immutable detection revision
         working-directory: .
         run: |
-          git -C hawkinsoperations-detections fetch --no-tags origin \
-            "refs/heads/${DETECTION_SOURCE_BRANCH}:refs/remotes/origin/convergence-source"
-          test "$(git -C hawkinsoperations-detections rev-parse HEAD)" = \
-            "$(git -C hawkinsoperations-detections rev-parse refs/remotes/origin/convergence-source)"
+          test "$(git -C hawkinsoperations-detections rev-parse HEAD)" = "$DETECTION_SOURCE_SHA"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Install workflow parser dependency
         run: python -m pip install PyYAML
+      - name: Reject retired fixture vocabulary
+        run: |
+          if git grep -n -I -i -E 's[y]nthetic' -- .; then
+            echo "retired fixture vocabulary found in tracked source" >&2
+            exit 1
+          fi
       - name: Verify content-addressed source handoff
         run: |
           python -B scripts/refresh_validation_source_manifest.py \
             --detections-root ../hawkinsoperations-detections \
-            --detections-ref refs/remotes/origin/convergence-source
+            --detections-ref "$DETECTION_SOURCE_SHA"
           python -B scripts/verify_validation_registry.py \
             --detections-root ../hawkinsoperations-detections \
-            --detections-ref refs/remotes/origin/convergence-source \
+            --detections-ref "$DETECTION_SOURCE_SHA" \
             --source-manifest validation/SOURCE_AUTHORITY_MANIFEST.json
       - name: Run every validator, parity check, and claim boundary
         run: |

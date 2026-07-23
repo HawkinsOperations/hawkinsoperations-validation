@@ -13,7 +13,11 @@ jobs:
   cross-repo-claim-parity:
     runs-on: ubuntu-latest
     env:
-      CONVERGENCE_SOURCE_REF: ${{ github.event_name == 'pull_request' && 'feature/hoxline-case-growth-convergence-v1' || 'main' }}
+      DETECTIONS_SOURCE_SHA: eb8d39428c2aa2925db8350ebf586a82a6d109ee
+      PROOF_SOURCE_SHA: 643ec75743bf9f8aa5552472ce8566643531d6bb
+      WEBSITE_SOURCE_SHA: 588b7a48a51733a22666df913b234bd694d27c08
+      COMMAND_CENTER_SOURCE_SHA: ac4677fb1273210154eb8c90805078e7dd492ac5
+      PLATFORM_SOURCE_SHA: 0c9fa3654db8691c0730a5ddd1e74a343c62c3a2
     steps:
       - name: Checkout validation repo
         uses: actions/checkout@v4
@@ -25,40 +29,45 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/hawkinsoperations-detections
-          ref: ${{ env.CONVERGENCE_SOURCE_REF }}
+          ref: ${{ env.DETECTIONS_SOURCE_SHA }}
           path: hawkinsoperations-detections
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Checkout proof repo
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/hawkinsoperations-proof
-          ref: ${{ env.CONVERGENCE_SOURCE_REF }}
+          ref: ${{ env.PROOF_SOURCE_SHA }}
           path: hawkinsoperations-proof
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Checkout website repo
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/hawkinsoperations-website
-          ref: ${{ env.CONVERGENCE_SOURCE_REF }}
+          ref: ${{ env.WEBSITE_SOURCE_SHA }}
           path: hawkinsoperations-website
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Checkout org front door repo
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/.github
-          ref: ${{ env.CONVERGENCE_SOURCE_REF }}
+          ref: ${{ env.COMMAND_CENTER_SOURCE_SHA }}
           path: .github
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Checkout platform repo
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/hawkinsoperations-platform
-          ref: ${{ env.CONVERGENCE_SOURCE_REF }}
+          ref: ${{ env.PLATFORM_SOURCE_SHA }}
           path: hawkinsoperations-platform
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Python
@@ -66,12 +75,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Resolve the declared detection source without fallback
+      - name: Verify exact immutable sibling revisions
         run: |
-          git -C hawkinsoperations-detections fetch --no-tags origin \
-            "refs/heads/${CONVERGENCE_SOURCE_REF}:refs/remotes/origin/convergence-source"
-          test "$(git -C hawkinsoperations-detections rev-parse HEAD)" = \
-            "$(git -C hawkinsoperations-detections rev-parse refs/remotes/origin/convergence-source)"
+          test "$(git -C hawkinsoperations-detections rev-parse HEAD)" = "$DETECTIONS_SOURCE_SHA"
+          test "$(git -C hawkinsoperations-proof rev-parse HEAD)" = "$PROOF_SOURCE_SHA"
+          test "$(git -C hawkinsoperations-website rev-parse HEAD)" = "$WEBSITE_SOURCE_SHA"
+          test "$(git -C .github rev-parse HEAD)" = "$COMMAND_CENTER_SOURCE_SHA"
+          test "$(git -C hawkinsoperations-platform rev-parse HEAD)" = "$PLATFORM_SOURCE_SHA"
 
       - name: Run fail-closed source parity and claim-boundary checks
         working-directory: hawkinsoperations-validation
@@ -79,6 +89,6 @@ jobs:
           python -B -m pip install PyYAML
           python -B scripts/verify_validation_registry.py \
             --detections-root ../hawkinsoperations-detections \
-            --detections-ref refs/remotes/origin/convergence-source \
+            --detections-ref "$DETECTIONS_SOURCE_SHA" \
             --source-manifest validation/SOURCE_AUTHORITY_MANIFEST.json
           python -B scripts/verify_all_validation_packages.py
