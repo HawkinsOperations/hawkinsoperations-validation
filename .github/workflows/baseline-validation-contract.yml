@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHONDONTWRITEBYTECODE: "1"
-      DETECTION_SOURCE_SHA: 455dc07603f1a502481351c7b57df67206085a16
+      DETECTION_SOURCE_SHA: f8bc0a0925113ca815bf5692081b5216162cc918
     defaults:
       run:
         working-directory: hawkinsoperations-validation
