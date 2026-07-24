@@ -438,12 +438,10 @@ def structured_claim_items(
         return items
 
     cumulative = "_".join(filter(None, ancestry))
+    leaf = ancestry[-1] if ancestry else ""
     if (
-        any(
-            cumulative == token
-            for token in DANGEROUS_AUTHORITY_PATHS
-        )
-        and not has_negative_context(cumulative)
+        leaf in DANGEROUS_AUTHORITY_PATHS
+        and not has_negative_context(leaf)
         and assertive_authority_value(value)
     ):
         items.append(
@@ -761,12 +759,6 @@ def scan_surface(
                 status_by_id[detection_id].update(
                     extract_status_tokens(associated_text)
                 )
-                if (
-                    file_path.suffix.casefold()
-                    in {".md", ".html", ".ts", ".js", ".mjs"}
-                    and not prose_contract
-                ):
-                    continue
                 drift.extend(
                     scan_promotion_terms(
                         text=text,
@@ -785,7 +777,7 @@ def scan_surface(
                         enforce=enforce,
                     )
                 )
-                if surface in PUBLIC_BOUNDARY_SURFACES:
+                if surface in PUBLIC_BOUNDARY_SURFACES and prose_contract:
                     drift.extend(
                         scan_required_boundaries(
                             text=text,

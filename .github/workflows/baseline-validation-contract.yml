@@ -96,7 +96,7 @@ jobs:
             --source-manifest validation/SOURCE_AUTHORITY_MANIFEST.json
       - name: Run every validator, parity check, and claim boundary
         run: |
-          python -B scripts/verify_all_validation_packages.py
+          python -B scripts/verify_all_validation_packages.py --source-contract required
       - name: Run baseline and registry contracts
         run: |
           python -B scripts/verify_validation_contract.py

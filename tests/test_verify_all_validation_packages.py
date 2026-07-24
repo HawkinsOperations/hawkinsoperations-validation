@@ -56,14 +56,22 @@ class VerifyAllValidationPackagesTests(unittest.TestCase):
         self._write_script("scripts/fail.py", 1)
         self.assertEqual(module.run_package_commands([self._package("scripts/fail.py")], self.root), 1)
 
-    def test_build_commands_requires_source_contract_for_source_backed_validator(self):
+    def test_build_commands_defaults_to_standalone_skip_if_missing(self):
         self._write_script("scripts/pass.py", supports_source_contract=True)
         package = self._package()
         package["source_dependency_required"] = True
         package["ci_source_dependency_mode"] = "required"
         commands = module.build_commands(package, self.root)
         self.assertIn("--source-contract", commands[0][1])
-        self.assertIn("required", commands[0][1])
+        self.assertIn("skip-if-missing", commands[0][1])
+
+    def test_build_commands_requires_source_contract_in_ci_mode(self):
+        self._write_script("scripts/pass.py", supports_source_contract=True)
+        package = self._package()
+        package["source_dependency_required"] = True
+        package["ci_source_dependency_mode"] = "required"
+        commands = module.build_commands(package, self.root, "required")
+        self.assertEqual(commands[0][1][-2:], ["--source-contract", "required"])
 
     def test_build_commands_rejects_source_backed_validator_without_support(self):
         self._write_script("scripts/pass.py", supports_source_contract=False)
@@ -71,15 +79,19 @@ class VerifyAllValidationPackagesTests(unittest.TestCase):
         package["source_dependency_required"] = True
         package["ci_source_dependency_mode"] = "required"
         with self.assertRaisesRegex(ValueError, "lacks required source-contract"):
-            module.build_commands(package, self.root)
+            module.build_commands(package, self.root, "required")
 
-    def test_skip_if_missing_is_rejected_before_execution(self):
+    def test_required_mode_rejects_non_required_ci_contract(self):
         self._write_script("scripts/pass.py", supports_source_contract=True)
         package = self._package()
         package["source_dependency_required"] = True
         package["ci_source_dependency_mode"] = "skip_if_missing"
         with self.assertRaisesRegex(ValueError, "must fail closed"):
-            module.build_commands(package, self.root)
+            module.build_commands(package, self.root, "required")
+
+    def test_unknown_source_contract_mode_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "unsupported source-contract mode"):
+            module.build_commands(self._package(), self.root, "fallback")
 
 
 if __name__ == "__main__":

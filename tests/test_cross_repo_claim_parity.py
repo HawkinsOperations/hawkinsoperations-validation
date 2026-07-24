@@ -169,6 +169,45 @@ class CrossRepoClaimParityTests(unittest.TestCase):
             items,
         )
 
+    def test_unmarked_public_prose_is_still_scanned_for_promotion(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            readme = root / "README.md"
+            readme.write_text(
+                "HO-DET-001 is production-ready for deployment.\n",
+                encoding="utf-8",
+            )
+            drift, _, unknown = scanner.scan_surface(
+                surface="website",
+                repo_root=root,
+                patterns=["README.md"],
+                detection_ids=["HO-DET-001"],
+                enforce=True,
+            )
+            self.assertEqual(unknown, 0)
+            self.assertTrue(
+                any("production" in item.message for item in drift),
+                drift,
+            )
+
+    def test_nested_authority_leaf_cannot_hide_behind_wrapper(self):
+        for value in (
+            {"detection": {"runtime_active": True}},
+            {"blocked_claims": {"runtime_active": True}},
+        ):
+            with self.subTest(value=value):
+                items = scanner.structured_claim_items(
+                    value,
+                    ["HO-DET-001"],
+                    "proof",
+                    "proof/index.json",
+                    True,
+                )
+                self.assertTrue(
+                    any("runtime_active" in item.message for item in items),
+                    items,
+                )
+
     def test_malformed_utf8_declared_text_fails_enforce(self):
         with tempfile.TemporaryDirectory() as td:
             org = Path(td)

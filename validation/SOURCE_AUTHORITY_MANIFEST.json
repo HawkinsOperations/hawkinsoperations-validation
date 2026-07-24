@@ -154,27 +154,27 @@
       "package_path": "detections/successor/ho-det-011",
       "required_files": [
         {
-          "git_blob_sha": "fe1023aa830755403010d2dc220ec295f8a73a60",
+          "git_blob_sha": "8f9e40364788618c82ce84a71a9c3fdcf118b4ec",
           "path": "detections/successor/ho-det-011/event-mapping.yml",
-          "semantic_fingerprint": "2bc2003017d3d1272f347bbe16c9cbd2bf6a99f0635ce33e53452a6971ad556d",
+          "semantic_fingerprint": "bfd67e927041907912e9864b3ee89837d4132ceecd9b335084e824568b4bbe30",
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
-          "git_blob_sha": "edc184345f483e69d8000b2cf564cd17de8f474f",
+          "git_blob_sha": "928c80eb02dffa3dbde7eb379d7f0b315987de0c",
           "path": "detections/successor/ho-det-011/README.md",
-          "semantic_fingerprint": "daa7a68678f8e32344c2d15f006ca1a4471ce619e97777d2c274cd867fac7f3a",
+          "semantic_fingerprint": "e82e18266359a2fe1be5b68928ac9cdcc22909f0f3f0c595d30f8d9e82c3ca4f",
           "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
         },
         {
-          "git_blob_sha": "d38c9def8e48f716ad0ed768f113ec7b9f5fabda",
+          "git_blob_sha": "de7f5036f25ef0075b0a5f3e54a6b28e836d11a8",
           "path": "detections/successor/ho-det-011/rule.yml",
-          "semantic_fingerprint": "364968aab8bf93cf17d70fc2f91dc3fb41c438472995fb3785a775884310dcca",
+          "semantic_fingerprint": "aa0a8b6e631873171d231f2a91aaf339159f33fdaa4877908587cbd125a6cf93",
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
-          "git_blob_sha": "073dc74fb91ac5ad78621695014cf248caa48282",
+          "git_blob_sha": "eb219ebdc5e0b3677b8439e50707aaf3284c202c",
           "path": "detections/successor/ho-det-011/splunk.spl",
-          "semantic_fingerprint": "a81c1b25a28a06b8e579853337006e714a3008bbce329dbc18b760031e6ecf7b",
+          "semantic_fingerprint": "fbe726493519bb48c2a64c5005dd2c6c28fd92d44c4611fe9e1866d228532390",
           "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
         },
         {
@@ -238,27 +238,27 @@
       "package_path": "detections/successor/ho-det-013",
       "required_files": [
         {
-          "git_blob_sha": "74e15784f324d958f853c8407ab8e492dca4e649",
+          "git_blob_sha": "5b4bfd9926a4a0f4e3dacc41575ac188040f7612",
           "path": "detections/successor/ho-det-013/event-mapping.yml",
-          "semantic_fingerprint": "90e6c6fb4c24132f3fc0e15ccb18ffb4472182eba334e01ada55b9dd284e7eae",
+          "semantic_fingerprint": "b4e4d89407c7665c9187f74907cde9e79d6ca1c7af3330966eabea753de7c5b8",
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
-          "git_blob_sha": "cb8b66748dd3a2926c1b4e326262c737d5d7857c",
+          "git_blob_sha": "a98d2ffb5a82233a8bd6f40fc5043525bd788e49",
           "path": "detections/successor/ho-det-013/README.md",
-          "semantic_fingerprint": "2d7d2f338f70e5ee95b792b1fe385b41c3e531ccaf80bd62a06466f2f2e2ab0e",
+          "semantic_fingerprint": "b2b940434d34efb535505fb10a2aeef1903dbe3664e10e9bad0789eb7034edd7",
           "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
         },
         {
-          "git_blob_sha": "f23738dc4d66d1b6e2b7227e217ca0148d575c69",
+          "git_blob_sha": "2a67374212cf0bec3e2d8975d89c80ea8644fb08",
           "path": "detections/successor/ho-det-013/rule.yml",
-          "semantic_fingerprint": "d5b91f6eff32db7f002c010ffd3b43edeb6fa206664d7cbfb9bcd2b0cba223b7",
+          "semantic_fingerprint": "66e9a9cd22a0547377ff616959481e4be1cf2fe5b8a080db4e4ebc02a719d63b",
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
-          "git_blob_sha": "8381491fc4e16ff817ab5c5a8bb6ba1fe638b279",
+          "git_blob_sha": "1a7d2b0a369bf3cecff674c7419f601d39148fa7",
           "path": "detections/successor/ho-det-013/splunk.spl",
-          "semantic_fingerprint": "e7b139eaa02fb5c539bbeb49e99898bcae7f643209f25a9993892eac4f4a2e76",
+          "semantic_fingerprint": "e589ae8caf2b5091f6f07f6f3504ac9ae5337965b9fbc6ddc4243d1d066229e4",
           "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
         },
         {
