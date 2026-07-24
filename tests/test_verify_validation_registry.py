@@ -1,10 +1,12 @@
 import copy
 import importlib.util
 import json
+import os
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -955,9 +957,105 @@ class VerifyValidationRegistryTests(unittest.TestCase):
         self.assertEqual(len(state["current_observed_head_sha"]), 40)
         with self.assertRaisesRegex(module.RegistryFailure, "does not equal intended ref"):
             module._verify_source_repository(detections_root, first)
+        canonical = (
+            "https://github.com/HawkinsOperations/"
+            "hawkinsoperations-detections.git"
+        )
+        wrong = "https://local.invalid/hawkinsoperations-detections.git"
+        subprocess.run(
+            ["git", "remote", "set-url", "origin", wrong],
+            cwd=detections_root,
+            check=True,
+        )
+        rewrite_env = {
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": f"url.{canonical}.insteadOf",
+            "GIT_CONFIG_VALUE_0": wrong,
+        }
+        with mock.patch.dict(os.environ, rewrite_env, clear=False):
+            interpreted = subprocess.run(
+                ["git", "remote", "get-url", "origin"],
+                cwd=detections_root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            self.assertEqual(canonical, interpreted)
+            with self.assertRaisesRegex(
+                module.RegistryFailure, "repository origin is not canonical"
+            ):
+                module._verify_source_repository(
+                    detections_root, f"refs/heads/{branch}"
+                )
+        subprocess.run(
+            ["git", "remote", "set-url", "origin", canonical],
+            cwd=detections_root,
+            check=True,
+        )
         (detections_root / "source.txt").write_text("dirty\n", encoding="utf-8")
         with self.assertRaisesRegex(module.RegistryFailure, "dirty"):
             module._verify_source_repository(detections_root, f"refs/heads/{branch}")
+
+    def test_source_repository_requires_exactly_one_nonempty_stored_origin(self):
+        for attack in ("missing", "empty", "multiple"):
+            with self.subTest(attack=attack):
+                detections_root = self.root / f"source-repo-{attack}"
+                detections_root.mkdir()
+                subprocess.run(
+                    ["git", "init"], cwd=detections_root, check=True, capture_output=True
+                )
+                subprocess.run(
+                    ["git", "config", "user.name", "test"],
+                    cwd=detections_root,
+                    check=True,
+                )
+                subprocess.run(
+                    ["git", "config", "user.email", "test@example.invalid"],
+                    cwd=detections_root,
+                    check=True,
+                )
+                (detections_root / "source.txt").write_text(
+                    "source\n", encoding="utf-8"
+                )
+                subprocess.run(
+                    ["git", "add", "source.txt"], cwd=detections_root, check=True
+                )
+                subprocess.run(
+                    ["git", "commit", "-m", "source"],
+                    cwd=detections_root,
+                    check=True,
+                    capture_output=True,
+                )
+                if attack == "empty":
+                    subprocess.run(
+                        ["git", "config", "--add", "remote.origin.url", ""],
+                        cwd=detections_root,
+                        check=True,
+                    )
+                elif attack == "multiple":
+                    for value in (
+                        "https://github.com/HawkinsOperations/"
+                        "hawkinsoperations-detections.git",
+                        "https://local.invalid/hawkinsoperations-detections.git",
+                    ):
+                        subprocess.run(
+                            ["git", "config", "--add", "remote.origin.url", value],
+                            cwd=detections_root,
+                            check=True,
+                        )
+                branch = subprocess.run(
+                    ["git", "branch", "--show-current"],
+                    cwd=detections_root,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                ).stdout.strip()
+                with self.assertRaisesRegex(
+                    module.RegistryFailure, "exactly one nonempty local URL"
+                ):
+                    module._verify_source_repository(
+                        detections_root, f"refs/heads/{branch}"
+                    )
 
     def test_semantic_fingerprint_canonicalizes_yaml_timestamp_scalars(self):
         source = self.root / "dated-rule.yml"

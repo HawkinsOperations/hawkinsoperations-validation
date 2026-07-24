@@ -497,19 +497,54 @@ def _git_blob(root: Path, relative_path: str) -> str:
     return _git(root, "rev-parse", f"HEAD:{relative_path}")
 
 
+def _stored_origin(root: Path) -> str:
+    result = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "config",
+            "--local",
+            "--get-all",
+            "remote.origin.url",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    values = [value.strip() for value in result.stdout.splitlines()]
+    if result.returncode != 0 or len(values) != 1 or not values[0]:
+        fail(
+            "detections source stored origin must contain exactly one "
+            "nonempty local URL"
+        )
+    return values[0]
+
+
+def _canonical_origin(value: str) -> str:
+    normalized = value.strip().rstrip("/").casefold()
+    if normalized.startswith("git@github.com:"):
+        normalized = "https://github.com/" + normalized.removeprefix(
+            "git@github.com:"
+        )
+    elif normalized.startswith("ssh://git@github.com/"):
+        normalized = "https://github.com/" + normalized.removeprefix(
+            "ssh://git@github.com/"
+        )
+    if not normalized.endswith(".git"):
+        normalized += ".git"
+    return normalized
+
+
 def _verify_source_repository(
     detections_root: Path,
     intended_ref: str | None,
 ) -> dict[str, str]:
-    remote = _git(detections_root, "remote", "get-url", "origin")
-    normalized_remote = remote.replace("\\", "/").removesuffix(".git")
-    canonical_remote = re.fullmatch(
-        r"(?:https://github\.com/|git@github\.com:)"
-        r"HawkinsOperations/hawkinsoperations-detections",
-        normalized_remote,
-        flags=re.IGNORECASE,
+    remote = _stored_origin(detections_root)
+    expected_remote = (
+        "https://github.com/HawkinsOperations/hawkinsoperations-detections.git"
     )
-    if canonical_remote is None:
+    if _canonical_origin(remote) != _canonical_origin(expected_remote):
         fail("detections source repository origin is not canonical")
     status = _git(detections_root, "status", "--porcelain")
     meaningful = [
