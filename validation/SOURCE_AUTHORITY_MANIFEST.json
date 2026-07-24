@@ -1,7 +1,7 @@
 {
-  "matrix_git_blob_sha": "e1d040134f139d2598c527c3584e1859e9c9553d",
+  "matrix_git_blob_sha": "3123d4f2a9dabdaa31d7e1d20698a17e7854491c",
   "matrix_path": "detections/DETECTION_PROMOTION_MATRIX.yml",
-  "matrix_semantic_fingerprint": "7ca1a5d76ed11de08832dbd074d120295d71d5935be3f10ed3d874d0198bf3e3",
+  "matrix_semantic_fingerprint": "d5214ccc882ac68eb56b3018b3c37799b7c5851e37c7b76e34cda570f0e061f1",
   "matrix_semantic_fingerprint_method": "canonical-json-sha256",
   "owner_repo": "hawkinsoperations-validation",
   "packages": [
@@ -238,9 +238,9 @@
       "package_path": "detections/successor/ho-det-013",
       "required_files": [
         {
-          "git_blob_sha": "5b4bfd9926a4a0f4e3dacc41575ac188040f7612",
+          "git_blob_sha": "55ef044325d98037e93e1b71d58d4f74144881df",
           "path": "detections/successor/ho-det-013/event-mapping.yml",
-          "semantic_fingerprint": "b4e4d89407c7665c9187f74907cde9e79d6ca1c7af3330966eabea753de7c5b8",
+          "semantic_fingerprint": "c7c23aff25f97d2f0b668fc76bc48709403593e13aebcfe6dbfb0c0304024e41",
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
@@ -250,9 +250,9 @@
           "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
         },
         {
-          "git_blob_sha": "2a67374212cf0bec3e2d8975d89c80ea8644fb08",
+          "git_blob_sha": "2224c5ba877a1ab7c46898307611a3dfbdf2e154",
           "path": "detections/successor/ho-det-013/rule.yml",
-          "semantic_fingerprint": "66e9a9cd22a0547377ff616959481e4be1cf2fe5b8a080db4e4ebc02a719d63b",
+          "semantic_fingerprint": "6be833e3012753f0ca4592c41a7c71f0d64b7bd27110476aa676e2c812bc309d",
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
