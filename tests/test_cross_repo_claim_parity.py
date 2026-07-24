@@ -295,10 +295,52 @@ class CrossRepoClaimParityTests(unittest.TestCase):
                 drift,
             )
 
+    def test_affirmative_markdown_heading_is_scanned(self):
+        items = scanner.scan_promotion_terms(
+            text="# HO-DET-001 is production-ready for deployment",
+            detection_id="HO-DET-001",
+            surface="website",
+            rel_path="README.md",
+            enforce=True,
+        )
+        self.assertTrue(any("production" in item.message for item in items), items)
+
+    def test_common_truthy_authority_values_are_assertive(self):
+        for value in (1, -1, "live", "ready", "yes"):
+            with self.subTest(value=value):
+                self.assertTrue(scanner.assertive_authority_value(value))
+        for value in (0, False, None, "blocked", "not_approved"):
+            with self.subTest(value=value):
+                self.assertFalse(scanner.assertive_authority_value(value))
+
+    def test_duplicate_json_authority_key_fails_enforce(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            hostile = root / "status.json"
+            hostile.write_text(
+                '{"detection_id":"HO-DET-001","runtime_active":true,"runtime_active":false}',
+                encoding="utf-8",
+            )
+            drift, _, unknown = scanner.scan_surface(
+                surface="proof",
+                repo_root=root,
+                patterns=["status.json"],
+                detection_ids=["HO-DET-001"],
+                enforce=True,
+            )
+            self.assertEqual(unknown, 0)
+            self.assertTrue(
+                any("duplicate JSON key" in item.message for item in drift),
+                drift,
+            )
+
     def test_nested_authority_leaf_cannot_hide_behind_wrapper(self):
         for value in (
             {"detection": {"runtime_active": True}},
             {"blocked_claims": {"runtime_active": True}},
+            {"detection": {"runtime_active": 1}},
+            {"detection": {"runtime_status": "live"}},
+            {"detection": {"production_status": "ready"}},
         ):
             with self.subTest(value=value):
                 items = scanner.structured_claim_items(
@@ -309,7 +351,10 @@ class CrossRepoClaimParityTests(unittest.TestCase):
                     True,
                 )
                 self.assertTrue(
-                    any("runtime_active" in item.message for item in items),
+                    any(
+                        "assertive authority value" in item.message
+                        for item in items
+                    ),
                     items,
                 )
 

@@ -141,6 +141,22 @@ class DriftItem:
         }
 
 
+class DuplicateJsonKeyError(ValueError):
+    pass
+
+
+def reject_duplicate_json_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    seen: set[str] = set()
+    for key, value in pairs:
+        normalized = unicodedata.normalize("NFKC", key).casefold()
+        if normalized in seen:
+            raise DuplicateJsonKeyError(f"duplicate JSON key: {key}")
+        seen.add(normalized)
+        result[key] = value
+    return result
+
+
 def fail(message: str) -> int:
     print(f"STATUS=fail")
     print("FAIL_COUNT=1")
@@ -384,8 +400,6 @@ def markdown_table_claim_cells(
 
 def term_is_nonclaim_structure(line: str, term: str) -> bool:
     stripped = line.strip()
-    if stripped.startswith("#"):
-        return True
     if "--fixture" in stripped and "--proposed-claim" in stripped:
         return True
     if ":" not in stripped:
@@ -467,6 +481,8 @@ def assertive_authority_value(value: object) -> bool:
         return True
     if value is False or value is None:
         return False
+    if isinstance(value, (int, float)):
+        return value != 0
     if not isinstance(value, str):
         return False
     normalized = normalize_path_key(value)
@@ -484,6 +500,11 @@ def assertive_authority_value(value: object) -> bool:
         "production",
         "production_ready",
         "public_safe",
+        "granted",
+        "live",
+        "ready",
+        "true",
+        "yes",
         "runtime_active",
         "signal_observed",
         "socaas_active",
@@ -499,6 +520,7 @@ def structured_claim_items(
     ancestry: tuple[str, ...] = (),
 ) -> list[DriftItem]:
     items: list[DriftItem] = []
+    leaf = ancestry[-1] if ancestry else ""
     if isinstance(value, dict):
         for key, child in value.items():
             normalized = normalize_path_key(str(key))
@@ -528,7 +550,6 @@ def structured_claim_items(
         return items
 
     cumulative = "_".join(filter(None, ancestry))
-    leaf = ancestry[-1] if ancestry else ""
     if (
         leaf in DANGEROUS_AUTHORITY_PATHS
         and not has_negative_context(leaf)
@@ -843,8 +864,11 @@ def scan_surface(
             continue
         if file_path.suffix.casefold() == ".json":
             try:
-                structured = json.loads(text)
-            except json.JSONDecodeError as exc:
+                structured = json.loads(
+                    text,
+                    object_pairs_hook=reject_duplicate_json_keys,
+                )
+            except (json.JSONDecodeError, DuplicateJsonKeyError) as exc:
                 drift.append(
                     DriftItem(
                         severity="fail" if enforce else "warning",
