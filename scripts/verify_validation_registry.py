@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -20,6 +21,15 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = ROOT / "validation" / "VALIDATION_REGISTRY.yml"
+def sanitized_git_environment() -> dict[str, str]:
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if not key.casefold().startswith("git_")
+    }
+    environment["GIT_NO_REPLACE_OBJECTS"] = "1"
+    environment["GIT_TERMINAL_PROMPT"] = "0"
+    return environment
 
 ALLOWED_PROOF_CEILINGS = {
     "CONTROLLED_TEST_VALIDATED",
@@ -487,6 +497,7 @@ def _git(root: Path, *args: str) -> str:
         capture_output=True,
         text=True,
         check=False,
+        env=sanitized_git_environment(),
     )
     if result.returncode != 0:
         fail(f"git {' '.join(args)} failed for {root}: {result.stderr.strip()}")
@@ -511,6 +522,7 @@ def _stored_origin(root: Path) -> str:
         capture_output=True,
         text=True,
         check=False,
+        env=sanitized_git_environment(),
     )
     values = [value.strip() for value in result.stdout.splitlines()]
     if result.returncode != 0 or len(values) != 1 or not values[0]:
@@ -575,6 +587,7 @@ def _repository_state(root: Path) -> dict[str, str]:
             capture_output=True,
             text=True,
             check=False,
+            env=sanitized_git_environment(),
         )
         return result.stdout.strip() if result.returncode == 0 else "UNRESOLVED"
 

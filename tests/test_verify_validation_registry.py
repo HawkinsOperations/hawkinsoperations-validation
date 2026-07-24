@@ -1057,6 +1057,173 @@ class VerifyValidationRegistryTests(unittest.TestCase):
                         detections_root, f"refs/heads/{branch}"
                     )
 
+    def test_git_environment_scrub_rejects_every_ambient_git_control(self):
+        hostile = {
+            "GIT_DIR": "decoy",
+            "GIT_WORK_TREE": "decoy",
+            "GIT_COMMON_DIR": "decoy",
+            "GIT_INDEX_FILE": "decoy",
+            "GIT_OBJECT_DIRECTORY": "decoy",
+            "GIT_ALTERNATE_OBJECT_DIRECTORIES": "decoy",
+            "GIT_CONFIG": "decoy",
+            "GIT_CONFIG_GLOBAL": "decoy",
+            "GIT_CONFIG_SYSTEM": "decoy",
+            "GIT_CONFIG_NOSYSTEM": "0",
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "core.repositoryformatversion",
+            "GIT_CONFIG_VALUE_0": "1",
+            "GIT_CEILING_DIRECTORIES": "decoy",
+            "GIT_DISCOVERY_ACROSS_FILESYSTEM": "1",
+            "GIT_SHALLOW_FILE": "decoy",
+            "GIT_NAMESPACE": "decoy",
+            "GIT_REPLACE_REF_BASE": "refs/decoy",
+            "GIT_IMPLICIT_WORK_TREE": "1",
+            "GIT_NO_REPLACE_OBJECTS": "0",
+            "GIT_TERMINAL_PROMPT": "1",
+        }
+        with mock.patch.dict(os.environ, hostile, clear=False):
+            sanitized = module.sanitized_git_environment()
+        self.assertEqual("1", sanitized["GIT_NO_REPLACE_OBJECTS"])
+        self.assertEqual("0", sanitized["GIT_TERMINAL_PROMPT"])
+        self.assertEqual(
+            {"git_no_replace_objects", "git_terminal_prompt"},
+            {
+                key.casefold()
+                for key in sanitized
+                if key.casefold().startswith("git_")
+            },
+        )
+
+    def test_git_dir_decoy_cannot_redirect_detection_source_authority(self):
+        detections_root = self.root / "source-repo-git-dir"
+        detections_root.mkdir()
+        subprocess.run(
+            ["git", "init"], cwd=detections_root, check=True, capture_output=True
+        )
+        canonical = (
+            "https://github.com/HawkinsOperations/"
+            "hawkinsoperations-detections.git"
+        )
+        wrong = "https://local.invalid/hawkinsoperations-detections.git"
+        subprocess.run(
+            ["git", "remote", "add", "origin", wrong],
+            cwd=detections_root,
+            check=True,
+        )
+        decoy = self.root / "decoy"
+        decoy.mkdir()
+        subprocess.run(
+            ["git", "init"], cwd=decoy, check=True, capture_output=True
+        )
+        subprocess.run(
+            ["git", "remote", "add", "origin", canonical],
+            cwd=decoy,
+            check=True,
+        )
+        raw_env = os.environ.copy()
+        raw_env["GIT_DIR"] = str(decoy / ".git")
+        interpreted = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(detections_root),
+                "config",
+                "--local",
+                "--get-all",
+                "remote.origin.url",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=raw_env,
+        ).stdout.strip()
+        self.assertEqual(canonical, interpreted)
+        with mock.patch.dict(
+            os.environ, {"GIT_DIR": str(decoy / ".git")}, clear=False
+        ):
+            self.assertEqual(wrong, module._stored_origin(detections_root))
+            with self.assertRaisesRegex(
+                module.RegistryFailure, "repository origin is not canonical"
+            ):
+                module._verify_source_repository(detections_root, None)
+
+    def test_git_index_file_cannot_hide_staged_dirty_detection_source(self):
+        detections_root = self.root / "source-repo-git-index"
+        detections_root.mkdir()
+        subprocess.run(
+            ["git", "init"], cwd=detections_root, check=True, capture_output=True
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "test"],
+            cwd=detections_root,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.invalid"],
+            cwd=detections_root,
+            check=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "remote",
+                "add",
+                "origin",
+                "https://github.com/HawkinsOperations/"
+                "hawkinsoperations-detections.git",
+            ],
+            cwd=detections_root,
+            check=True,
+        )
+        source = detections_root / "source.txt"
+        original = "source\n"
+        source.write_text(original, encoding="utf-8")
+        subprocess.run(
+            ["git", "add", "source.txt"], cwd=detections_root, check=True
+        )
+        subprocess.run(
+            ["git", "commit", "-m", "source"],
+            cwd=detections_root,
+            check=True,
+            capture_output=True,
+        )
+        branch = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=detections_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        clean_index = self.root / "clean.index"
+        alternate_env = os.environ.copy()
+        alternate_env["GIT_INDEX_FILE"] = str(clean_index)
+        subprocess.run(
+            ["git", "read-tree", "HEAD"],
+            cwd=detections_root,
+            check=True,
+            capture_output=True,
+            env=alternate_env,
+        )
+        source.write_text("staged contradiction\n", encoding="utf-8")
+        subprocess.run(["git", "add", "source.txt"], cwd=detections_root, check=True)
+        source.write_text(original, encoding="utf-8")
+        hidden = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=detections_root,
+            check=True,
+            capture_output=True,
+            text=True,
+            env=alternate_env,
+        ).stdout.strip()
+        self.assertEqual("", hidden, "attack precondition: alternate index is clean")
+        with mock.patch.dict(
+            os.environ, {"GIT_INDEX_FILE": str(clean_index)}, clear=False
+        ):
+            with self.assertRaisesRegex(module.RegistryFailure, "dirty"):
+                module._verify_source_repository(
+                    detections_root, f"refs/heads/{branch}"
+                )
+
     def test_semantic_fingerprint_canonicalizes_yaml_timestamp_scalars(self):
         source = self.root / "dated-rule.yml"
         source.write_text(
