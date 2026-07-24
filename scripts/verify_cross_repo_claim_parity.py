@@ -107,9 +107,11 @@ STALE_SNAPSHOT_RE = re.compile(
 )
 
 NEGATIVE_CONTEXT_RE = re.compile(
-    r"(?<![A-Za-z0-9])(block|blocked|blocking|not|no|none|without|cannot|does\s+not|do\s+not|"
+    r"(?<![A-Za-z0-9])(block|blocked|blocking|blocked[_\s-]?claims|"
+    r"not|no|none|without|cannot|does\s+not|do\s+not|"
     r"must\s+not|remain(?:s)?\s+blocked|required|requires|needs|before\s+any|"
-    r"pending|unsupported|not\s+proven|"
+    r"pending|unsupported|not\s+proven|reject|rejects|rejected|fails?\s+closed|"
+    r"stop(?:ped)?(?:\s+before)?|remain(?:s)?\s+distinct\s+from|"
     r"not\s+public[-_\s]?safe|claims_not_supported|blocked_claims|blocked_public_claims|"
     r"claim[_\s-]?boundary|not[_\s-]?approved|not[_\s-]?authorized|"
     r"does[_\s-]?not[_\s-]?support|controlled[-_\s]?test\s+scope\s+only|"
@@ -255,13 +257,43 @@ def has_negative_context_for_phrase(
     local = line[clause_start : min(len(line), end + 96)]
     if has_negative_context(local):
         return True
+    suffix = line[end:]
+    adversative = re.search(r"\b(?:but|however|although|yet)\b", suffix, re.IGNORECASE)
+    direct_suffix = suffix if adversative is None else suffix[: adversative.start()]
+    if re.search(
+        r"\b(?:remain(?:s)?|is|are|must\s+remain)\s+"
+        r"(?:blocked|unsupported|not\s+(?:approved|authorized|proven|public[-_\s]?safe))\b",
+        direct_suffix,
+        re.IGNORECASE,
+    ):
+        return True
+    if index > 0:
+        previous = lines[index - 1]
+        if (
+            previous.strip()
+            and not previous.rstrip().endswith((".", "?", "!"))
+            and has_negative_context(previous)
+        ):
+            return True
+    stripped = line.lstrip()
+    if stripped.startswith(("-", "*")) or line.startswith((" ", "\t")):
+        for section_index in range(index - 1, max(-1, index - 80), -1):
+            candidate = lines[section_index]
+            candidate_stripped = candidate.lstrip()
+            if candidate_stripped.startswith("#"):
+                return has_negative_context(candidate)
+            if candidate.rstrip().endswith(":") and has_negative_context(candidate):
+                return True
     for parent_index in range(index - 1, -1, -1):
         candidate = lines[parent_index]
+        if not candidate.strip():
+            break
         if candidate.strip() and candidate.rstrip().endswith(":") and has_negative_context(candidate):
             return True
         if candidate.lstrip().startswith("#"):
-            return has_negative_context(candidate)
-    stripped = line.lstrip()
+            if has_negative_context(candidate):
+                return True
+            break
     continuation = stripped.startswith(("-", "*")) or line.startswith((" ", "\t"))
     for offset in range(1, 41):
         parent_index = index - offset
@@ -280,14 +312,6 @@ def has_negative_context_for_phrase(
             and candidate.rstrip().endswith(":")
         ):
             break
-    if index > 0:
-        previous = lines[index - 1]
-        if (
-            previous.strip()
-            and not previous.rstrip().endswith((".", "?", "!"))
-            and has_negative_context(previous)
-        ):
-            return True
     paragraph: list[str] = []
     for parent_index in range(index - 1, -1, -1):
         candidate = lines[parent_index]
@@ -299,9 +323,70 @@ def has_negative_context_for_phrase(
     return False
 
 
+def markdown_table_cells(line: str) -> list[str] | None:
+    stripped = line.strip()
+    if not (stripped.startswith("|") and stripped.endswith("|")):
+        return None
+    return [cell.strip() for cell in stripped[1:-1].split("|")]
+
+
+def markdown_table_headers(lines: list[str], index: int) -> list[str] | None:
+    cells = markdown_table_cells(lines[index])
+    if cells is None:
+        return None
+    for header_index in range(index - 1, -1, -1):
+        candidate = markdown_table_cells(lines[header_index])
+        if candidate is None:
+            break
+        if len(candidate) != len(cells):
+            continue
+        if all(
+            re.fullmatch(r":?-{3,}:?", cell.replace(" ", ""))
+            for cell in candidate
+        ):
+            if header_index == 0:
+                return None
+            header = markdown_table_cells(lines[header_index - 1])
+            if header and len(header) == len(candidate):
+                return header
+            return None
+    return None
+
+
+def markdown_table_claim_cells(
+    lines: list[str],
+    index: int,
+    phrase: str,
+) -> list[tuple[str, bool]] | None:
+    cells = markdown_table_cells(lines[index])
+    if cells is None:
+        return None
+    headers = markdown_table_headers(lines, index)
+    row_is_negative = False
+    if headers:
+        for cell_index, header in enumerate(headers):
+            if cell_index >= len(cells):
+                continue
+            if re.search(r"\b(?:truth\s+label|status|state|claim\s+class)\b", header, re.IGNORECASE):
+                if has_negative_context(cells[cell_index]):
+                    row_is_negative = True
+                    break
+    if cells and has_negative_context(cells[0]):
+        row_is_negative = True
+    result: list[tuple[str, bool]] = []
+    for cell_index, cell in enumerate(cells):
+        if phrase.casefold() not in cell.casefold():
+            continue
+        header = headers[cell_index] if headers and cell_index < len(headers) else ""
+        result.append((cell, row_is_negative or has_negative_context(header)))
+    return result
+
+
 def term_is_nonclaim_structure(line: str, term: str) -> bool:
     stripped = line.strip()
     if stripped.startswith("#"):
+        return True
+    if "--fixture" in stripped and "--proposed-claim" in stripped:
         return True
     if ":" not in stripped:
         return False
@@ -314,10 +399,15 @@ def term_is_affirmative_claim(line: str, term: str) -> bool:
     folded_term = term.casefold()
     escaped = re.escape(folded_term)
     predicate = (
-        r"(?:is|are|has|have|uses|use|proves|establishes|confirms|"
+        r"(?:is|are|has|have|proves|establishes|confirms|"
         r"claims|declares|enables|enabled|observed|approved|authorized|deployed)"
     )
     if re.search(rf"\b{predicate}\b.{{0,120}}{escaped}", folded_line):
+        return True
+    if folded_term != "production" and re.search(
+        rf"\b(?:uses|use)\b.{{0,120}}{escaped}",
+        folded_line,
+    ):
         return True
     if re.search(rf"{escaped}.{{0,80}}\b(?:is|are|enabled|true|approved|active)\b", folded_line):
         return True
@@ -507,6 +597,26 @@ def scan_promotion_terms(
     for term in PROMOTION_TERMS:
         term_l = term.lower()
         for index, line in enumerate(lines):
+            table_cells = markdown_table_claim_cells(lines, index, term)
+            if table_cells is not None:
+                if not line_is_associated_with_detection(lines, index, detection_id):
+                    continue
+                for cell, negative_header in table_cells:
+                    if (
+                        not negative_header
+                        and not has_negative_context(cell)
+                        and term_is_affirmative_claim(cell, term)
+                    ):
+                        items.append(
+                            DriftItem(
+                                severity="fail" if enforce else "warning",
+                                detection_id=detection_id,
+                                surface=surface,
+                                path=f"{rel_path}:{index + 1}",
+                                message=f"promotion term without blocked/negative context: {term}",
+                            )
+                        )
+                continue
             if (
                 term_l in line.lower()
                 and line_is_associated_with_detection(lines, index, detection_id)
@@ -553,9 +663,23 @@ def scan_status_tokens(
         for token in extract_candidate_status_tokens(line):
             if token in ALLOWED_PROOF_CEILING_TOKENS:
                 continue
+            table_cells = markdown_table_claim_cells(lines, index, token)
+            if table_cells is not None:
+                if all(
+                    negative_header or has_negative_context(cell)
+                    for cell, negative_header in table_cells
+                ):
+                    continue
             if (
                 token in DANGEROUS_STATUS_TOKENS
                 and not has_negative_context_for_phrase(lines, index, token)
+                and not (
+                    line.lstrip().startswith("#")
+                    and any(
+                        has_negative_context(candidate)
+                        for candidate in lines[index + 1 : index + 4]
+                    )
+                )
             ):
                 items.append(
                     DriftItem(
