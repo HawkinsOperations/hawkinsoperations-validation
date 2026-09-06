@@ -141,6 +141,12 @@ class CorpusAndMutationTests(unittest.TestCase):
         self.assertEqual(sum(map(len, corpora)), 69)
         self.assertEqual(sum(row["expected"] for corpus in corpora for row in corpus), 33)
 
+    def test_concurrent_authority_change_blocks_report(self):
+        identities = [{"head": "a" * 40}, {"head": "b" * 40}, {"head": "c" * 40}, {"head": "b" * 40}]
+        with patch.object(quality, "DETECTIONS", ()), patch.object(quality, "git", return_value=b"b" * 40), patch.object(quality.Path, "read_bytes", return_value=b"b" * 40), patch.object(quality, "source_identity", side_effect=identities):
+            with self.assertRaisesRegex(quality.QualityError, "identity changed"):
+                quality.run_quality(Path("detections"), "a" * 40, Path("validation"))
+
 
 if __name__ == "__main__":
     unittest.main()

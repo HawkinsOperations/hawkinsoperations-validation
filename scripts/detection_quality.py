@@ -315,6 +315,12 @@ def run_quality(detections_root: Path, detections_ref: str, validation_root: Pat
         if committed != (validation_root / path).read_bytes().replace(b"\r\n", b"\n"):
             raise QualityError("executing validator differs from committed validator")
         validator_inputs.append({"path": path, "sha256": digest(committed)})
+    # Immutable blobs prevent mixed inputs; recheck the checkout observations so
+    # a concurrent branch change cannot be reported as the selected source set.
+    final_sources = [source_identity(detections_root, "hawkinsoperations-detections", detections_ref),
+                     source_identity(validation_root, "hawkinsoperations-validation", validation_ref)]
+    if sources != final_sources:
+        raise QualityError("authority identity changed during source execution")
     aggregate = score([case for package in packages for case in package["cases"]])
     totals = {key: sum(package["mutation_metrics"][key] for package in packages) for key in ("generated", "killed", "survived", "errors")}
     totals["mutation_score"] = round(totals["killed"] / totals["generated"], 6) if totals["generated"] else None
