@@ -89,7 +89,7 @@ def validate_source_contract(text: str) -> None:
         "detection_id: HO-DET-001",
         "selection_image:",
         "selection_cli:",
-        "condition: selection_image and selection_cli",
+        "condition: (selection_image or selection_original_filename) and selection_cli",
         "Image|endswith:",
         "OriginalFileName|contains:",
         "CommandLine|contains:",

@@ -46,9 +46,9 @@
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
-          "git_blob_sha": "5f6afac1d95ea077bb0512a175885506bc6ed643",
+          "git_blob_sha": "dc1b6a0f568231df5b92d93a18e34369bcfbb69a",
           "path": "detections/successor/ho-det-001/rule.yml",
-          "semantic_fingerprint": "bea00756ee4ee6995900f51d6dc3cf9bb3a12a7b6146aa349d89332e7ff132be",
+          "semantic_fingerprint": "b664f5cdf40f55b8a030bda77ac0efd833aa1b4244a5452d0cc3afb397f6eed1",
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
@@ -82,9 +82,9 @@
           "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
         },
         {
-          "git_blob_sha": "43e5a7b55164a5c8da6e9084a75929e144b11293",
+          "git_blob_sha": "5bb284cb1067f6c28baa144a9958e4603f7224e0",
           "path": "detections/successor/ho-det-009/rule.yml",
-          "semantic_fingerprint": "ae1b0e281e97b2ec48ceebf78cb46c924616cf8275fafd6f375863e2d1c02584",
+          "semantic_fingerprint": "e77347e69829b0b421f1ea57a09bcd0a4a115c14e3417ddaf56b7816d8562b01",
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
@@ -124,9 +124,9 @@
           "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
         },
         {
-          "git_blob_sha": "372f4f24da114e034dba7ed38264741404e81c81",
+          "git_blob_sha": "e5421b3984656612dab317130a976b6ce78f290c",
           "path": "detections/successor/ho-det-010/rule.yml",
-          "semantic_fingerprint": "c029263826c8023e483109bd9158f6847df4ec2e1c463b5dab8b9c6ef20e3144",
+          "semantic_fingerprint": "75dd0ed2466093736c4ac8ba8f9faf19148a18f416dfd44b63215be06554a6da",
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
@@ -208,9 +208,9 @@
           "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
         },
         {
-          "git_blob_sha": "12d4774385379bc234cfd2839e8dae45a4ea8054",
+          "git_blob_sha": "6af705f2ef24e5d1aeef5e971319b3fe3fc0bad1",
           "path": "detections/successor/ho-det-012/rule.yml",
-          "semantic_fingerprint": "c3f919045fcef7c8153f19095c5dfdbce2dc5c8b0d5597ac72a0cdbde269ab2b",
+          "semantic_fingerprint": "ab97659e7738d2b7948fcbfa721584d97093201d3b515628a2506c434213b324",
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
@@ -250,9 +250,9 @@
           "semantic_fingerprint_method": "normalized-lf-bytes-sha256"
         },
         {
-          "git_blob_sha": "2224c5ba877a1ab7c46898307611a3dfbdf2e154",
+          "git_blob_sha": "868cbff3bd431b7495a50a726eb9b7d36d499aa0",
           "path": "detections/successor/ho-det-013/rule.yml",
-          "semantic_fingerprint": "6be833e3012753f0ca4592c41a7c71f0d64b7bd27110476aa676e2c812bc309d",
+          "semantic_fingerprint": "ca2420018e4bc21298792b542709d909e3c7a567fb193bc3affaad1696571aa6",
           "semantic_fingerprint_method": "canonical-json-sha256"
         },
         {
