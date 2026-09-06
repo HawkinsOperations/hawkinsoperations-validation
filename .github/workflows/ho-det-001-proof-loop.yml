@@ -24,6 +24,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: HawkinsOperations/hawkinsoperations-detections
+          ref: 9c0cc25a48addde52bcbadbd4ea03c491e617420
+          persist-credentials: false
           path: hawkinsoperations-detections
 
       - name: Checkout proof repository

@@ -1,8 +1,17 @@
 {
+  "validation_owner": "hawkinsoperations-validation",
+  "source_owner": "hawkinsoperations-detections",
+  "fixture_version": 1,
+  "expected_result": "PASS",
+  "actual_result": "PASS",
+  "report_identity": "HO-DET-009_VALIDATION_RESULT_V1",
+  "parity_identity": "HO-DET-009_RESULT_PARITY_V1",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "human_review_required": true,
+  "ai_disposition_authority": false,
   "status": "pass",
   "detection_id": "HO-DET-009",
   "validation_scope": "controlled-test fixtures only",
-  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
   "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-009",
   "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-009/validation-cases.json",
   "total_cases": 10,
@@ -14,6 +23,7 @@
   "positive": [
     {
       "id": "pos-001-security-4720-support-account",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "local user creation with support-like account name",
@@ -21,6 +31,7 @@
     },
     {
       "id": "pos-002-security-4720-service-account",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "local user creation with service-like account name",
@@ -28,6 +39,7 @@
     },
     {
       "id": "pos-003-sysmon-net-user-add",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "net.exe local user creation command",
@@ -35,6 +47,7 @@
     },
     {
       "id": "pos-004-sysmon-powershell-new-localuser",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "PowerShell local user creation command",
@@ -42,6 +55,7 @@
     },
     {
       "id": "pos-005-security-4720-admin-adjacent",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "admin-adjacent local account creation",
@@ -51,6 +65,7 @@
   "negative": [
     {
       "id": "neg-001-approved-helpdesk-onboarding",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "approved onboarding context",
@@ -58,6 +73,7 @@
     },
     {
       "id": "neg-002-account-change-not-creation",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "related account change context only",
@@ -65,6 +81,7 @@
     },
     {
       "id": "neg-003-net-user-query",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "account query only",
@@ -72,6 +89,7 @@
     },
     {
       "id": "neg-004-approved-lab-reset-account",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "approved lab reset",
@@ -79,6 +97,7 @@
     },
     {
       "id": "neg-005-powershell-get-localuser",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "local user query only",

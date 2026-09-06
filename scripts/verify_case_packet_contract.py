@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from validation_lib import ContractFailure, strict_json_object
+
 
 sys.dont_write_bytecode = True
 
@@ -142,12 +144,9 @@ def load_json(path: Path, label: str) -> dict[str, Any]:
     if not path.exists():
         fail(f"missing {label}: {path}")
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        fail(f"invalid JSON in {label}: {exc}")
-    if not isinstance(value, dict):
-        fail(f"{label} must be a JSON object")
-    return value
+        return strict_json_object(path.read_text(encoding="utf-8"), label)
+    except ContractFailure as exc:
+        fail(str(exc))
 
 
 def require_keys(value: dict[str, Any], keys: list[str], label: str) -> None:

@@ -25,7 +25,7 @@ class VerifyWazuhLogtestRegistryTests(unittest.TestCase):
             json.dumps(
                 {
                     "detection_id": "HO-DET-011",
-                    "sample_scope": "controlled_synthetic_wazuh_logtest_candidate",
+                    "sample_scope": "controlled_test_wazuh_logtest_candidate",
                     "runtime_status": False,
                     "signal_status": False,
                     "public_safe_status": "NOT_PUBLIC_SAFE",

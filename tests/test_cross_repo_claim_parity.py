@@ -47,7 +47,13 @@ class CrossRepoClaimParityTests(unittest.TestCase):
     def good_parity_body(self) -> str:
         return "\n".join(
             [
-                "HO-DET-001",
+                "HO-DET-001: SOURCE_EXISTS",
+                "HO-DET-011: SOURCE_EXISTS",
+                "HO-DET-012: SOURCE_EXISTS",
+                "AWS-DET-001: SOURCE_EXISTS",
+                "HO-NDR-001: SOURCE_EXISTS",
+                "HO-PIPE-001: SOURCE_EXISTS",
+                "cross_repo_claim_contract: true",
                 "proof_ceiling: CONTROLLED_TEST_VALIDATED",
                 "public_safe_runtime_proof: BLOCKED",
                 "runtime_active_public_proof: BLOCKED",
@@ -124,6 +130,250 @@ class CrossRepoClaimParityTests(unittest.TestCase):
             enforce=True,
         )
         self.assertEqual(items, [])
+
+    def test_multi_case_file_does_not_cross_associate_claims(self):
+        text = "\n".join(
+            [
+                "## HO-DET-001",
+                "status: SOURCE_EXISTS",
+                "",
+                "## AWS-DET-001",
+                "blocked_claims:",
+                "  - production-ready",
+                "  - runtime-active public proof",
+            ]
+        )
+        items = scanner.scan_promotion_terms(
+            text=text,
+            detection_id="HO-DET-001",
+            surface="proof",
+            rel_path="proof/records/multi.md",
+            enforce=True,
+        )
+        self.assertEqual(items, [])
+
+    def test_phrase_local_negation_does_not_launder_later_promotion(self):
+        text = (
+            "HO-DET-001 is not public-safe in review notes, but "
+            "HO-DET-001 is production-ready for deployment."
+        )
+        items = scanner.scan_promotion_terms(
+            text=text,
+            detection_id="HO-DET-001",
+            surface="proof",
+            rel_path="proof/records/HO-DET-001.md",
+            enforce=True,
+        )
+        self.assertTrue(
+            any("production" in item.message for item in items),
+            items,
+        )
+
+    def test_blocked_wording_table_column_is_negative_context(self):
+        text = "\n".join(
+            [
+                "| Case | Allowed wording | Blocked wording |",
+                "|---|---|---|",
+                '| HO-DET-001 | "Source exists." | "HO-DET-001 is production-ready." |',
+            ]
+        )
+        items = scanner.scan_promotion_terms(
+            text=text,
+            detection_id="HO-DET-001",
+            surface="proof",
+            rel_path="proof/records/HO-DET-001.md",
+            enforce=True,
+        )
+        self.assertEqual(items, [])
+
+    def test_table_negative_header_does_not_launder_allowed_column(self):
+        text = "\n".join(
+            [
+                "| Case | Allowed wording | Blocked wording |",
+                "|---|---|---|",
+                '| HO-DET-001 | "HO-DET-001 is production-ready." | "No runtime claim." |',
+            ]
+        )
+        items = scanner.scan_promotion_terms(
+            text=text,
+            detection_id="HO-DET-001",
+            surface="proof",
+            rel_path="proof/records/HO-DET-001.md",
+            enforce=True,
+        )
+        self.assertTrue(any("production" in item.message for item in items), items)
+
+    def test_blocked_section_does_not_launder_later_section(self):
+        text = "\n".join(
+            [
+                "## HO-DET-001 Blocked Claims",
+                "",
+                '- "HO-DET-001 is production-ready."',
+                "",
+                "## Current Claim",
+                "",
+                "HO-DET-001 is production-ready for deployment.",
+            ]
+        )
+        items = scanner.scan_promotion_terms(
+            text=text,
+            detection_id="HO-DET-001",
+            surface="proof",
+            rel_path="proof/records/HO-DET-001.md",
+            enforce=True,
+        )
+        self.assertGreaterEqual(len(items), 1, items)
+        self.assertTrue(all(":7" in item.path for item in items), items)
+
+    def test_same_sentence_blocked_predicate_covers_claim_list(self):
+        text = (
+            "HO-DET-001 runtime-active, signal-observed, production, and "
+            "public-safe claims remain blocked unless separately proven."
+        )
+        items = scanner.scan_promotion_terms(
+            text=text,
+            detection_id="HO-DET-001",
+            surface="proof",
+            rel_path="proof/records/HO-DET-001.md",
+            enforce=True,
+        )
+        self.assertEqual(items, [])
+
+    def test_negative_status_heading_uses_immediate_status(self):
+        text = "\n".join(
+            [
+                "## HO-DET-001",
+                "### RUNTIME_ACTIVE",
+                "",
+                "- Status: NOT_SATISFIED",
+            ]
+        )
+        items = scanner.scan_status_tokens(
+            text=text,
+            detection_id="HO-DET-001",
+            surface="proof",
+            rel_path="proof/records/HO-DET-001.md",
+            enforce=True,
+        )
+        self.assertEqual(items, [])
+
+    def test_production_format_description_is_not_deployment_claim(self):
+        text = "\n".join(
+            [
+                "## HO-DET-001",
+                "",
+                "This audit uses production HTML formatting for source review.",
+            ]
+        )
+        items = scanner.scan_promotion_terms(
+            text=text,
+            detection_id="HO-DET-001",
+            surface="website",
+            rel_path="docs/rendering-audit.md",
+            enforce=True,
+        )
+        self.assertEqual(items, [])
+
+    def test_unmarked_public_prose_is_still_scanned_for_promotion(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            readme = root / "README.md"
+            readme.write_text(
+                "HO-DET-001 is production-ready for deployment.\n",
+                encoding="utf-8",
+            )
+            drift, _, unknown = scanner.scan_surface(
+                surface="website",
+                repo_root=root,
+                patterns=["README.md"],
+                detection_ids=["HO-DET-001"],
+                enforce=True,
+            )
+            self.assertEqual(unknown, 0)
+            self.assertTrue(
+                any("production" in item.message for item in drift),
+                drift,
+            )
+
+    def test_affirmative_markdown_heading_is_scanned(self):
+        items = scanner.scan_promotion_terms(
+            text="# HO-DET-001 is production-ready for deployment",
+            detection_id="HO-DET-001",
+            surface="website",
+            rel_path="README.md",
+            enforce=True,
+        )
+        self.assertTrue(any("production" in item.message for item in items), items)
+
+    def test_common_truthy_authority_values_are_assertive(self):
+        for value in (1, -1, "live", "ready", "yes"):
+            with self.subTest(value=value):
+                self.assertTrue(scanner.assertive_authority_value(value))
+        for value in (0, False, None, "blocked", "not_approved"):
+            with self.subTest(value=value):
+                self.assertFalse(scanner.assertive_authority_value(value))
+
+    def test_duplicate_json_authority_key_fails_enforce(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            hostile = root / "status.json"
+            hostile.write_text(
+                '{"detection_id":"HO-DET-001","runtime_active":true,"runtime_active":false}',
+                encoding="utf-8",
+            )
+            drift, _, unknown = scanner.scan_surface(
+                surface="proof",
+                repo_root=root,
+                patterns=["status.json"],
+                detection_ids=["HO-DET-001"],
+                enforce=True,
+            )
+            self.assertEqual(unknown, 0)
+            self.assertTrue(
+                any("duplicate JSON key" in item.message for item in drift),
+                drift,
+            )
+
+    def test_nested_authority_leaf_cannot_hide_behind_wrapper(self):
+        for value in (
+            {"detection": {"runtime_active": True}},
+            {"blocked_claims": {"runtime_active": True}},
+            {"detection": {"runtime_active": 1}},
+            {"detection": {"runtime_status": "live"}},
+            {"detection": {"production_status": "ready"}},
+        ):
+            with self.subTest(value=value):
+                items = scanner.structured_claim_items(
+                    value,
+                    ["HO-DET-001"],
+                    "proof",
+                    "proof/index.json",
+                    True,
+                )
+                self.assertTrue(
+                    any(
+                        "assertive authority value" in item.message
+                        for item in items
+                    ),
+                    items,
+                )
+
+    def test_malformed_utf8_declared_text_fails_enforce(self):
+        with tempfile.TemporaryDirectory() as td:
+            org = Path(td)
+            self.build_org(org, self.good_parity_body())
+            hostile = (
+                org
+                / "hawkinsoperations-proof"
+                / "proof"
+                / "records"
+                / "malformed.md"
+            )
+            hostile.write_bytes(b"HO-DET-001\xffproduction-ready")
+
+            rc, output = self.run_main(["--repo-root", str(org), "--enforce"])
+            self.assertEqual(rc, 1)
+            self.assertIn("not readable strict UTF-8", output)
 
     def test_source_surface_missing_public_boundaries_does_not_fail(self):
         with tempfile.TemporaryDirectory() as td:

@@ -14,6 +14,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from validation_lib import ContractFailure, strict_json_object
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_ROOT = ROOT / "validation" / "successor" / "ho-det-001" / "reproducible-proof"
@@ -63,12 +65,9 @@ def read_text(path: Path, label: str) -> str:
 
 def load_json(path: Path, label: str) -> dict[str, Any]:
     try:
-        value = json.loads(read_text(path, label))
-    except json.JSONDecodeError as exc:
-        fail(f"invalid JSON in {label}: {exc}")
-    if not isinstance(value, dict):
-        fail(f"{label} must be a JSON object")
-    return value
+        return strict_json_object(read_text(path, label), label)
+    except ContractFailure as exc:
+        fail(str(exc))
 
 
 def require_equal(actual: Any, expected: Any, label: str) -> None:

@@ -14,6 +14,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from validation_report_contract import controlled_report_contract
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DETECTIONS_ROOT = ROOT.parent / "hawkinsoperations-detections"
@@ -306,6 +308,11 @@ def build_report(cases: dict[str, Any]) -> dict[str, Any]:
     missed = [result["id"] for result in positive_results if not result["pass"]]
     false_positive = [result["id"] for result in negative_results if not result["pass"]]
     return {
+        **controlled_report_contract(
+            "HO-DET-012",
+            PROOF_CEILING,
+            passed=not missed and not false_positive,
+        ),
         "status": "pass" if not missed and not false_positive else "fail",
         "detection_id": "HO-DET-012",
         "validation_scope": "controlled-test fixtures only",

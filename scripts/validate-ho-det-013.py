@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from validation_report_contract import controlled_report_contract
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DETECTIONS_ROOT = ROOT.parent / "hawkinsoperations-detections"
@@ -149,12 +151,17 @@ def validate_fixture_contract(cases: dict[str, Any]) -> tuple[list[dict[str, Any
 def build_report(cases: dict[str, Any], source_contract: str = "required") -> dict[str, Any]:
     validate_source_contract(source_contract)
     positives, negatives = validate_fixture_contract(cases)
-    pos_results = [{"id": item["id"], "matched": event_matches(item["event"]), "pass": event_matches(item["event"]) is True, "behavior": item["behavior"], "telemetry_source": item["telemetry_source"]} for item in positives]
-    neg_results = [{"id": item["id"], "matched": event_matches(item["event"]), "pass": event_matches(item["event"]) is False, "behavior": item["behavior"], "telemetry_source": item["telemetry_source"]} for item in negatives]
+    pos_results = [{"id": item["id"], "expected": True, "matched": event_matches(item["event"]), "pass": event_matches(item["event"]) is True, "behavior": item["behavior"], "telemetry_source": item["telemetry_source"]} for item in positives]
+    neg_results = [{"id": item["id"], "expected": False, "matched": event_matches(item["event"]), "pass": event_matches(item["event"]) is False, "behavior": item["behavior"], "telemetry_source": item["telemetry_source"]} for item in negatives]
     missed = [item["id"] for item in pos_results if not item["pass"]]
     false_positive = [item["id"] for item in neg_results if not item["pass"]]
     status = "pass" if not missed and not false_positive else "fail"
     return {
+        **controlled_report_contract(
+            "HO-DET-013",
+            PROOF_CEILING if status == "pass" else "VALIDATION_DRAFT",
+            passed=status == "pass",
+        ),
         "status": status,
         "detection_id": "HO-DET-013",
         "validation_scope": "controlled-test fixtures only",

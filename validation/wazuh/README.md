@@ -1,6 +1,6 @@
 # Wazuh Logtest Contracts
 
-This folder contains static CI contracts and controlled synthetic sample events for future Wazuh `wazuh-logtest` validation.
+This folder contains static CI contracts and controlled-test sample events for future Wazuh `wazuh-logtest` validation.
 
 These files do not prove live Wazuh routing, runtime activity, signal observation, public-safe status, production deployment, or dashboard authority. Live Wazuh manager deployment and private runtime validation require a separate approved implementation gate.
 

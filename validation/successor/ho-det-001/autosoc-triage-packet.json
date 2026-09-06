@@ -7,7 +7,7 @@
     "negative_count": 7
   },
   "validation_result_ref": "hawkinsoperations-validation/reports/ho-det-001/validation-result.json",
-  "validation_result_hash": "d5aa74d59b2f32ce85cc438a4e7178e7aee1110ada2c648d9ed5208b8f3b9b14",
+  "validation_result_hash": "7072b25e7610382451099931410796d3692d2ecdad99c1d53d7ad45bb3d4793d",
   "case_packet_ref": "hawkinsoperations-validation/validation/successor/ho-det-001/case-packet.json",
   "disposition": "REVIEW_CONTROLLED_TEST_DETECTION",
   "disposition_basis": "deterministic controlled-test validation result only",

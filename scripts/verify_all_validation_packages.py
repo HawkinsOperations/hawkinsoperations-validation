@@ -26,12 +26,6 @@ def _script_command(script_path: str) -> list[str]:
     return [script_path]
 
 
-def _normalize_source_mode(value: Any) -> str:
-    if value == "skip_if_missing":
-        return "skip-if-missing"
-    return str(value)
-
-
 def _script_supports_source_contract(root: Path, script_path: str) -> bool:
     path = root / script_path
     try:
@@ -41,30 +35,47 @@ def _script_supports_source_contract(root: Path, script_path: str) -> bool:
     return "--source-contract" in text
 
 
-def build_commands(package: dict[str, Any], root: Path = ROOT) -> list[tuple[str, list[str]]]:
+def build_commands(
+    package: dict[str, Any],
+    root: Path = ROOT,
+    source_contract: str = "skip-if-missing",
+) -> list[tuple[str, list[str]]]:
+    if source_contract not in {"required", "skip-if-missing"}:
+        raise ValueError(f"unsupported source-contract mode: {source_contract}")
     commands: list[tuple[str, list[str]]] = []
     for label, field in CHECK_FIELDS:
         script_path = package.get(field)
         if not script_path:
             continue
         command = _script_command(script_path)
-        if (
-            package.get("source_dependency_required") is True
-            and _normalize_source_mode(package.get("ci_source_dependency_mode")) == "skip-if-missing"
-            and _script_supports_source_contract(root, script_path)
-        ):
-            command.extend(["--source-contract", "skip-if-missing"])
+        if label == "validator" and package.get("source_dependency_required") is True:
+            if not _script_supports_source_contract(root, script_path):
+                raise ValueError(
+                    f"{package.get('detection_id')} validator lacks required source-contract support"
+                )
+            if (
+                source_contract == "required"
+                and package.get("ci_source_dependency_mode") != "required"
+            ):
+                raise ValueError(
+                    f"{package.get('detection_id')} source dependency must fail closed in required mode"
+                )
+            command.extend(["--source-contract", source_contract])
         commands.append((label, command))
     return commands
 
 
-def run_package_commands(packages: list[dict[str, Any]], root: Path = ROOT) -> int:
+def run_package_commands(
+    packages: list[dict[str, Any]],
+    root: Path = ROOT,
+    source_contract: str = "skip-if-missing",
+) -> int:
     rows: list[tuple[str, str, str]] = []
     failed = False
 
     for package in packages:
         detection_id = package["detection_id"]
-        for label, command in build_commands(package, root):
+        for label, command in build_commands(package, root, source_contract):
             result = subprocess.run(command, cwd=root, text=True, capture_output=True)
             status = "pass" if result.returncode == 0 else "fail"
             rows.append((detection_id, label, status))
@@ -86,13 +97,22 @@ def run_package_commands(packages: list[dict[str, Any]], root: Path = ROOT) -> i
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run every registry-listed validation package check.")
     parser.add_argument("--registry", type=Path, default=REGISTRY_PATH)
+    parser.add_argument(
+        "--source-contract",
+        choices=("required", "skip-if-missing"),
+        default="skip-if-missing",
+        help=(
+            "Require the declared sibling detection source in CI, or preserve "
+            "standalone-clone execution by skipping only the missing sibling handoff."
+        ),
+    )
     args = parser.parse_args()
     try:
         packages = validate_registry(load_registry(args.registry), ROOT)
     except RegistryFailure as exc:
         print(f"VALIDATION_REGISTRY=fail: {exc}", file=sys.stderr)
         return 1
-    return run_package_commands(packages, ROOT)
+    return run_package_commands(packages, ROOT, args.source_contract)
 
 
 if __name__ == "__main__":

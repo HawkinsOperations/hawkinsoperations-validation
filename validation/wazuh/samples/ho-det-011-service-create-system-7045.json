@@ -1,9 +1,9 @@
 {
   "detection_id": "HO-DET-011",
-  "sample_scope": "controlled_synthetic_wazuh_logtest_candidate",
+  "sample_scope": "controlled_test_wazuh_logtest_candidate",
   "source_channel": "System",
   "event_id": 7045,
-  "event_summary": "Synthetic service installation event for Wazuh rule-source contract validation.",
+  "event_summary": "Controlled-test service installation event for Wazuh rule-source contract validation.",
   "runtime_status": false,
   "signal_status": false,
   "public_safe_status": "NOT_PUBLIC_SAFE",

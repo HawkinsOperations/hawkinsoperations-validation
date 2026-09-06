@@ -9,6 +9,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from validation_lib import ContractFailure, strict_json_object
+
+from validation_report_contract import controlled_report_contract
+
 
 ROOT = Path(__file__).resolve().parents[1]
 VALIDATION_CASES = ROOT / "validation" / "successor" / "ho-det-001" / "validation-cases.json"
@@ -36,12 +40,9 @@ def fail(message: str) -> None:
 
 def load_json(path: Path, label: str) -> dict[str, Any]:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        fail(f"invalid JSON in {label}: {exc}")
-    if not isinstance(value, dict):
-        fail(f"{label} must be a JSON object")
-    return value
+        return strict_json_object(path.read_text(encoding="utf-8"), label)
+    except ContractFailure as exc:
+        fail(str(exc))
 
 
 def process_identity_matches(event: dict[str, Any]) -> bool:
@@ -99,6 +100,11 @@ def evaluate(cases: dict[str, Any]) -> dict[str, Any]:
     failures = len(missed) + len(false_positive)
     status = "pass" if failures == 0 else "fail"
     return {
+        **controlled_report_contract(
+            "HO-DET-001",
+            PROOF_CEILING,
+            passed=status == "pass",
+        ),
         "status": status,
         "detection_id": "HO-DET-001",
         "source_file": "hawkinsoperations-detections/detections/successor/ho-det-001/rule.yml",

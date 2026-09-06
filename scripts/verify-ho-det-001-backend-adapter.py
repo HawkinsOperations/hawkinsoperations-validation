@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from validation_lib import ContractFailure, strict_json_object
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DETECTIONS_ROOT = ROOT.parent / "hawkinsoperations-detections"
@@ -59,12 +61,9 @@ def read_text(path: Path, label: str) -> str:
 
 def load_json(path: Path, label: str) -> dict[str, Any]:
     try:
-        data = json.loads(read_text(path, label))
-    except json.JSONDecodeError as exc:
-        fail(f"invalid JSON in {label}: {exc}")
-    if not isinstance(data, dict):
-        fail(f"{label} must be a JSON object")
-    return data
+        return strict_json_object(read_text(path, label), label)
+    except ContractFailure as exc:
+        fail(str(exc))
 
 
 def load_normalizer():
