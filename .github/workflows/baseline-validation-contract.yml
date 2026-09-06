@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PYTHONDONTWRITEBYTECODE: "1"
-      DETECTION_SOURCE_SHA: f8bc0a0925113ca815bf5692081b5216162cc918
+      DETECTION_SOURCE_SHA: 9c0cc25a48addde52bcbadbd4ea03c491e617420
     defaults:
       run:
         working-directory: hawkinsoperations-validation
@@ -109,3 +109,69 @@ jobs:
         run: |
           git diff --exit-code
           git diff --check
+
+  source-executed-mutation-quality:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      DETECTION_SOURCE_SHA: 9c0cc25a48addde52bcbadbd4ea03c491e617420
+    steps:
+      - name: Checkout exact validation head
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: hawkinsoperations-validation
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Checkout exact detection source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: HawkinsOperations/hawkinsoperations-detections
+          ref: ${{ env.DETECTION_SOURCE_SHA }}
+          path: hawkinsoperations-detections
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install bounded predicate parser
+        run: python -m pip install PyYAML==6.0.2
+      - name: Attack predicate parsing and mutation accounting
+        run: python -B -m unittest discover -s hawkinsoperations-validation/tests -p test_detection_quality.py -v
+      - name: Execute source mutations and verify deterministic replay
+        shell: python
+        run: |
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          root = Path.cwd()
+          command = [sys.executable, "-B", str(root / "hawkinsoperations-validation/scripts/detection_quality.py"),
+                     "--detections-root", str(root / "hawkinsoperations-detections"),
+                     "--detections-ref", os.environ["DETECTION_SOURCE_SHA"]]
+          first = subprocess.run(command, check=True, capture_output=True, text=True).stdout
+          report = json.loads(first)
+          output = Path(os.environ["RUNNER_TEMP"]) / "detection-quality.json"
+          output.write_text(first, encoding="utf-8")
+          replay = subprocess.run(command + ["--verify", str(output)], check=True, capture_output=True, text=True).stdout
+          if first != replay:
+              raise SystemExit("nondeterministic quality replay")
+          print(json.dumps({key: report[key] for key in ("status", "detections_evaluated", "quality", "mutation_metrics", "replay_sha256")}, indent=2))
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as summary:
+              summary.write("## Controlled source predicate execution\n\n")
+              summary.write(f"Runner: {os.environ['RUNNER_OS']}; six source rules; {report['quality']['events_evaluated']} controlled events.\n\n")
+              summary.write("```json\n" + json.dumps(report["quality"], indent=2) + "\n" + json.dumps(report["mutation_metrics"], indent=2) + "\n```\n\n")
+              summary.write("No fixture command or endpoint action executed. Not SIEM backend parity, runtime signal, public-safe proof, or human approval.\n")
+      - name: Upload validation-owned replay record
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: detection-quality-${{ matrix.os }}
+          path: ${{ runner.temp }}/detection-quality.json
+          if-no-files-found: error
+          retention-days: 14

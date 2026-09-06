@@ -20,6 +20,37 @@ It does not answer whether a detection is running in production, whether a live 
 | HO-DET-001 validation result | Positive/negative controlled fixture result with missed-positive and false-positive tracking | [`reports/ho-det-001/validation-result.md`](reports/ho-det-001/validation-result.md) | Validation truth only |
 | CI validation gates | Public PR checks for registry, contracts, parity, claim boundaries, and trusted-runner separation | [`.github/workflows`](.github/workflows) | CI checks do not prove live deployment or public-safe runtime proof |
 
+## Source-executed mutation quality
+
+With the detection sibling clean at the exact requested commit, run:
+
+```powershell
+python -B scripts/detection_quality.py --detections-root ../hawkinsoperations-detections --detections-ref <exact-detection-commit>
+python -B scripts/detection_quality.py --detections-root ../hawkinsoperations-detections --detections-ref <exact-detection-commit> --verify <saved-quality.json>
+```
+
+The runner executes six canonical source `detection` predicates against 69
+existing controlled cases. It reports observed confusion matrices, precision,
+recall, F1, real source-mutation witnesses, survivors, errors, source/corpus hashes,
+and executing validator identity. Verification reexecutes all inputs and compares
+the entire report; a report cannot validate itself by supplying a new checksum.
+
+Supported syntax is explicit `and`/`or`/`not` with parentheses, field-map AND,
+value-list OR, exact scalar equality, case-insensitive `contains`/`endswith`/
+`startswith`, and `contains|all`. Missing fields do not match. Unsupported
+conditions, modifiers, wildcards, aliases, duplicate keys, contradictory labels,
+and malformed selected event fields fail closed. This is a bounded offline
+predicate interpreter, not a general Sigma compiler or SIEM backend.
+
+The existing group-owned HO-DET-001 expectations remain unchanged; the other five
+corpora also require their explicit boolean labels to agree with their groups.
+Mutants exist only in memory. Parser errors never count as kills, and survivors
+remain visible for corpus review. The Linux/Windows CI matrix executes these
+controlled paths and replay checks without executing event commands or touching
+endpoints. Source validation does not promote runtime, signal, public-safe proof,
+or case closure. `ChangeWindow` exclusions model controlled fixture enrichment;
+they do not establish trust in metadata supplied by a live event or by AI.
+
 ## Strongest Current Receipts
 
 - **HO-DET-001 controlled validation route**: 14 controlled process-creation cases, 7 positive cases, 7 negative cases, 0 missed positives, and 0 false-positive negatives in [`reports/ho-det-001/validation-result.md`](reports/ho-det-001/validation-result.md).
