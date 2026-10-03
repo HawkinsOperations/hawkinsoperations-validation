@@ -474,6 +474,141 @@ class CrossRepoClaimParityTests(unittest.TestCase):
                 (root / "README.md").write_text(identity + " SOURCE_EXISTS; production-ready remains blocked.\n", encoding="utf-8")
                 self.assertEqual(scanner.scan_surface("website", root, ["README.md"], ["HO-DET-001"], True)[0], [])
 
+    def test_all_existing_promotion_terms_guard_structured_direct_composed_and_claim_paths(self):
+        for extension in ("json", "yaml"):
+            for term in scanner.PROMOTION_TERMS:
+                key = scanner.normalize_path_key(term)
+                for suffix, value in (("", True), ("_claim", "on"), ("_proof", "0.5")):
+                    assertion = {key + suffix: value}
+                    composed = value
+                    for segment in reversed((key + suffix).split("_")):
+                        composed = {segment: composed}
+                    for record in (assertion, {"wrapper": composed}):
+                        with self.subTest(extension=extension, term=term, suffix=suffix, record=record), tempfile.TemporaryDirectory() as td:
+                            root = Path(td).resolve()
+                            (root / ("status." + extension)).write_text(json.dumps(record), encoding="utf-8")
+                            items, _, _ = scanner.scan_surface("proof", root, ["status." + extension], ["HO-DET-001"], True)
+                            self.assertTrue(any("assertive authority value" in item.message for item in items), items)
+
+    def test_all_existing_structured_promotion_terms_retain_inert_values_and_denied_lists(self):
+        for term in scanner.PROMOTION_TERMS:
+            key = scanner.normalize_path_key(term)
+            for value in (False, 0, "0", "off", "blocked"):
+                with self.subTest(term=term, value=value):
+                    self.assertEqual(scanner.structured_claim_items({key + "_claim": value}, ["HO-DET-001"], "proof", "status.json", True), [])
+            self.assertEqual(scanner.structured_claim_items({"detection_id": "HO-DET-001", "blocked_claims": [term]},
+                                                            ["HO-DET-001"], "proof", "status.json", True), [])
+
+    def test_known_authority_parent_context_survives_extra_mapping_and_list_wrappers(self):
+        for extension in ("json", "yaml"):
+            for value in (True, 1, "on"):
+                for record in (
+                    {"fleet_wide": {"value": value}},
+                    {"autonomous_soc": {"status": value}},
+                    {"fleet": {"wide": {"enabled": value}}},
+                    {"fleet_wide": {"not_claimed": value}},
+                    {"autonomous_soc": {"blocked_claims": [value]}},
+                    {"wrapper": {"fleet_wide_claim": [{"details": {"value": value}}]}},
+                ):
+                    with self.subTest(extension=extension, record=record), tempfile.TemporaryDirectory() as td:
+                        root = Path(td).resolve()
+                        (root / ("status." + extension)).write_text(json.dumps(record), encoding="utf-8")
+                        items, _, _ = scanner.scan_surface("proof", root, ["status." + extension], ["HO-DET-001"], True)
+                        self.assertTrue(any("assertive authority value" in item.message for item in items), items)
+
+    def test_known_authority_parent_context_preserves_inert_controls_and_schema_definitions(self):
+        for value in (False, 0, "blocked", "SOURCE_EXISTS", "NOT_APPROVED"):
+            with self.subTest(value=value):
+                self.assertEqual(scanner.structured_claim_items({"fleet_wide": [{"value": value}]},
+                                                                ["HO-DET-001"], "proof", "status.json", True), [])
+            self.assertEqual(scanner.structured_claim_items({"autonomous_soc": {"blocked_claims": [value]}},
+                                                            ["HO-DET-001"], "proof", "status.json", True), [])
+        self.assertEqual(scanner.structured_claim_items(
+            {"case_closure": {"status": "blocked", "executed": False, "requires_human_approval": True}},
+            ["HO-DET-001"], "platform", "receipt.json", True), [])
+        for requirement in ([True], {"value": True}, [{"requires_human_approval": True}],
+                            {"requires_human_approval": True}):
+            self.assertTrue(scanner.structured_claim_items({"case_closure": {"requires_human_approval": requirement}},
+                                                          ["HO-DET-001"], "platform", "receipt.json", True))
+        self.assertTrue(scanner.structured_claim_items({"case_closure": {"requires_human_approval": True, "status": "on"}},
+                                                      ["HO-DET-001"], "platform", "receipt.json", True))
+        schema = {"$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object",
+                  "properties": {"fleet_wide": {"type": "boolean", "const": False},
+                                 "autonomous_soc": {"type": "boolean", "default": False}}}
+        self.assertEqual(scanner.structured_claim_items(schema, ["HO-DET-001"], "platform", "schema.json", True), [])
+        schema["examples"] = [{"fleet_wide": {"value": True}}]
+        self.assertTrue(scanner.structured_claim_items(schema, ["HO-DET-001"], "platform", "schema.json", True))
+
+    def test_rejected_contract_fixture_inputs_require_owning_path_identity_and_report_binding(self):
+        from tests.test_verify_validation_registry import VerifyValidationRegistryTests
+        owner = VerifyValidationRegistryTests()
+        owner.setUp()
+        try:
+            root = owner.root.resolve()
+            fixture_path = root / "validation/example/validation-cases.json"
+            fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+            fixture["cases"]["negative"][0].update({"expected_match": False,
+                "contract": {"blocked_promotion_fields": {"live_splunk": True}}})
+            registry_path = root / "validation/VALIDATION_REGISTRY.yml"
+            registry_path.write_text(json.dumps(owner.registry), encoding="utf-8")
+            def scan(record, surface="validation", path=fixture_path):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(record), encoding="utf-8")
+                return scanner.scan_surface(surface, root, [path.relative_to(root).as_posix()], ["EX-DET-001"], True)[0]
+            self.assertEqual(scan(fixture), [])
+            for surface in ("proof", "website"):
+                with self.subTest(surface=surface): self.assertTrue(scan(fixture, surface))
+            for path in (root / "reports/example/validation-cases.json", root / "validation/other/validation-cases.json"):
+                with self.subTest(path=path): self.assertTrue(scan(fixture, path=path))
+            for mutation in ("true_expectation", "missing_identity", "wrong_identity", "ambiguous_expectation",
+                             "outside_subtree", "nested_flag", "summary", "positive_case",
+                             "expected_result_match", "expected_result_true", "list_flag", "list_flags", "list_contract"):
+                record = json.loads(json.dumps(fixture))
+                case = record["cases"]["negative"][0]
+                if mutation == "true_expectation": case["expected_match"] = True
+                elif mutation == "missing_identity": del case["id"]
+                elif mutation == "wrong_identity": record["detection_id"] = "EX-DET-999"
+                elif mutation == "ambiguous_expectation": case["expected"] = True
+                elif mutation == "expected_result_match": case["expected_result"] = "match"
+                elif mutation == "expected_result_true": case["expected_result"] = True
+                elif mutation == "list_flag": case["contract"]["blocked_promotion_fields"]["live_splunk"] = [True]
+                elif mutation == "list_flags": case["contract"]["blocked_promotion_fields"] = [case["contract"]["blocked_promotion_fields"]]
+                elif mutation == "list_contract": case["contract"] = [case["contract"]]
+                elif mutation == "outside_subtree": case["contract"]["outside"] = {"live_splunk": True}
+                elif mutation == "nested_flag": case["contract"]["blocked_promotion_fields"]["live_splunk"] = {"value": True}
+                elif mutation == "summary": case["contract"]["summary"] = "EX-DET-001 is production-ready"
+                elif mutation == "positive_case": record["cases"]["positive"].append(record["cases"]["negative"].pop())
+                with self.subTest(mutation=mutation): self.assertTrue(scan(record))
+            for field, forged in (("owner_repo", "hawkinsoperations-proof"),
+                                  ("truth_surface", "public_proof"), ("human_review_required", False),
+                                  ("ai_disposition_authority", True)):
+                forged_registry = json.loads(json.dumps(owner.registry))
+                forged_registry[field] = forged
+                registry_path.write_text(json.dumps(forged_registry), encoding="utf-8")
+                with self.subTest(registry_field=field): self.assertTrue(scan(fixture))
+            report_path = root / owner.registry["packages"][0]["report_json"]
+            original_report = json.loads(report_path.read_text(encoding="utf-8"))
+            for field, forged in (("validation_owner", "hawkinsoperations-proof"),
+                                  ("source_owner", "hawkinsoperations-proof"), ("human_review_required", False),
+                                  ("ai_disposition_authority", True), ("proof_ceiling", "PUBLIC_SAFE"),
+                                  ("public_safe_status", "PUBLIC_SAFE"), ("runtime_status", True),
+                                  ("signal_status", True)):
+                forged_registry = json.loads(json.dumps(owner.registry))
+                forged_registry["packages"][0][field] = forged
+                forged_report = dict(original_report, **{field: forged})
+                registry_path.write_text(json.dumps(forged_registry), encoding="utf-8")
+                report_path.write_text(json.dumps(forged_report), encoding="utf-8")
+                with self.subTest(package_field=field): self.assertTrue(scan(fixture))
+            report_path.write_text(json.dumps(original_report), encoding="utf-8")
+            duplicate_registry = json.loads(json.dumps(owner.registry))
+            duplicate_registry["packages"].append(duplicate_registry["packages"][0])
+            registry_path.write_text(json.dumps(duplicate_registry), encoding="utf-8")
+            self.assertTrue(scan(fixture))
+            registry_path.unlink()
+            self.assertTrue(scan(fixture))
+        finally:
+            owner.tearDown()
+
     def test_sibling_and_descendant_prose_inherit_enclosing_detection_identity(self):
         for record in (
             {"detection_id": "HO-DET-001", "summary": "production-ready is true"},
