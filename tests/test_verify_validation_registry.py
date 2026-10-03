@@ -401,6 +401,52 @@ class VerifyValidationRegistryTests(unittest.TestCase):
                 ):
                     module.validate_registry(self.registry, self.root)
 
+    def test_report_markdown_headings_cannot_promote_authority(self):
+        markdown_path = self.root / "reports/example/validation-result.md"
+        for level in range(1, 7):
+            for claim in ("production is live", "runtime is active", "case is closed",
+                          "AI disposition authority enabled", "not public safe; production is live"):
+                with self.subTest(level=level, claim=claim):
+                    markdown_path.write_text(f"{'#' * level} EX-DET-001 {claim}\n",
+                                             encoding="utf-8")
+                    with self.assertRaisesRegex(module.RegistryFailure, "blocked authority claim"):
+                        module.validate_registry(self.registry, self.root)
+
+    def test_report_markdown_benign_and_bounded_headings_remain_valid(self):
+        markdown_path = self.root / "reports/example/validation-result.md"
+        markdown_path.write_text(
+            "# EX-DET-001 validation result\n\n## Supported Claim\n"
+            "Controlled fixture validation only.\n\n## Blocked Claims\n"
+            "- production deployment\n- runtime active\n- signal observed\n\n"
+            "### Production is not live\n\n### Runtime is not active\n",
+            encoding="utf-8",
+        )
+        module.validate_registry(self.registry, self.root)
+
+    def test_report_identity_aliases_cannot_disagree_or_mask_invalid_values(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        original = json.loads(report_path.read_text(encoding="utf-8"))
+        for field in ("detection_id", "rule_id"):
+            for invalid in ("OTHER-DET-001", None, 1, False, ["EX-DET-001"]):
+                with self.subTest(field=field, invalid=invalid):
+                    report = copy.deepcopy(original)
+                    report.update(detection_id="EX-DET-001", rule_id="EX-DET-001")
+                    report[field] = invalid
+                    report_path.write_text(json.dumps(report), encoding="utf-8")
+                    with self.assertRaisesRegex(module.RegistryFailure, "identity is missing or contradictory"):
+                        module.validate_registry(self.registry, self.root)
+
+    def test_report_identity_aliases_accept_single_and_agreeing_declarations(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        original = json.loads(report_path.read_text(encoding="utf-8"))
+        for fields in (("detection_id",), ("rule_id",), ("detection_id", "rule_id")):
+            with self.subTest(fields=fields):
+                report = copy.deepcopy(original)
+                report.pop("detection_id")
+                report.update({field: "EX-DET-001" for field in fields})
+                report_path.write_text(json.dumps(report), encoding="utf-8")
+                module.validate_registry(self.registry, self.root)
+
     def test_blocked_claim_container_cannot_exempt_nested_affirmative_prose(self):
         report_path = self.root / "reports/example/validation-result.json"
         report = json.loads(report_path.read_text(encoding="utf-8"))
