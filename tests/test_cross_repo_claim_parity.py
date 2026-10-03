@@ -361,6 +361,35 @@ class CrossRepoClaimParityTests(unittest.TestCase):
                     items,
                 )
 
+    def test_split_nested_authority_paths_fail_in_json_and_yaml(self):
+        for extension in ("json", "yaml"):
+            for assertion in (
+                {"runtime": {"active": True}}, {"signal": {"observed": "yes"}},
+                {"production": {"status": "ready"}},
+                {"wrapper": {"runtime": {"active": 1}}},
+                {"blocked_claims": {"signal": {"observed": True}}},
+                {"wrapper": {"ai": {"disposition": {"authority": "approved"}}}},
+            ):
+                with self.subTest(extension=extension, assertion=assertion), tempfile.TemporaryDirectory() as td:
+                    root = Path(td).resolve()
+                    (root / ("status." + extension)).write_text(json.dumps(assertion), encoding="utf-8")
+                    items, _, unknown = scanner.scan_surface("proof", root, ["status." + extension], ["HO-DET-001"], True)
+                    self.assertEqual(unknown, 0)
+                    self.assertTrue(any("assertive authority value" in item.message for item in items), items)
+
+    def test_split_nested_authority_paths_preserve_negative_and_inert_values(self):
+        for extension in ("json", "yaml"):
+            record = {"detection_id": "HO-DET-001", "status": "SOURCE_EXISTS",
+                      "runtime": {"active": False}, "signal": {"observed": 0},
+                      "production": {"status": "blocked"}, "wrapper": {"approval": {"status": "not_approved"}},
+                      "other": {"active": True}, "notes": "runtime-active claims remain blocked"}
+            with self.subTest(extension=extension), tempfile.TemporaryDirectory() as td:
+                root = Path(td).resolve()
+                (root / ("status." + extension)).write_text(json.dumps(record), encoding="utf-8")
+                items, _, unknown = scanner.scan_surface("proof", root, ["status." + extension], ["HO-DET-001"], True)
+                self.assertEqual(unknown, 0)
+                self.assertEqual(items, [])
+
     def test_sibling_and_descendant_prose_inherit_enclosing_detection_identity(self):
         for record in (
             {"detection_id": "HO-DET-001", "summary": "production-ready is true"},

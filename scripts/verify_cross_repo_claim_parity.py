@@ -634,7 +634,8 @@ def structured_claim_items(
 
     cumulative = "_".join(filter(None, ancestry))
     if (
-        leaf in DANGEROUS_AUTHORITY_PATHS
+        any("_".join(ancestry[offset:]) in DANGEROUS_AUTHORITY_PATHS
+            for offset in range(len(ancestry)))
         and not has_negative_context(leaf)
         and assertive_authority_value(value)
     ):
