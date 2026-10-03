@@ -677,6 +677,11 @@ def _explicitly_bounded_authority_value(value: Any) -> bool:
         "signalblocked",
         "signalobservedprivate",
         "sourceexists",
+        # Existing support/collector state constants are bounded evidence only.
+        "supportonly",
+        "deterministicruleevaluated",
+        "privateevidenceonly",
+        "runtimecandidateonly",
         "unsupported",
     }
 

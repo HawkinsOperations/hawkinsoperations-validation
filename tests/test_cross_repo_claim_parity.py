@@ -3,6 +3,8 @@
 
 import importlib.util
 import json
+import copy
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -42,6 +44,8 @@ class CrossRepoClaimParityTests(unittest.TestCase):
             ".github/profile/README.md": body,
             "hawkinsoperations-platform/README.md": body,
         }
+        files["hawkinsoperations-validation/validation/VALIDATION_REGISTRY.yml"] = (
+            ROOT / "validation/VALIDATION_REGISTRY.yml").read_text(encoding="utf-8")
         for rel_path, content in files.items():
             path = org / rel_path
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -50,12 +54,7 @@ class CrossRepoClaimParityTests(unittest.TestCase):
     def good_parity_body(self) -> str:
         return "\n".join(
             [
-                "HO-DET-001: SOURCE_EXISTS",
-                "HO-DET-011: SOURCE_EXISTS",
-                "HO-DET-012: SOURCE_EXISTS",
-                "AWS-DET-001: SOURCE_EXISTS",
-                "HO-NDR-001: SOURCE_EXISTS",
-                "HO-PIPE-001: SOURCE_EXISTS",
+                *(f"{identity}: SOURCE_EXISTS" for identity in scanner.governed_detection_ids(ROOT)),
                 "cross_repo_claim_contract: true",
                 "proof_ceiling: CONTROLLED_TEST_VALIDATED",
                 "public_safe_runtime_proof: BLOCKED",
@@ -83,6 +82,184 @@ class CrossRepoClaimParityTests(unittest.TestCase):
             if line.startswith("DRIFT_ITEMS="):
                 return json.loads(line.removeprefix("DRIFT_ITEMS="))
         self.fail(f"DRIFT_ITEMS missing from output: {output}")
+
+    def test_default_cli_covers_every_canonical_registered_detection_identity(self):
+        governed = scanner.governed_detection_ids(ROOT)
+        self.assertEqual(len(governed), 14)
+        for identity in governed:
+            with self.subTest(identity=identity), tempfile.TemporaryDirectory() as td:
+                org = Path(td).resolve()
+                self.build_org(org, self.good_parity_body())
+                hostile = org / "hawkinsoperations-website/README.md"
+                hostile.write_text(self.good_parity_body() + f"\n{identity.lower()} is production-ready"
+                                   + f"\n# {identity}: production-ready\n{identity}: PUBLIC_SAFE", encoding="utf-8")
+                result = subprocess.run([sys.executable, "-B", str(SCRIPT), "--repo-root", str(org), "--enforce"],
+                                        capture_output=True, text=True)
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                failures = [item for item in self.drift_items(result.stdout)
+                            if item["severity"] == "fail" and item["detection_id"] == identity]
+                self.assertTrue(any("promotion term" in item["message"] for item in failures), failures)
+                self.assertTrue(any("dangerous status token" in item["message"] for item in failures), failures)
+                heading_line = len(self.good_parity_body().splitlines()) + 2
+                self.assertTrue(any(item["path"].endswith(":" + str(heading_line)) for item in failures), failures)
+
+    def test_missing_or_malformed_governed_inventory_fails_closed_without_traceback(self):
+        baseline = json.loads((ROOT / "validation/VALIDATION_REGISTRY.yml").read_text(encoding="utf-8"))
+        for mutation in ("missing", "bad_json", "invalid_utf8", "wrong_owner", "duplicate_id", "package_list",
+                         "proof_container", "kind_container", "duplicate_root_key"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as td:
+                org = Path(td).resolve()
+                self.build_org(org, self.good_parity_body())
+                path = org / "hawkinsoperations-validation/validation/VALIDATION_REGISTRY.yml"
+                registry = copy.deepcopy(baseline)
+                if mutation == "wrong_owner": registry["owner_repo"] = "hawkinsoperations-proof"
+                elif mutation == "duplicate_id": registry["packages"].append(copy.deepcopy(registry["packages"][0]))
+                elif mutation == "package_list": registry["packages"][0] = []
+                elif mutation == "proof_container": registry["packages"][0]["proof_ceiling"] = []
+                elif mutation == "kind_container": registry["packages"][0]["validation_kind"] = []
+                path.write_text(json.dumps(registry), encoding="utf-8")
+                if mutation == "missing": path.unlink()
+                elif mutation == "bad_json": path.write_text("{", encoding="utf-8")
+                elif mutation == "invalid_utf8": path.write_bytes(b"\xff")
+                elif mutation == "duplicate_root_key": path.write_text('{"packages":[],"packages":[]}', encoding="utf-8")
+                result = subprocess.run([sys.executable, "-B", str(SCRIPT), "--repo-root", str(org), "--enforce"],
+                                        capture_output=True, text=True)
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn("governed detection inventory unavailable or invalid", result.stdout)
+                self.assertNotIn("Traceback", result.stdout + result.stderr)
+
+    def test_authority_state_strings_fail_closed_except_existing_bounded_values(self):
+        for extension in ("json", "yaml"):
+            for field in ("runtime_status", "production_status", "fleet_wide_claim", "autonomous_soc"):
+                for value in ("running", "confirmed", "unknown-new-state", "complete"):
+                    record = {"detection_id": "HO-DET-001", "wrapper": {field: {"value": value}}}
+                    with self.subTest(extension=extension, field=field, value=value), tempfile.TemporaryDirectory() as td:
+                        root = Path(td).resolve()
+                        path = root / ("status." + extension)
+                        path.write_text(json.dumps(record), encoding="utf-8")
+                        items, _, _ = scanner.scan_surface("proof", root, [path.name], ["HO-DET-001"], True)
+                        self.assertTrue(any("assertive authority value" in item.message for item in items), items)
+        for value in (False, 0, "0", "off", "blocked", "SOURCE_EXISTS", "NOT_APPROVED", "PRIVATE_RUNTIME_EVIDENCE_CAPTURED"):
+            with self.subTest(value=value):
+                self.assertEqual(scanner.structured_claim_items({"runtime_status": {"value": value}},
+                                                                ["HO-DET-001"], "proof", "status.json", True), [])
+
+    def test_negative_prose_context_cannot_cross_or_restart_detection_identity(self):
+        governed = scanner.governed_detection_ids(ROOT)
+        for previous in ("HO-DET-011 does not claim production-ready", "HO-DET-001 does not claim production-ready",
+                         "## HO-DET-011 blocked claims", "HO-DET-011 blocked claims:"):
+            for current in ("HO-DET-001 is production-ready", "  HO-DET-001 is production-ready", "- HO-DET-001 is production-ready"):
+                with self.subTest(previous=previous, current=current):
+                    self.assertTrue(scanner.scan_promotion_terms(previous + "\n" + current, "HO-DET-001",
+                                                                "proof", "record.md", True, governed))
+        for subject in ("This", "It"):
+            self.assertTrue(scanner.scan_promotion_terms(
+                "HO-DET-001 is not production-ready\n" + subject + " is production-ready for deployment.",
+                "HO-DET-001", "proof", "record.md", True, governed))
+        self.assertTrue(scanner.scan_promotion_terms(
+            "HO-DET-001 blocked claims:\nThe detection is production-ready for deployment.",
+            "HO-DET-001", "proof", "record.md", True, governed))
+        denial = "HO-DET-001 does not prove\n  PUBLIC_SAFE"
+        self.assertEqual(scanner.scan_status_tokens(denial, "HO-DET-001", "proof", "record.md", True, governed), [])
+        foreign = "HO-DET-011 does not prove\n  HO-DET-001: PUBLIC_SAFE"
+        self.assertTrue(scanner.scan_status_tokens(foreign, "HO-DET-001", "proof", "record.md", True, governed))
+
+    def test_explicit_negative_literal_roles_do_not_launder_other_claims(self):
+        governed = scanner.governed_detection_ids(ROOT)
+        for quoted in ('- "HO-DET-001 is production-ready."',
+                       '- "HO-DET-001 is runtime-active" unless explicitly scoped to private controlled lab evidence.'):
+            self.assertEqual(scanner.scan_promotion_terms("## HO-DET-001 Blocked Claims\n\n" + quoted,
+                                                         "HO-DET-001", "proof", "record.md", True, governed), [])
+            self.assertTrue(scanner.scan_promotion_terms("## HO-DET-011 Blocked Claims\n\n" + quoted,
+                                                        "HO-DET-001", "proof", "record.md", True, governed))
+        for hostile in ('- "HO-DET-001 is production-ready." and HO-DET-001 is runtime-active',
+                        '- "HO-DET-001 is runtime-active" unless explicitly scoped to public production evidence.',
+                        'HO-DET-001 is production-ready', '- HO-DET-001 is production-ready'):
+            self.assertTrue(scanner.scan_promotion_terms("## HO-DET-001 Blocked Claims\n\n" + hostile,
+                                                        "HO-DET-001", "proof", "record.md", True, governed))
+        denial = 'doesNotProve: "HO-DET-001 telemetry is Cribl-routed, or any public-safe runtime proof.",'
+        self.assertEqual(scanner.scan_promotion_terms(denial, "HO-DET-001", "website", "source.ts", True, governed), [])
+        for hostile in ('doesNotProve: { summary: "HO-DET-001 is production-ready" },',
+                        'doesNotProve: "private only", summary: "HO-DET-001 is production-ready"'):
+            self.assertTrue(scanner.scan_promotion_terms(hostile, "HO-DET-001", "website", "source.ts", True, governed))
+
+    def test_false_ui_label_value_pairs_and_qualifier_verbs_keep_exact_scope(self):
+        prefix = "HO-DET-001: SOURCE_EXISTS\n"
+        denied = '{ label: "SIGNAL_OBSERVED", value: "false" },'
+        self.assertEqual(scanner.scan_status_tokens(prefix + denied, "HO-DET-001", "website", "source.ts", True), [])
+        for hostile in ('{ label: "SIGNAL_OBSERVED", value: "true" },',
+                        '{ label: "SIGNAL_OBSERVED", value: "false", other: "SIGNAL_OBSERVED" },',
+                        '{ label: "SIGNAL_OBSERVED", other: "false", value: "true" },',
+                        '{ label: "SIGNAL_OBSERVED" }, { value: "false" },',
+                        denied + ' SIGNAL_OBSERVED is true'):
+            self.assertTrue(scanner.scan_status_tokens(prefix + hostile, "HO-DET-001", "website", "source.ts", True))
+        hypothetical = "HO-DET-001: Reviewer wording could outrun validation by treating rendering as signal-observed, or public-safe runtime proof."
+        self.assertEqual(scanner.scan_promotion_terms(hypothetical, "HO-DET-001", "website", "source.ts", True), [])
+        self.assertTrue(scanner.scan_promotion_terms("HO-DET-001 observed public-safe runtime proof", "HO-DET-001", "proof", "record.md", True))
+
+    def test_heading_forward_denials_and_comma_fresh_subjects_cannot_hide_readiness(self):
+        governed = scanner.governed_detection_ids(ROOT)
+        for identity in ("HO-DET-001", "ID-DET-001"):
+            for following in ("HO-DET-011 does not prove PUBLIC_SAFE", identity + " does not prove runtime-active"):
+                self.assertTrue(scanner.scan_status_tokens(f"# {identity}: PUBLIC_SAFE\n" + following,
+                                                           identity, "proof", "record.md", True, governed))
+        self.assertEqual(scanner.scan_status_tokens("HO-DET-001: SOURCE_EXISTS\n### RUNTIME_ACTIVE\n\n- Status: NOT_SATISFIED",
+                                                   "HO-DET-001", "proof", "record.md", True, governed), [])
+        for text, identity in (("HO-DET-011 does not claim production-ready, HO-DET-001 is production-ready", "HO-DET-001"),
+                               ("HO-DET-001 does not claim production-ready, it is production-ready", "HO-DET-001")):
+            self.assertTrue(scanner.scan_promotion_terms(text, identity, "proof", "record.md", True, governed))
+        self.assertTrue(scanner.scan_status_tokens("HO-DET-001 does not prove PUBLIC_SAFE, HO-DET-011 is PUBLIC_SAFE",
+                                                  "HO-DET-011", "proof", "record.md", True, governed))
+        self.assertEqual(scanner.scan_promotion_terms("HO-DET-001 is not yet production-ready",
+                                                     "HO-DET-001", "proof", "record.md", True, governed), [])
+        self.assertEqual(scanner.scan_promotion_terms('HO-DET-001: SOURCE_EXISTS\n  doesNotProve:\n    "Runtime-active public proof, or public-safe runtime proof.",',
+                                                     "HO-DET-001", "website", "source.ts", True, governed), [])
+        self.assertTrue(scanner.structured_claim_items({"runtime_status": "UNKNOWN"},
+                                                       ["HO-DET-001"], "proof", "status.json", True))
+        schema = {"$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object",
+                  "properties": {"runtime_status": {"type": "string", "enum": ["UNKNOWN", "BLOCKED"]}}}
+        self.assertEqual(scanner.structured_claim_items(schema, ["HO-DET-001"], "platform", "schema.json", True), [])
+        schema["examples"] = [{"runtime_status": "UNKNOWN"}]
+        self.assertTrue(scanner.structured_claim_items(schema, ["HO-DET-001"], "platform", "schema.json", True))
+
+    def test_connected_verifier_rejection_criteria_are_not_observed_claims(self):
+        prefix = "HO-DET-001: SOURCE_EXISTS\nThe verifier fails closed if the packet:\n\n"
+        criteria = "- includes local paths\n- claims runtime-active public proof\n- claims signal-observed public proof\n- claims production, fleet, or autonomous operation"
+        self.assertEqual(scanner.scan_promotion_terms(prefix + criteria, "HO-DET-001", "platform", "contract.md", True), [])
+        for hostile in ("- claims production-ready; HO-DET-001 is production-ready",
+                        "- claims production-ready and it is production-ready",
+                        "- claims production-ready and the detection is production-ready",
+                        "- claims production-ready the detection is production-ready",
+                        "- claims production-ready and the packet is SIGNAL_OBSERVED",
+                        "- claims production-ready. This is production-ready",
+                        "- claims HO-DET-001 is production-ready",
+                        "## New section\n- claims HO-DET-001 is production-ready",
+                        "List complete.\n- claims production-ready"):
+            self.assertTrue(scanner.scan_promotion_terms(prefix + hostile, "HO-DET-001", "platform", "contract.md", True), hostile)
+        for prior in ("- claims HO-DET-011 is production-ready", "- claims production-ready and it is production-ready",
+                      "- claims production-ready. This is production-ready", "- claims production-ready; independent assertion",
+                      "- claims production-ready and the detection is production-ready", "- claims production-ready and the packet is SIGNAL_OBSERVED"):
+            lines = (prefix + prior + "\n- claims production-ready").splitlines()
+            self.assertFalse(scanner.has_negative_context_for_phrase(lines, len(lines) - 1, "production-ready",
+                                                                      detection_id="HO-DET-001"), prior)
+        self.assertTrue(scanner.scan_promotion_terms("HO-DET-001: SOURCE_EXISTS\nThe packet is approved:\n- claims production-ready",
+                                                     "HO-DET-001", "platform", "contract.md", True))
+
+    def test_fresh_predicate_guard_preserves_owning_declared_negative_contexts(self):
+        examples = (
+            'HO-DET-001: SOURCE_EXISTS\nstatus: "blocked",\nclaims: ["runtime-active", "signal observed", "public-safe proof"],',
+            'HO-DET-001: SOURCE_EXISTS\nincomingClaim: "Blocked example: the detection package is production ready.",\nsaferWording: "The source package and controlled validation state are inspectable; production claims require separate evidence.",',
+            'HO-PIPE-001 remains a pipeline route integrity contract.\nIt does not claim delivered traffic, live Splunk results, Cribl-routed proof,\nWazuh-routed proof, Security Onion observed proof, production readiness, or\npublic-safe runtime status.',
+        )
+        governed = scanner.governed_detection_ids(ROOT)
+        for text in examples:
+            identity = "HO-PIPE-001" if text.startswith("HO-PIPE") else "HO-DET-001"
+            self.assertEqual(scanner.scan_promotion_terms(text, identity, "website", "source.ts", True, governed), [], text)
+        for subject in ("The detection", "The packet"):
+            for predicate in ("is", "proves", "establishes", "claims"):
+                self.assertTrue(scanner.scan_promotion_terms(
+                    "HO-DET-001 blocked claims:\n" + subject + " " + predicate + " production-ready for deployment.",
+                    "HO-DET-001", "proof", "record.md", True, governed))
 
     def test_negative_context_allows_promotion_term(self):
         self.assertTrue(scanner.has_negative_context("runtime-active status is BLOCKED"))

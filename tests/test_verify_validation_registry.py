@@ -244,6 +244,15 @@ class VerifyValidationRegistryTests(unittest.TestCase):
             self.assertIn("VALIDATION_REGISTRY=fail", result.stderr)
             self.assertNotIn("SOURCE_CONTRACT=skipped", result.stdout)
 
+    def test_existing_owned_support_and_candidate_states_remain_nonpromotional(self):
+        for value in ("support_only", "DETERMINISTIC_RULE_EVALUATED", "PRIVATE_EVIDENCE_ONLY", "RUNTIME_CANDIDATE_ONLY"):
+            module._scan_authority_boundaries({"runtime": {"status": value}}, "controlled receipt")
+            with self.assertRaises(module.RegistryFailure):
+                module._scan_authority_boundaries({"runtime": {"status": value + " production ready"}}, "controlled receipt")
+        for value in ("running", "confirmed", "live", True):
+            with self.assertRaises(module.RegistryFailure):
+                module._scan_authority_boundaries({"runtime": {"status": value}}, "controlled receipt")
+
     def test_valid_registry_passes(self):
         packages = module.validate_registry(self.registry, self.root)
         self.assertEqual([package["detection_id"] for package in packages], ["EX-DET-001"])
