@@ -456,6 +456,49 @@ class HoDet001FactsTests(unittest.TestCase):
         finally:
             sys.set_int_max_str_digits(previous_limit)
 
+    def test_overflow_receipt_numbers_block_both_facts_modes_without_context(self):
+        event = {"Image": "\\powershell.exe", "CommandLine": "powershell.exe -enc REDACTED"}
+        for number in ("1e9999", "-1e9999"):
+            raw = '{"x":' + number + ',"private":"PRIVATE_RECEIPT_SENTINEL"}'
+            for mode in (["--facts-case", self.rows[0]["id"]], ["--facts-event", "private-selected-event.json"]):
+                with self.subTest(number=number, mode=mode):
+                    stdout, stderr = io.StringIO(), io.StringIO()
+                    with patch.object(quality, "git", side_effect=self.fake_git), \
+                         patch.object(quality, "source_identity", side_effect=self.identity), \
+                         patch.object(quality, "read_ho_det_001_event", return_value=event), \
+                         patch.object(Path, "read_text", return_value=raw) as receipt_reader, \
+                         redirect_stdout(stdout), redirect_stderr(stderr):
+                        result = quality.main(["--detections-root", "private-selected-source", "--detections-ref", "a" * 40,
+                                               "--execution-id", self.execution_id, "--verify", "private-selected-receipt.json", *mode])
+                    receipt_reader.assert_called_once_with(encoding="utf-8")
+                    self.assertEqual(result, 2)
+                    report = json.loads(stdout.getvalue())
+                    self.assertEqual(report["status"], "BLOCKED")
+                    self.assertEqual(report["error"], "selected fact source, input or receipt unavailable or invalid")
+                    self.assertEqual(report["boundary"]["proof_ceiling"], "SOURCE_EXISTS")
+                    self.assertFalse(report["boundary"]["proof_promotion_authority"])
+                    for private in ("PRIVATE_RECEIPT_SENTINEL", "private-selected", number, "Traceback"):
+                        self.assertNotIn(private, stdout.getvalue() + stderr.getvalue())
+                    self.assertEqual(stderr.getvalue(), "")
+
+    def test_nonfinite_receipts_raise_sanitized_errors_in_both_owner_verify_helpers(self):
+        event = {"Image": "\\powershell.exe", "CommandLine": "powershell.exe -enc REDACTED"}
+        with patch.object(quality, "git", side_effect=self.fake_git), patch.object(quality, "source_identity", side_effect=self.identity):
+            controlled = self.receipt()
+            attested = quality.run_ho_det_001_event_facts(Path("selected-detections"), "a" * 40, event, self.execution_id, self.root)
+            for value in (float("inf"), float("-inf"), float("nan")):
+                for receipt, verify, independent_input in (
+                    (controlled, quality.verify_ho_det_001_facts, self.rows[0]["id"]),
+                    (attested, quality.verify_ho_det_001_event_facts, event),
+                ):
+                    with self.subTest(value=value, verifier=verify.__name__):
+                        changed = copy.deepcopy(receipt)
+                        changed["facts"]["PRIVATE_RECEIPT_SENTINEL"] = value
+                        with self.assertRaisesRegex(quality.QualityError, "supported finite JSON") as failure:
+                            verify(changed, Path("selected-detections"), "a" * 40, independent_input, self.execution_id, self.root)
+                        self.assertNotIn("PRIVATE_RECEIPT_SENTINEL", str(failure.exception))
+                        self.assertEqual(str(failure.exception), "canonical value must be supported finite JSON")
+
 
 if __name__ == "__main__":
     unittest.main()

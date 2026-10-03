@@ -41,7 +41,10 @@ class QualityError(ValueError):
 
 
 def canonical(value: Any) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False).encode()
+    try:
+        return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False).encode()
+    except ValueError as exc:
+        raise QualityError("canonical value must be supported finite JSON") from exc
 
 
 def digest(value: bytes) -> str:
