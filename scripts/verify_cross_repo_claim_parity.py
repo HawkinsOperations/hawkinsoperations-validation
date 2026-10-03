@@ -20,7 +20,11 @@ from datetime import date
 from pathlib import Path
 from typing import Iterable
 
-from verify_validation_registry import AUTHORITY_PROMOTION_KEYS, CANONICAL_ID, RegistryFailure, _load_strict_yaml
+from verify_validation_registry import (
+    AUTHORITY_CLAIM_SUFFIXES, AUTHORITY_PROMOTION_KEYS, CANONICAL_ID, RegistryFailure,
+    _load_json, _load_strict_yaml, _rel_path, _validate_package_identity,
+    _validate_registry_identity, _validate_report_shape, load_registry,
+)
 
 DETECTION_IDS = [
     "HO-DET-001",
@@ -501,6 +505,10 @@ def normalize_path_key(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", folded).strip("_")
 
 
+PROMOTION_AUTHORITY_KEYS = AUTHORITY_PROMOTION_KEYS | {
+    normalize_path_key(term).replace("_", "") + suffix
+    for term in PROMOTION_TERMS for suffix in AUTHORITY_CLAIM_SUFFIXES
+}
 DANGEROUS_AUTHORITY_PATHS = {
     "runtime_state",
     "runtime_status",
@@ -571,6 +579,41 @@ def assertive_authority_value(value: object) -> bool:
     }
 
 
+def rejected_contract_fixture_case_ids(repo_root: Path, rel_path: str, fixture: object) -> frozenset[str]:
+    """Bind deliberately rejected contract inputs to their owning report cases."""
+    canonical_path = rel_path.replace("\\", "/")
+    if (not canonical_path.startswith("validation/") or not canonical_path.endswith("/validation-cases.json")
+            or not isinstance(fixture, dict)):
+        return frozenset()
+    try:
+        registry = load_registry(repo_root / "validation" / "VALIDATION_REGISTRY.yml")
+        packages = _validate_registry_identity(registry)
+        owners = [package for package in packages if isinstance(package, dict)
+                  and package.get("fixture_file") == canonical_path
+                  and package.get("detection_id") == fixture.get("detection_id")
+                  and package.get("validation_kind") == "controlled_validation"]
+        if len(owners) != 1:
+            return frozenset()
+        owner = owners[0]
+        _validate_package_identity(owner)
+        _rel_path(repo_root, owner["fixture_file"], "fixture_file", owner["detection_id"])
+        report = _load_json(_rel_path(repo_root, owner["report_json"], "report_json", owner["detection_id"]), "fixture owner report")
+        _validate_report_shape(report, owner, fixture)
+        rejected_ids = {row["id"] for row in report.get("negative", [])
+                        if row.get("expected") is False and row.get("matched") is False and row.get("pass") is True}
+        # The exception describes direct boolean contract inputs, not containers
+        # or contradictory expectation aliases that happen to share case IDs.
+        return frozenset(case["id"] for case in fixture.get("cases", {}).get("negative", [])
+                         if case.get("id") in rejected_ids and case.get("expected_match") is False
+                         and ("expected" not in case or case["expected"] is False)
+                         and ("expected_result" not in case or case["expected_result"] == "no_match")
+                         and isinstance(case.get("contract"), dict)
+                         and isinstance(case["contract"].get("blocked_promotion_fields"), dict)
+                         and all(type(flag) is bool for flag in case["contract"]["blocked_promotion_fields"].values()))
+    except (RegistryFailure, KeyError, TypeError, ValueError, OSError):
+        return frozenset()
+
+
 def structured_claim_items(
     value: object,
     detection_ids: list[str],
@@ -582,10 +625,24 @@ def structured_claim_items(
     status_by_id: dict[str, set[str]] | None = None,
     schema_context: bool = False,
     list_item: bool = False,
+    authority_context: bool = False,
+    rejected_fixture_ids: frozenset[str] = frozenset(),
+    rejected_fixture_case: bool = False,
 ) -> list[DriftItem]:
     items: list[DriftItem] = []
     leaf = ancestry[-1] if ancestry else ""
+    authority_context = authority_context or any(
+        "_".join(ancestry[offset:]) in DANGEROUS_AUTHORITY_PATHS
+        or "".join(ancestry[offset:]).replace("_", "") in PROMOTION_AUTHORITY_KEYS
+        for offset in range(len(ancestry))
+    )
     if isinstance(value, dict):
+        if ancestry == ("cases", "negative"):
+            rejected_fixture_case = (
+                isinstance(value.get("id"), str) and value["id"] in rejected_fixture_ids
+                and value.get("expected_match") is False
+                and all(value[field] is False for field in ("expected",) if field in value)
+            )
         schema_context = schema_context or (
             isinstance(value.get("$schema"), str)
             and bool(re.fullmatch(r"https?://json-schema\.org/(?:draft/[0-9-]+|draft-[0-9]+)/schema#?", value["$schema"]))
@@ -625,6 +682,10 @@ def structured_claim_items(
                     local_ids,
                     status_by_id,
                     schema_context,
+                    False,
+                    authority_context,
+                    rejected_fixture_ids,
+                    rejected_fixture_case,
                 )
             )
         return items
@@ -642,16 +703,23 @@ def structured_claim_items(
                     status_by_id,
                     schema_context,
                     True,
+                    authority_context,
+                    rejected_fixture_ids,
+                    rejected_fixture_case,
                 )
             )
         return items
 
     cumulative = "_".join(filter(None, ancestry))
+    rejected_fixture_input = (
+        rejected_fixture_case and len(ancestry) == 5
+        and ancestry[:4] == ("cases", "negative", "contract", "blocked_promotion_fields")
+        and leaf.replace("_", "") in PROMOTION_AUTHORITY_KEYS and type(value) is bool
+    )
     if (
-        any("_".join(ancestry[offset:]) in DANGEROUS_AUTHORITY_PATHS
-            or "".join(ancestry[offset:]).replace("_", "") in AUTHORITY_PROMOTION_KEYS
-            for offset in range(len(ancestry)))
-        and not has_negative_context(leaf)
+        authority_context and not rejected_fixture_input
+        and not (leaf == "requires_human_approval" and value is True and not list_item
+                 and "requires_human_approval" not in ancestry[:-1])
         and assertive_authority_value(value)
     ):
         items.append(
@@ -999,6 +1067,8 @@ def scan_surface(
                     rel_path,
                     enforce,
                     status_by_id=status_by_id,
+                    rejected_fixture_ids=(rejected_contract_fixture_case_ids(repo_root, rel_path, structured)
+                                          if surface == "validation" else frozenset()),
                 )
             )
             continue

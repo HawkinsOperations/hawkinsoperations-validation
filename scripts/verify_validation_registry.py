@@ -134,6 +134,7 @@ REGISTRY_FIELDS = {
     "packages",
 }
 CANONICAL_ID = re.compile(r"^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$")
+AUTHORITY_CLAIM_SUFFIXES = ("", "claim", "proof")
 AUTHORITY_PROMOTION_KEYS = {
     "aiauthority",
     "aiapproval",
@@ -153,6 +154,13 @@ AUTHORITY_PROMOTION_KEYS = {
     "runtimeactive",
     "signalobserved",
     "socaasdeployment",
+    # Existing controlled-report and backend/proof boundaries.
+    "fleetwide", "autonomoussoc", "livesplunk", "criblrouted", "wazuhrouted",
+    "liveidpproof", "securityonionobserved", "securityonionobservedproof",
+    "splunkfired", "proofpromotion", "websitepublicsurfacepromotion", "awslivestatus",
+}
+AUTHORITY_PROMOTION_KEYS = {
+    key + suffix for key in AUTHORITY_PROMOTION_KEYS for suffix in AUTHORITY_CLAIM_SUFFIXES
 }
 BLOCKED_SCALARS = {
     False,
@@ -785,7 +793,9 @@ def _scan_authority_boundaries(
                     "case",
                 }
             )
-            child_promotion_context = promotion_context or any(
+            authority_key = any("".join(child_normalized_path[offset:]) in AUTHORITY_PROMOTION_KEYS
+                                for offset in range(len(child_normalized_path)))
+            child_promotion_context = promotion_context or authority_key or any(
                 _compositional_promotion_key(candidate)
                 for candidate in cumulative_keys
             )
@@ -1277,7 +1287,7 @@ def _validate_bridge_records(data: dict[str, Any], root: Path) -> list[dict[str,
     return bridges
 
 
-def validate_registry(data: dict[str, Any], root: Path = ROOT) -> list[dict[str, Any]]:
+def _validate_registry_identity(data: dict[str, Any]) -> list[dict[str, Any]]:
     unknown_root = sorted(set(data) - REGISTRY_FIELDS)
     missing_root = sorted(REGISTRY_FIELDS - set(data))
     if unknown_root:
@@ -1301,96 +1311,107 @@ def validate_registry(data: dict[str, Any], root: Path = ROOT) -> list[dict[str,
     packages = data.get("packages")
     if not isinstance(packages, list) or not packages:
         fail("packages must be a non-empty list")
+    return packages
+
+
+def _validate_package_identity(package: dict[str, Any]) -> str:
+    if not isinstance(package, dict):
+        fail("each package entry must be an object")
+    unknown = sorted(set(package) - REQUIRED_FIELDS)
+    if unknown:
+        fail(f"package contains unknown fields: {', '.join(unknown)}")
+    missing = sorted(REQUIRED_FIELDS - package.keys())
+    detection_id = str(package.get("detection_id", "<unknown>"))
+    if missing:
+        fail(f"{detection_id} missing required fields: {', '.join(missing)}")
+    if not CANONICAL_ID.fullmatch(detection_id):
+        fail(f"{detection_id} is not a canonical detection ID")
+    if package["validation_owner"] != "hawkinsoperations-validation":
+        fail(f"{detection_id} validation_owner is not canonical")
+    expected_source_owner = (
+        "hawkinsoperations-detections"
+        if package["source_dependency_required"] is True
+        else "hawkinsoperations-validation"
+    )
+    if package["source_owner"] != expected_source_owner:
+        fail(f"{detection_id} source_owner is not canonical")
+    source_reference = package["source_reference"]
+    if not isinstance(source_reference, str):
+        fail(f"{detection_id} source_reference must be a string")
+    if package["source_dependency_required"] is True:
+        prefix = "hawkinsoperations-detections/"
+        if not source_reference.startswith(prefix):
+            fail(f"{detection_id} source_reference must use the canonical detections owner")
+        _canonical_relpath(source_reference.removeprefix(prefix), "source_reference", detection_id)
+    elif source_reference != package["validation_package_path"]:
+        fail(f"{detection_id} local source_reference must match validation_package_path")
+    if not isinstance(package["fixture_version"], int) or isinstance(package["fixture_version"], bool) or package["fixture_version"] < 1:
+        fail(f"{detection_id} fixture_version must be a positive integer")
+    if package["expected_result"] not in {"PASS", "BLOCKED"}:
+        fail(f"{detection_id} expected_result must be PASS or BLOCKED")
+    if package["actual_result"] not in {"PASS", "BLOCKED"}:
+        fail(f"{detection_id} actual_result must be PASS or BLOCKED")
+    if package["actual_result"] != package["expected_result"]:
+        fail(f"{detection_id} actual_result does not match expected_result")
+    if not isinstance(package["report_identity"], str) or not package["report_identity"]:
+        fail(f"{detection_id} report_identity must be explicit")
+    if package["parity_identity"] is not None and (
+        not isinstance(package["parity_identity"], str) or not package["parity_identity"]
+    ):
+        fail(f"{detection_id} parity_identity must be null or a non-empty string")
+    if package["human_review_required"] is not True:
+        fail(f"{detection_id} human_review_required must be true")
+    if package["ai_disposition_authority"] is not False:
+        fail(f"{detection_id} ai_disposition_authority must be false")
+
+    validation_kind = package["validation_kind"]
+    if validation_kind not in ALLOWED_KINDS:
+        fail(f"{detection_id} unknown validation_kind: {validation_kind}")
+    expected_report_identity = _expected_report_identity(detection_id, validation_kind)
+    if package["report_identity"] != expected_report_identity:
+        fail(
+            f"{detection_id} report_identity must bind the owned report as "
+            f"{expected_report_identity}"
+        )
+    expected_parity_identity = _expected_parity_identity(detection_id, validation_kind)
+    if package["parity_identity"] != expected_parity_identity:
+        fail(
+            f"{detection_id} parity_identity must bind the owned parity contract as "
+            f"{expected_parity_identity!r}"
+        )
+    if package["proof_ceiling"] not in ALLOWED_PROOF_CEILINGS:
+        fail(f"{detection_id} unknown proof ceiling: {package['proof_ceiling']}")
+    if package["public_safe_status"] != "NOT_PUBLIC_SAFE":
+        fail(f"{detection_id} public_safe_status must be NOT_PUBLIC_SAFE")
+    if package["runtime_status"] is not False:
+        fail(f"{detection_id} runtime_status must be boolean false")
+    if package["signal_status"] is not False:
+        fail(f"{detection_id} signal_status must be boolean false")
+    if not isinstance(package["notes"], str) or not package["notes"].strip():
+        fail(f"{detection_id} notes must be a non-empty string")
+    if not isinstance(package["source_dependency_required"], bool):
+        fail(f"{detection_id} source_dependency_required must be boolean")
+    if package["ci_source_dependency_mode"] not in {"none", "required"}:
+        fail(f"{detection_id} ci_source_dependency_mode is invalid")
+    if package["source_dependency_required"] is False and package["ci_source_dependency_mode"] != "none":
+        fail(f"{detection_id} ci_source_dependency_mode must be none when source_dependency_required is false")
+    return detection_id
+
+
+def validate_registry(data: dict[str, Any], root: Path = ROOT) -> list[dict[str, Any]]:
+    packages = _validate_registry_identity(data)
     _validate_bridge_records(data, root)
 
     seen_ids: set[str] = set()
     path_owners: dict[str, str] = {}
     for package in packages:
-        if not isinstance(package, dict):
-            fail("each package entry must be an object")
-        unknown = sorted(set(package) - REQUIRED_FIELDS)
-        if unknown:
-            fail(f"package contains unknown fields: {', '.join(unknown)}")
-        missing = sorted(REQUIRED_FIELDS - package.keys())
-        detection_id = str(package.get("detection_id", "<unknown>"))
-        if missing:
-            fail(f"{detection_id} missing required fields: {', '.join(missing)}")
-        if not CANONICAL_ID.fullmatch(detection_id):
-            fail(f"{detection_id} is not a canonical detection ID")
+        detection_id = _validate_package_identity(package)
+        validation_kind = package["validation_kind"]
         normalized_id = unicodedata.normalize("NFKC", detection_id).casefold()
         if normalized_id in seen_ids:
             fail(f"duplicate detection_id exists: {detection_id}")
         seen_ids.add(normalized_id)
 
-        if package["validation_owner"] != "hawkinsoperations-validation":
-            fail(f"{detection_id} validation_owner is not canonical")
-        expected_source_owner = (
-            "hawkinsoperations-detections"
-            if package["source_dependency_required"] is True
-            else "hawkinsoperations-validation"
-        )
-        if package["source_owner"] != expected_source_owner:
-            fail(f"{detection_id} source_owner is not canonical")
-        source_reference = package["source_reference"]
-        if not isinstance(source_reference, str):
-            fail(f"{detection_id} source_reference must be a string")
-        if package["source_dependency_required"] is True:
-            prefix = "hawkinsoperations-detections/"
-            if not source_reference.startswith(prefix):
-                fail(f"{detection_id} source_reference must use the canonical detections owner")
-            _canonical_relpath(source_reference.removeprefix(prefix), "source_reference", detection_id)
-        elif source_reference != package["validation_package_path"]:
-            fail(f"{detection_id} local source_reference must match validation_package_path")
-        if not isinstance(package["fixture_version"], int) or isinstance(package["fixture_version"], bool) or package["fixture_version"] < 1:
-            fail(f"{detection_id} fixture_version must be a positive integer")
-        if package["expected_result"] not in {"PASS", "BLOCKED"}:
-            fail(f"{detection_id} expected_result must be PASS or BLOCKED")
-        if package["actual_result"] not in {"PASS", "BLOCKED"}:
-            fail(f"{detection_id} actual_result must be PASS or BLOCKED")
-        if package["actual_result"] != package["expected_result"]:
-            fail(f"{detection_id} actual_result does not match expected_result")
-        if not isinstance(package["report_identity"], str) or not package["report_identity"]:
-            fail(f"{detection_id} report_identity must be explicit")
-        if package["parity_identity"] is not None and (
-            not isinstance(package["parity_identity"], str) or not package["parity_identity"]
-        ):
-            fail(f"{detection_id} parity_identity must be null or a non-empty string")
-        if package["human_review_required"] is not True:
-            fail(f"{detection_id} human_review_required must be true")
-        if package["ai_disposition_authority"] is not False:
-            fail(f"{detection_id} ai_disposition_authority must be false")
-
-        validation_kind = package["validation_kind"]
-        if validation_kind not in ALLOWED_KINDS:
-            fail(f"{detection_id} unknown validation_kind: {validation_kind}")
-        expected_report_identity = _expected_report_identity(detection_id, validation_kind)
-        if package["report_identity"] != expected_report_identity:
-            fail(
-                f"{detection_id} report_identity must bind the owned report as "
-                f"{expected_report_identity}"
-            )
-        expected_parity_identity = _expected_parity_identity(detection_id, validation_kind)
-        if package["parity_identity"] != expected_parity_identity:
-            fail(
-                f"{detection_id} parity_identity must bind the owned parity contract as "
-                f"{expected_parity_identity!r}"
-            )
-        if package["proof_ceiling"] not in ALLOWED_PROOF_CEILINGS:
-            fail(f"{detection_id} unknown proof ceiling: {package['proof_ceiling']}")
-        if package["public_safe_status"] != "NOT_PUBLIC_SAFE":
-            fail(f"{detection_id} public_safe_status must be NOT_PUBLIC_SAFE")
-        if package["runtime_status"] is not False:
-            fail(f"{detection_id} runtime_status must be boolean false")
-        if package["signal_status"] is not False:
-            fail(f"{detection_id} signal_status must be boolean false")
-        if not isinstance(package["notes"], str) or not package["notes"].strip():
-            fail(f"{detection_id} notes must be a non-empty string")
-        if not isinstance(package["source_dependency_required"], bool):
-            fail(f"{detection_id} source_dependency_required must be boolean")
-        if package["ci_source_dependency_mode"] not in {"none", "required"}:
-            fail(f"{detection_id} ci_source_dependency_mode is invalid")
-        if package["source_dependency_required"] is False and package["ci_source_dependency_mode"] != "none":
-            fail(f"{detection_id} ci_source_dependency_mode must be none when source_dependency_required is false")
         if package["source_dependency_required"] is True:
             if package["ci_source_dependency_mode"] != "required":
                 fail(f"{detection_id} source-backed validation must declare an enforceable source dependency mode")

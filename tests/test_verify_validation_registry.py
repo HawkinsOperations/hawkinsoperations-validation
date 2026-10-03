@@ -85,6 +85,36 @@ class VerifyValidationRegistryTests(unittest.TestCase):
             "packages": [self._package()],
         }
 
+    def test_controlled_report_backend_and_promotion_flags_fail_closed(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        baseline = json.loads(report_path.read_text(encoding="utf-8"))
+        fields = ("fleet_wide", "autonomous_soc", "live_splunk", "cribl_routed", "wazuh_routed",
+                  "cribl_routed_proof", "wazuh_routed_proof", "live_idp_proof", "security_onion_observed",
+                  "security_onion_observed_proof", "splunk_fired", "proof_promotion", "website_public_surface_promotion", "aws_live_status")
+        for field in fields:
+            for value in (True, 1, "on"):
+                with self.subTest(field=field, value=value):
+                    self._write_json("reports/example/validation-result.json", {**baseline, field: value})
+                    with self.assertRaises(module.RegistryFailure):
+                        module.validate_registry(self.registry, self.root)
+            for value in (False, 0, "blocked"):
+                with self.subTest(field=field, value=value):
+                    self._write_json("reports/example/validation-result.json", {**baseline, field: value})
+                    module.validate_registry(self.registry, self.root)
+
+    def test_controlled_report_composed_claim_authority_cannot_hide_in_supported_context(self):
+        report_path = self.root / "reports/example/validation-result.json"
+        baseline = json.loads(report_path.read_text(encoding="utf-8"))
+        for field in ("fleet_wide", "autonomous_soc", "live_splunk", "cribl_routed", "wazuh_routed"):
+            for suffix in ("", "_claim", "_proof"):
+                nested = True
+                for segment in reversed((field + suffix).split("_")):
+                    nested = {segment: nested}
+                with self.subTest(field=field, suffix=suffix):
+                    self._write_json("reports/example/validation-result.json", {**baseline, "current_scope": {"wrapper": nested}})
+                    with self.assertRaises(module.RegistryFailure):
+                        module.validate_registry(self.registry, self.root)
+
     def tearDown(self):
         self.tmpdir.cleanup()
 
