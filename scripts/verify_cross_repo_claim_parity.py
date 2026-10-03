@@ -461,7 +461,7 @@ def term_is_affirmative_claim(line: str, term: str, readiness_cell: bool = False
     if readiness_cell and stripped.casefold() == term.casefold():
         return True
     identities = "|".join(re.escape(identity) for identity in DETECTION_IDS)
-    if re.fullmatch(rf"(?:#{{1,6}}\s+(?:{identities})\s+(?:[:—–-]\s*)?|(?:{identities})\s*[:—–-]\s*){re.escape(term)}\s*[.!]?", stripped, re.IGNORECASE):
+    if re.fullmatch(rf"(?:#{{1,6}}\s+(?:{identities})(?:\s*[:—–-]\s*|\s+)|(?:{identities})\s*[:—–-]\s*){re.escape(term)}\s*[.!]?", stripped, re.IGNORECASE):
         return True
     folded_line = line.casefold()
     folded_term = term.casefold()

@@ -312,6 +312,9 @@ class CrossRepoClaimParityTests(unittest.TestCase):
         for text in (
             "# HO-DET-001 — production-ready", "# HO-DET-001 production-ready", "HO-DET-001: production-ready",
             "# ho-det-001 - runtime-active", "# **HO-DET-001** — **production-ready**",
+            "# HO-DET-001: production-ready", "# HO-DET-001 : production-ready",
+            "# HO-DET-001-production-ready", "# HO-DET-001—production-ready", "# HO-DET-001–production-ready",
+            "#\tHO-DET-001:\tproduction-ready", "# **HO-DET-001**: *production-ready*",
             "HO-DET-001: *production-ready*",
             "| Case | Status |\n|---|---|\n| HO-DET-001 | production-ready |",
             "| Case | State |\n|---|---|\n| HO-DET-001 | runtime-active |",
@@ -321,6 +324,9 @@ class CrossRepoClaimParityTests(unittest.TestCase):
                 self.assertTrue(scanner.scan_promotion_terms(text, "HO-DET-001", "website", "README.md", True))
         for text in (
             "# HO-DET-001 — production-ready remains blocked", "HO-DET-001: not production-ready",
+            "# HO-DET-001: not production-ready", "# HO-DET-001 : production-ready remains blocked",
+            "# HO-DET-001-not production-ready", "# HO-DET-001—production-ready remains blocked",
+            "# HO-DET-001–not production-ready", "# **HO-DET-001**: *production-ready* remains blocked",
             "| Case | Status |\n|---|---|\n| HO-DET-001 | not production-ready |",
             "| Case | Blocked status |\n|---|---|\n| HO-DET-001 | production-ready |",
         ):
