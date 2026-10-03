@@ -11,12 +11,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 import unicodedata
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Iterable
+
+from verify_validation_registry import CANONICAL_ID, RegistryFailure, _load_strict_yaml
 
 DETECTION_IDS = [
     "HO-DET-001",
@@ -157,6 +161,35 @@ def reject_duplicate_json_keys(pairs: list[tuple[str, object]]) -> dict[str, obj
     return result
 
 
+def reject_nonfinite_json_constant(value: str) -> object:
+    raise ValueError("non-finite structured values are forbidden")
+
+
+def validate_structured_values(value: object, ancestors: set[int] | None = None) -> None:
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError("non-finite structured values are forbidden")
+    if not isinstance(value, (dict, list)):
+        if value is not None and not isinstance(value, (str, bool, int, float, date)):
+            raise ValueError("unsupported structured scalar type")
+        return
+    ancestors = set() if ancestors is None else ancestors
+    identity = id(value)
+    if identity in ancestors:
+        raise ValueError("recursive structured aliases are forbidden")
+    ancestors.add(identity)
+    try:
+        if isinstance(value, dict):
+            if any(not isinstance(key, str) for key in value):
+                raise ValueError("structured mapping keys must be strings")
+            children = value.values()
+        else:
+            children = value
+        for child in children:
+            validate_structured_values(child, ancestors)
+    finally:
+        ancestors.remove(identity)
+
+
 def fail(message: str) -> int:
     print(f"STATUS=fail")
     print("FAIL_COUNT=1")
@@ -253,29 +286,36 @@ def has_negative_context_for_phrase(
     lines: list[str],
     index: int,
     phrase: str,
+    phrase_start: int | None = None,
 ) -> bool:
     line = lines[index]
     folded = line.casefold()
-    start = folded.find(phrase.casefold())
+    start = folded.find(phrase.casefold()) if phrase_start is None else phrase_start
     if start < 0:
         return False
     end = start + len(phrase)
-    prefix = line[:start].casefold()
-    clause_start = max(
-        prefix.rfind(", but "),
-        prefix.rfind(" but "),
-        prefix.rfind(" however "),
+    boundaries = re.compile(r"[;\r\n]|(?<=[.!?])\s+|\b(?:but|however|although|yet|while|whereas)\b", re.IGNORECASE)
+    prefix_boundaries = list(boundaries.finditer(line[:start]))
+    clause_start = prefix_boundaries[-1].end() if prefix_boundaries else 0
+    suffix_boundary = boundaries.search(line[end:])
+    clause_end = end + suffix_boundary.start() if suffix_boundary else len(line)
+    local = line[clause_start:clause_end]
+    direct_suffix = line[end:clause_end]
+    directly_negated = re.search(
+        r"\b(?:not|no|never|without)(?:\s+(?:claim|claiming|prove|proving|establish|support|assert))?\s*$",
+        line[clause_start:start], re.IGNORECASE,
     )
-    if clause_start >= 0:
-        clause_start += 1
-    else:
-        clause_start = 0
-    local = line[clause_start : min(len(line), end + 96)]
+    attached_prefix = re.search(r"\b(?:is|are|has|have)\s*$", line[clause_start:start], re.IGNORECASE)
+    if not directly_negated and re.match(
+        r"\s*(?:is|are|:|=)\s*(?:true|yes|active|approved|authorized|confirmed|enabled|live|ready|observed|[-+]?[1-9][0-9]*)\b",
+        direct_suffix, re.IGNORECASE,
+    ):
+        return False
     if has_negative_context(local):
+        if not directly_negated and attached_prefix:
+            return False
         return True
-    suffix = line[end:]
-    adversative = re.search(r"\b(?:but|however|although|yet)\b", suffix, re.IGNORECASE)
-    direct_suffix = suffix if adversative is None else suffix[: adversative.start()]
+    direct_suffix = line[end:clause_end]
     if re.search(
         r"\b(?:remain(?:s)?|is|are|must\s+remain)\s+"
         r"(?:blocked|unsupported|not\s+(?:approved|authorized|proven|public[-_\s]?safe))\b",
@@ -431,7 +471,7 @@ def term_is_affirmative_claim(line: str, term: str) -> bool:
     return bool(
         re.search(
             rf"[\"']?{key_pattern}[\"']?\s*[:=]\s*"
-            r"(?:true|active|approved|authorized|deployed|observed)\b",
+            r"(?:true|active|approved|authorized|deployed|observed|[-+]?[1-9][0-9]*)\b",
             folded_line,
         )
     )
@@ -518,10 +558,39 @@ def structured_claim_items(
     rel_path: str,
     enforce: bool,
     ancestry: tuple[str, ...] = (),
+    context_ids: tuple[str, ...] = (),
+    status_by_id: dict[str, set[str]] | None = None,
+    schema_context: bool = False,
 ) -> list[DriftItem]:
     items: list[DriftItem] = []
     leaf = ancestry[-1] if ancestry else ""
     if isinstance(value, dict):
+        schema_context = schema_context or (
+            isinstance(value.get("$schema"), str)
+            and bool(re.fullmatch(r"https?://json-schema\.org/(?:draft/[0-9-]+|draft-[0-9]+)/schema#?", value["$schema"]))
+        )
+        schema_properties = (schema_context and leaf == "properties"
+                             and all(isinstance(child, (dict, bool)) for child in value.values()))
+        declared_ids = [child for key, child in value.items()
+                        if normalize_path_key(str(key)) in {"detection_id", "rule_id"}
+                        and not (schema_properties and isinstance(child, (dict, bool)))]
+        local_ids = context_ids
+        if declared_ids:
+            if any(
+                not isinstance(identity, str)
+                or not CANONICAL_ID.fullmatch(identity.upper())
+                or any(known.casefold() in identity.casefold() and known.casefold() != identity.casefold()
+                       for known in detection_ids)
+                for identity in declared_ids
+            ) or len(
+                {identity.casefold() for identity in declared_ids if isinstance(identity, str)}
+            ) != 1:
+                items.append(DriftItem("fail" if enforce else "warning", "GLOBAL", surface,
+                                       rel_path, "structured detection identity is invalid or contradictory"))
+                local_ids = ()
+            else:
+                local_ids = tuple(identity for identity in detection_ids
+                                  if identity.casefold() == declared_ids[0].casefold())
         for key, child in value.items():
             normalized = normalize_path_key(str(key))
             items.extend(
@@ -532,6 +601,9 @@ def structured_claim_items(
                     rel_path,
                     enforce,
                     ancestry + (normalized,),
+                    local_ids,
+                    status_by_id,
+                    schema_context,
                 )
             )
         return items
@@ -545,6 +617,9 @@ def structured_claim_items(
                     rel_path,
                     enforce,
                     ancestry,
+                    context_ids,
+                    status_by_id,
+                    schema_context,
                 )
             )
         return items
@@ -565,27 +640,23 @@ def structured_claim_items(
             )
         )
 
-    if isinstance(value, str) and not has_negative_context(cumulative):
-        for detection_id in detection_ids:
-            if detection_id in value:
-                items.extend(
-                    scan_promotion_terms(
-                        text=value,
-                        detection_id=detection_id,
-                        surface=surface,
-                        rel_path=rel_path,
-                        enforce=enforce,
-                    )
-                )
-                items.extend(
-                    scan_status_tokens(
-                        text=value,
-                        detection_id=detection_id,
-                        surface=surface,
-                        rel_path=rel_path,
-                        enforce=enforce,
-                    )
-                )
+    if isinstance(value, str):
+        mentioned_ids = tuple(identity for identity in detection_ids
+                              if identity.casefold() in value.casefold())
+        bounded_leaf = leaf in {
+            "blocked_claims", "blocked_public_claims", "claims_not_supported",
+            "does_not_support", "does_not_prove", "not_claimed_here",
+        } and value.strip().casefold() in {
+            term.casefold() for term in (*PROMOTION_TERMS, *REQUIRED_BLOCKED_CLAIMS, *DANGEROUS_STATUS_TOKENS)
+        }
+        for detection_id in mentioned_ids or context_ids:
+            if status_by_id is not None:
+                status_by_id[detection_id].update(extract_status_tokens(value))
+            text = value if detection_id.casefold() in value.casefold() else f"{detection_id}: {value}"
+            if bounded_leaf:
+                text = f"{detection_id}: do not claim {value}"
+            items.extend(scan_promotion_terms(text, detection_id, surface, rel_path, enforce))
+            items.extend(scan_status_tokens(text, detection_id, surface, rel_path, enforce))
     return items
 
 
@@ -642,7 +713,8 @@ def scan_promotion_terms(
                 term_l in line.lower()
                 and line_is_associated_with_detection(lines, index, detection_id)
                 and not term_is_nonclaim_structure(line, term)
-                and not has_negative_context_for_phrase(lines, index, term)
+                and not all(has_negative_context_for_phrase(lines, index, term, match.start())
+                            for match in re.finditer(re.escape(term), line, re.IGNORECASE))
                 and term_is_affirmative_claim(line, term)
             ):
                 sev = "fail" if enforce else "warning"
@@ -693,7 +765,8 @@ def scan_status_tokens(
                     continue
             if (
                 token in DANGEROUS_STATUS_TOKENS
-                and not has_negative_context_for_phrase(lines, index, token)
+                and not all(has_negative_context_for_phrase(lines, index, token, match.start())
+                            for match in re.finditer(re.escape(token), line, re.IGNORECASE))
                 and not (
                     line.lstrip().startswith("#")
                     and any(
@@ -862,20 +935,24 @@ def scan_surface(
                 )
             )
             continue
-        if file_path.suffix.casefold() == ".json":
+        suffix = file_path.suffix.casefold()
+        if suffix in {".json", ".yml", ".yaml"}:
+            structured_kind = "JSON" if suffix == ".json" else "YAML"
             try:
-                structured = json.loads(
-                    text,
-                    object_pairs_hook=reject_duplicate_json_keys,
+                structured = (
+                    json.loads(text, object_pairs_hook=reject_duplicate_json_keys,
+                               parse_constant=reject_nonfinite_json_constant)
+                    if suffix == ".json" else _load_strict_yaml(file_path, "claim surface")
                 )
-            except (json.JSONDecodeError, DuplicateJsonKeyError) as exc:
+                validate_structured_values(structured)
+            except (ValueError, TypeError, RegistryFailure, RecursionError) as exc:
                 drift.append(
                     DriftItem(
                         severity="fail" if enforce else "warning",
                         detection_id="GLOBAL",
                         surface=surface,
                         path=rel_path,
-                        message=f"declared JSON is malformed: {exc}",
+                        message=f"declared {structured_kind} is malformed: {exc}",
                     )
                 )
                 continue
@@ -886,14 +963,9 @@ def scan_surface(
                     surface,
                     rel_path,
                     enforce,
+                    status_by_id=status_by_id,
                 )
             )
-            serialized = json.dumps(structured, ensure_ascii=True)
-            for detection_id in detection_ids:
-                if detection_id in serialized:
-                    status_by_id[detection_id].update(
-                        extract_status_tokens(serialized)
-                    )
             continue
         lines = text.splitlines()
         prose_contract = is_public_boundary_contract(text)
