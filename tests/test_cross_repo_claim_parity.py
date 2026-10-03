@@ -12,6 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "verify_cross_repo_claim_parity.py"
+sys.path.insert(0, str(ROOT / "scripts"))
 
 
 def load_module():
@@ -30,7 +31,9 @@ scanner = load_module()
 class CrossRepoClaimParityTests(unittest.TestCase):
     def build_org(self, org: Path, body: str) -> None:
         files = {
-            "hawkinsoperations-detections/detections/successor/ho-det-001/status.yml": body,
+            "hawkinsoperations-detections/detections/successor/ho-det-001/status.yml": json.dumps(
+                {"detection_id": "HO-DET-001", "notes": body}
+            ),
             "hawkinsoperations-validation/reports/ho-det-001/validation-result.json": json.dumps(
                 {"detection_id": "HO-DET-001", "notes": body}
             ),
@@ -357,6 +360,149 @@ class CrossRepoClaimParityTests(unittest.TestCase):
                     ),
                     items,
                 )
+
+    def test_sibling_and_descendant_prose_inherit_enclosing_detection_identity(self):
+        for record in (
+            {"detection_id": "HO-DET-001", "summary": "production-ready is true"},
+            {"detection_id": "HO-DET-001", "detail": {"summary": "runtime-active is true"}},
+            {"rule_id": "HO-DET-001", "summary": "PUBLIC_SAFE"},
+        ):
+            with self.subTest(record=record):
+                items = scanner.structured_claim_items(record, ["HO-DET-001"], "proof", "status.json", True)
+                self.assertTrue(any(item.detection_id == "HO-DET-001" for item in items), items)
+
+    def test_structured_records_do_not_share_identity_or_negation_context(self):
+        record = {"detection_id": "HO-DET-001", "records": [
+            {"detection_id": "HO-DET-001", "summary": "not production-ready"},
+            {"detection_id": "HO-DET-011", "summary": "production-ready is true"},
+            {"detection_id": "HO-DET-099", "summary": "production-ready is true"},
+        ]}
+        items = scanner.structured_claim_items(record, ["HO-DET-001", "HO-DET-011"], "proof", "status.json", True)
+        self.assertTrue(items)
+        self.assertEqual({item.detection_id for item in items}, {"HO-DET-011"})
+
+    def test_negative_structured_container_cannot_launder_affirmative_summary(self):
+        for field in ("blocked_claims", "claims_not_supported", "does_not_prove"):
+            for content in ({"summary": "production-ready is true"}, ["production-ready is true"]):
+                with self.subTest(field=field, content=content):
+                    items = scanner.structured_claim_items(
+                        {"detection_id": "HO-DET-001", field: content}, ["HO-DET-001"], "proof", "status.json", True)
+                    self.assertTrue(items, items)
+        bounded = {"detection_id": "HO-DET-001", "blocked_claims": ["production-ready", "runtime-active public proof"],
+                   "summary": "not public-safe; production-ready is true"}
+        self.assertTrue(scanner.structured_claim_items(bounded, ["HO-DET-001"], "proof", "status.json", True))
+        bounded["summary"] = "production-ready claims remain blocked"
+        self.assertEqual(scanner.structured_claim_items(bounded, ["HO-DET-001"], "proof", "status.json", True), [])
+
+    def test_structured_identity_aliases_cannot_mask_disagreement(self):
+        items = scanner.structured_claim_items({"detection_id": "HO-DET-001", "rule_id": "HO-DET-011"},
+                                                ["HO-DET-001", "HO-DET-011"], "proof", "status.json", True)
+        self.assertTrue(any("identity" in item.message for item in items), items)
+
+    def test_scalar_claims_cannot_borrow_negation_from_other_occurrences_or_predicates(self):
+        for summary in (
+            "not production-ready; production-ready is true",
+            "not PUBLIC_SAFE; PUBLIC_SAFE is true",
+            "production-ready is true and public-safe remains blocked",
+            "not stale and production-ready is true",
+            "HO-DET-001 is production-ready without approval",
+            "HO-DET-001 has production-ready status without approval",
+            "HO-DET-001 is runtime-active and no public proof is claimed",
+        ):
+            with self.subTest(summary=summary):
+                items = scanner.structured_claim_items({"detection_id": "HO-DET-001", "summary": summary},
+                                                       ["HO-DET-001"], "proof", "status.json", True)
+                self.assertTrue(items, items)
+        for summary in ("production-ready is not true", "do not claim production-ready is true"):
+            with self.subTest(summary=summary):
+                self.assertEqual(scanner.structured_claim_items({"detection_id": "HO-DET-001", "summary": summary},
+                                                                ["HO-DET-001"], "proof", "status.json", True), [])
+
+    def test_blocked_term_exemption_does_not_cover_affirmative_expressions(self):
+        for expression in ("production-ready = 1", "production-ready = true"):
+            with self.subTest(expression=expression):
+                items = scanner.structured_claim_items({"detection_id": "HO-DET-001", "blocked_claims": [expression]},
+                                                       ["HO-DET-001"], "proof", "status.json", True)
+                self.assertTrue(items, items)
+                self.assertFalse(scanner.has_negative_context_for_phrase(["HO-DET-001: " + expression], 0, "production-ready"))
+
+    def test_schema_properties_are_not_record_identities_but_actual_records_still_scan(self):
+        schema = {"$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object",
+                  "properties": {"detection_id": {"type": "string", "const": "HO-DET-001"},
+                                 "runtime_active": {"const": False}}}
+        self.assertEqual(scanner.structured_claim_items(schema, ["HO-DET-001"], "platform", "schema.json", True), [])
+        schema["examples"] = [{"detection_id": "HO-DET-001", "summary": "production-ready is true"}]
+        self.assertTrue(scanner.structured_claim_items(schema, ["HO-DET-001"], "platform", "schema.json", True))
+        schema["properties"] = {"detection_id": "HO-DET-001", "summary": "production-ready is true"}
+        del schema["examples"]
+        self.assertTrue(scanner.structured_claim_items(schema, ["HO-DET-001"], "platform", "schema.json", True))
+
+    def test_structured_statuses_are_bound_to_their_own_records(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td).resolve()
+            (root / "status.json").write_text(json.dumps([
+                {"detection_id": "HO-DET-001", "status": "SOURCE_EXISTS"},
+                {"detection_id": "HO-DET-011", "summary": "No status evidence for this detection"},
+            ]), encoding="utf-8")
+            items, statuses, unknown = scanner.scan_surface("proof", root, ["status.json"],
+                                                           ["HO-DET-001", "HO-DET-011"], True)
+            self.assertEqual(items, [])
+            self.assertEqual(unknown, 0)
+            self.assertEqual(statuses["HO-DET-001"], {"SOURCE_EXISTS"})
+            self.assertEqual(statuses["HO-DET-011"], set())
+
+    def test_malformed_known_identity_cannot_clear_its_claim_scope(self):
+        for identity in (" HO-DET-001 ", "HO-DET-001-extra"):
+            with self.subTest(identity=identity):
+                items = scanner.structured_claim_items({"detection_id": identity, "summary": "production-ready is true"},
+                                                       ["HO-DET-001"], "proof", "status.json", True)
+                self.assertTrue(any("identity" in item.message for item in items), items)
+
+    def test_yaml_source_authority_fields_and_sibling_prose_fail_enforce(self):
+        for suffix in (".yml", ".yaml"):
+            for claim in ("runtime_active: true", "production_status: ready", "runtime_active: 1",
+                          "summary: production-ready is true"):
+                with self.subTest(suffix=suffix, claim=claim), tempfile.TemporaryDirectory() as td:
+                    root = Path(td).resolve()
+                    (root / ("status" + suffix)).write_text("detection_id: HO-DET-001\n" + claim + "\n", encoding="utf-8")
+                    items, _, unknown = scanner.scan_surface("detections", root, ["status" + suffix], ["HO-DET-001"], True)
+                    self.assertEqual(unknown, 0)
+                    self.assertTrue(any(item.severity == "fail" for item in items), items)
+
+    def test_yaml_malformed_duplicate_nonfinite_and_unsafe_values_fail_closed(self):
+        for body in (
+            "runtime_active: true\nruntime_active: false\n",
+            "value: .nan\n", "value: .inf\n", "value: -.inf\n",
+            "value: !!python/object/apply:builtins.str [unsafe]\n",
+            "value: !!binary dHJ1ZQ==\n", "? [invalid, key]\n: true\n",
+            "value: &cycle [*cycle]\n",
+        ):
+            with self.subTest(body=body), tempfile.TemporaryDirectory() as td:
+                root = Path(td).resolve()
+                (root / "status.yml").write_text("detection_id: HO-DET-001\n" + body, encoding="utf-8")
+                items, _, _ = scanner.scan_surface("detections", root, ["status.yml"], ["HO-DET-001"], True)
+                self.assertTrue(any(item.severity == "fail" and "malformed" in item.message for item in items), items)
+
+    def test_json_nonfinite_values_fail_closed(self):
+        for constant in ("NaN", "Infinity", "-Infinity"):
+            with self.subTest(constant=constant), tempfile.TemporaryDirectory() as td:
+                root = Path(td).resolve()
+                (root / "status.json").write_text('{"detection_id":"HO-DET-001","value":' + constant + '}', encoding="utf-8")
+                items, _, _ = scanner.scan_surface("proof", root, ["status.json"], ["HO-DET-001"], True)
+                self.assertTrue(any("non-finite" in item.message for item in items), items)
+
+    def test_benign_yaml_source_status_dates_and_blocked_lists_pass(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td).resolve()
+            (root / "status.yml").write_text(
+                "detection_id: HO-DET-001\nstatus: SOURCE_EXISTS\nreviewed: 2026-10-02\n"
+                "runtime_active: false\nproduction_status: blocked\nblocked_claims:\n"
+                "  - production-ready\n  - runtime-active public proof\nsummary: runtime-active claims remain blocked\n",
+                encoding="utf-8")
+            items, statuses, unknown = scanner.scan_surface("detections", root, ["status.yml"], ["HO-DET-001"], True)
+            self.assertEqual(items, [])
+            self.assertEqual(unknown, 0)
+            self.assertIn("SOURCE_EXISTS", statuses["HO-DET-001"])
 
     def test_malformed_utf8_declared_text_fails_enforce(self):
         with tempfile.TemporaryDirectory() as td:
