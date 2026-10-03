@@ -24,6 +24,8 @@ from validation_lib import ContractFailure, strict_json_object
 
 ROOT = Path(__file__).resolve().parents[1]
 DETECTIONS = tuple(f"HO-DET-{number:03}" for number in (1, 9, 10, 11, 12, 13))
+# Full six-package pretty quality receipts exceed the operator event's 64 KiB bound.
+MAX_RECEIPT_BYTES = 1024 * 1024
 BOUNDARY = {
     "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
     "public_safe_status": "NOT_PUBLIC_SAFE",
@@ -527,35 +529,48 @@ def read_ho_det_001_event(path: Path) -> dict:
         raise QualityError("operator event unavailable or invalid") from exc
 
 
+def read_quality_receipt(path: Path) -> dict:
+    """Read one saved report within a fixed byte budget before decoding JSON."""
+    try:
+        with path.open("rb") as stream:
+            raw = stream.read(MAX_RECEIPT_BYTES + 1)
+        if len(raw) > MAX_RECEIPT_BYTES:
+            raise QualityError("supplied quality receipt exceeds size bound")
+        return strict_json_object(raw.decode("utf-8"), "quality report")
+    except (OSError, UnicodeError, ContractFailure, ValueError, RecursionError) as exc:
+        raise QualityError("supplied quality receipt unavailable or invalid") from exc
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--detections-root", type=Path, default=ROOT.parent / "hawkinsoperations-detections")
     parser.add_argument("--detections-ref", required=True, help="exact source commit; must match the clean checkout")
     parser.add_argument("--verify", type=Path, help="reexecute the source/corpus and compare the entire saved report")
     parser.add_argument("--facts-case", help="Existing HO-DET-001 controlled fixture to project as sanitized facts")
-    parser.add_argument("--facts-event", type=Path, help="Operator-selected sanitized local event; attested input only")
+    parser.add_argument("--facts-event", help="Operator-selected sanitized local event; attested input only")
     parser.add_argument("--execution-id", help="Explicit correlation for controlled fact projection")
     args = parser.parse_args(argv)
+    facts_mode = args.facts_case is not None or args.facts_event is not None
+    facts_requested = facts_mode or args.execution_id is not None
     try:
-        if args.facts_case and args.facts_event:
+        if args.facts_case is not None and args.facts_event is not None:
             raise QualityError("fixture and operator event modes are distinct")
-        if bool(args.facts_case or args.facts_event) != bool(args.execution_id):
+        if facts_mode != (args.execution_id is not None):
             raise QualityError("facts projection requires both fixture and execution identities")
-        if args.facts_event:
-            report = run_ho_det_001_event_facts(args.detections_root, args.detections_ref, read_ho_det_001_event(args.facts_event), args.execution_id)
+        if any(value == "" for value in (args.facts_case, args.facts_event, args.execution_id)):
+            raise QualityError("facts projection identities and input path must be nonempty")
+        if args.facts_event is not None:
+            report = run_ho_det_001_event_facts(args.detections_root, args.detections_ref, read_ho_det_001_event(Path(args.facts_event)), args.execution_id)
         else:
-            report = run_ho_det_001_facts(args.detections_root, args.detections_ref, args.facts_case, args.execution_id) if args.facts_case else run_quality(args.detections_root, args.detections_ref)
+            report = run_ho_det_001_facts(args.detections_root, args.detections_ref, args.facts_case, args.execution_id) if args.facts_case is not None else run_quality(args.detections_root, args.detections_ref)
         if args.verify:
-            try:
-                supplied = strict_json_object(args.verify.read_text(encoding="utf-8"), "quality report")
-            except ValueError as exc:
-                raise QualityError("supplied quality receipt is invalid") from exc
+            supplied = read_quality_receipt(args.verify)
             if canonical(supplied) != canonical(report):
                 raise QualityError("replayed source execution differs from supplied report")
         print(json.dumps(report, indent=2, sort_keys=True, allow_nan=False))
         return 0 if report["status"] in {"PASS", "EVALUATED"} else 1
     except (QualityError, ContractFailure, OSError, UnicodeError, RecursionError) as exc:
-        error = "selected fact source, input or receipt unavailable or invalid" if args.facts_case or args.facts_event else str(exc)
+        error = "selected fact source, input or receipt unavailable or invalid" if facts_requested else str(exc)
         print(json.dumps({"status": "BLOCKED", "error": error, "boundary": {**BOUNDARY, "proof_ceiling": "SOURCE_EXISTS"}}))
         return 2
 

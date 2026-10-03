@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import copy
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 import io
 import json
 from pathlib import Path
@@ -181,6 +181,19 @@ class HoDet001FactsTests(unittest.TestCase):
 
     def receipt(self, case_id=None):
         return quality.run_ho_det_001_facts(Path("selected-detections"), "a" * 40, case_id or self.rows[0]["id"], self.execution_id, self.root)
+
+    @contextmanager
+    def receipt_stream(self, raw):
+        original_open = Path.open
+        stream = io.BytesIO(raw)
+        def selected_open(path, *args, **kwargs):
+            if path == Path("private-selected-receipt.json"):
+                self.assertEqual(args, ("rb",))
+                return stream
+            return original_open(path, *args, **kwargs)
+        with patch.object(Path, "open", autospec=True, side_effect=selected_open), \
+             patch.object(stream, "read", wraps=stream.read) as read:
+            yield read
 
     def test_projection_uses_source_predicates_and_keeps_parent_unknown(self):
         rule = {"detection_id": "HO-DET-001", "detection": {
@@ -439,11 +452,11 @@ class HoDet001FactsTests(unittest.TestCase):
                     with patch.object(quality, "git", side_effect=self.fake_git), \
                          patch.object(quality, "source_identity", side_effect=self.identity), \
                          patch.object(quality, "read_ho_det_001_event", return_value=event), \
-                         patch.object(Path, "read_text", return_value=raw) as receipt_reader, \
+                         self.receipt_stream(raw.encode()) as receipt_reader, \
                          redirect_stdout(stdout), redirect_stderr(stderr):
                         result = quality.main(["--detections-root", "private-selected-source", "--detections-ref", "a" * 40,
                                                "--execution-id", self.execution_id, "--verify", "private-selected-receipt.json", *mode])
-                    receipt_reader.assert_called_once_with(encoding="utf-8")
+                    receipt_reader.assert_called_once_with(quality.MAX_RECEIPT_BYTES + 1)
                     self.assertEqual(result, 2)
                     report = json.loads(stdout.getvalue())
                     self.assertEqual(report["status"], "BLOCKED")
@@ -466,11 +479,11 @@ class HoDet001FactsTests(unittest.TestCase):
                     with patch.object(quality, "git", side_effect=self.fake_git), \
                          patch.object(quality, "source_identity", side_effect=self.identity), \
                          patch.object(quality, "read_ho_det_001_event", return_value=event), \
-                         patch.object(Path, "read_text", return_value=raw) as receipt_reader, \
+                         self.receipt_stream(raw.encode()) as receipt_reader, \
                          redirect_stdout(stdout), redirect_stderr(stderr):
                         result = quality.main(["--detections-root", "private-selected-source", "--detections-ref", "a" * 40,
                                                "--execution-id", self.execution_id, "--verify", "private-selected-receipt.json", *mode])
-                    receipt_reader.assert_called_once_with(encoding="utf-8")
+                    receipt_reader.assert_called_once_with(quality.MAX_RECEIPT_BYTES + 1)
                     self.assertEqual(result, 2)
                     report = json.loads(stdout.getvalue())
                     self.assertEqual(report["status"], "BLOCKED")
@@ -498,6 +511,92 @@ class HoDet001FactsTests(unittest.TestCase):
                             verify(changed, Path("selected-detections"), "a" * 40, independent_input, self.execution_id, self.root)
                         self.assertNotIn("PRIVATE_RECEIPT_SENTINEL", str(failure.exception))
                         self.assertEqual(str(failure.exception), "canonical value must be supported finite JSON")
+
+    def test_receipt_reader_checks_byte_bound_before_decode_or_parse(self):
+        raw = b"\xff" * (quality.MAX_RECEIPT_BYTES + 100)
+        with self.receipt_stream(raw) as read, patch.object(quality, "strict_json_object") as parse:
+            with self.assertRaisesRegex(quality.QualityError, "supplied quality receipt unavailable or invalid"):
+                quality.read_quality_receipt(Path("private-selected-receipt.json"))
+        read.assert_called_once_with(quality.MAX_RECEIPT_BYTES + 1)
+        parse.assert_not_called()
+        for size in (65537, quality.MAX_RECEIPT_BYTES):
+            raw = b'{"status":"PASS"}'
+            raw += b" " * (size - len(raw))
+            with self.subTest(size=size), self.receipt_stream(raw) as read:
+                self.assertEqual(quality.read_quality_receipt(Path("private-selected-receipt.json")), {"status": "PASS"})
+            read.assert_called_once_with(quality.MAX_RECEIPT_BYTES + 1)
+
+    def test_oversized_receipt_blocks_both_facts_cli_modes_without_context(self):
+        raw = b'{"private":"PRIVATE_RECEIPT_SENTINEL"}' + b" " * quality.MAX_RECEIPT_BYTES
+        event = {"Image": "\\powershell.exe", "CommandLine": "powershell.exe -enc REDACTED"}
+        for mode in (["--facts-case", self.rows[0]["id"]], ["--facts-event", "private-selected-event.json"]):
+            with self.subTest(mode=mode):
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with patch.object(quality, "git", side_effect=self.fake_git), \
+                     patch.object(quality, "source_identity", side_effect=self.identity), \
+                     patch.object(quality, "read_ho_det_001_event", return_value=event), \
+                     self.receipt_stream(raw) as read, redirect_stdout(stdout), redirect_stderr(stderr):
+                    result = quality.main(["--detections-root", "private-selected-source", "--detections-ref", "a" * 40,
+                                           "--execution-id", self.execution_id, "--verify", "private-selected-receipt.json", *mode])
+                read.assert_called_once_with(quality.MAX_RECEIPT_BYTES + 1)
+                self.assertEqual(result, 2)
+                report = json.loads(stdout.getvalue())
+                self.assertEqual(report["status"], "BLOCKED")
+                self.assertEqual(report["error"], "selected fact source, input or receipt unavailable or invalid")
+                self.assertEqual(report["boundary"]["proof_ceiling"], "SOURCE_EXISTS")
+                self.assertFalse(report["boundary"]["proof_promotion_authority"])
+                for private in ("PRIVATE_RECEIPT_SENTINEL", "private-selected", "Traceback"):
+                    self.assertNotIn(private, stdout.getvalue() + stderr.getvalue())
+                self.assertEqual(stderr.getvalue(), "")
+
+    def test_empty_explicit_facts_options_block_before_source_or_input_execution(self):
+        variants = (["--facts-case", ""], ["--facts-case", "", "--execution-id", ""],
+                    ["--facts-case", "", "--execution-id", self.execution_id],
+                    ["--facts-case", self.rows[0]["id"], "--execution-id", ""],
+                    ["--facts-event", "", "--execution-id", self.execution_id],
+                    ["--facts-event", "private-selected-event.json", "--execution-id", ""],
+                    ["--execution-id", ""], ["--execution-id", self.execution_id],
+                    ["--facts-case", "", "--facts-event", "private-selected-event.json", "--execution-id", self.execution_id])
+        for variant in variants:
+            with self.subTest(args=variant):
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with patch.object(quality, "run_quality") as general, \
+                     patch.object(quality, "run_ho_det_001_facts") as controlled, \
+                     patch.object(quality, "run_ho_det_001_event_facts") as operator, \
+                     patch.object(quality, "read_ho_det_001_event") as read, \
+                     patch.object(quality, "source_identity") as source, \
+                     redirect_stdout(stdout), redirect_stderr(stderr):
+                    result = quality.main(["--detections-root", "private-selected-source", "--detections-ref", "a" * 40, *variant])
+                for operation in (general, controlled, operator, read, source):
+                    operation.assert_not_called()
+                self.assertEqual(result, 2)
+                report = json.loads(stdout.getvalue())
+                self.assertEqual(report["status"], "BLOCKED")
+                self.assertEqual(report["error"], "selected fact source, input or receipt unavailable or invalid")
+                self.assertEqual(report["boundary"]["proof_ceiling"], "SOURCE_EXISTS")
+                for private in ("private-selected", "Traceback"):
+                    self.assertNotIn(private, stdout.getvalue() + stderr.getvalue())
+                self.assertEqual(stderr.getvalue(), "")
+
+    def test_saved_facts_receipts_over_event_bound_reexecute_in_both_cli_modes(self):
+        event = {"Image": "\\powershell.exe", "CommandLine": "powershell.exe -enc REDACTED"}
+        with patch.object(quality, "git", side_effect=self.fake_git), patch.object(quality, "source_identity", side_effect=self.identity):
+            controlled = self.receipt()
+            operator = quality.run_ho_det_001_event_facts(Path("selected-detections"), "a" * 40, event, self.execution_id, self.root)
+            for mode, receipt in ((["--facts-case", self.rows[0]["id"]], controlled),
+                                  (["--facts-event", "private-selected-event.json"], operator)):
+                with self.subTest(mode=mode):
+                    raw = json.dumps(receipt, indent=2, sort_keys=True).encode()
+                    raw += b" " * (65537 - len(raw))
+                    stdout, stderr = io.StringIO(), io.StringIO()
+                    with patch.object(quality, "read_ho_det_001_event", return_value=event), \
+                         self.receipt_stream(raw) as read, redirect_stdout(stdout), redirect_stderr(stderr):
+                        result = quality.main(["--detections-root", "private-selected-source", "--detections-ref", "a" * 40,
+                                               "--execution-id", self.execution_id, "--verify", "private-selected-receipt.json", *mode])
+                    self.assertEqual(result, 0, stdout.getvalue() + stderr.getvalue())
+                    self.assertEqual(json.loads(stdout.getvalue()), receipt)
+                    read.assert_called_once_with(quality.MAX_RECEIPT_BYTES + 1)
+                    self.assertEqual(stderr.getvalue(), "")
 
 
 if __name__ == "__main__":
