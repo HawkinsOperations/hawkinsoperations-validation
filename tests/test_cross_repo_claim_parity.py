@@ -437,6 +437,31 @@ class CrossRepoClaimParityTests(unittest.TestCase):
         del schema["examples"]
         self.assertTrue(scanner.structured_claim_items(schema, ["HO-DET-001"], "platform", "schema.json", True))
 
+    def test_owning_negative_claim_lists_allow_only_bounded_enumerated_statements(self):
+        record = {"detection_id": "HO-DET-001", "not_proven": ["runtime-active detection", "production-ready"],
+                  "blocked_repo_claim": ["HO-DET-001 is runtime-active", "HO-DET-001 has live Splunk proof",
+                                         "HO-DET-001 has AI-approved disposition"]}
+        self.assertEqual(scanner.structured_claim_items(record, ["HO-DET-001"], "validation", "index.json", True), [])
+        for field, bad in (("not_proven", "production-ready = 1"),
+                           ("blocked_repo_claim", "HO-DET-001 is production-ready and PUBLIC_SAFE is true"),
+                           ("blocked_repo_claim", {"summary": "production-ready is true"})):
+            with self.subTest(field=field, bad=bad):
+                self.assertTrue(scanner.structured_claim_items({"detection_id": "HO-DET-001", field: [bad]},
+                                                               ["HO-DET-001"], "validation", "index.json", True))
+
+    def test_explicit_negative_proof_and_blocked_examples_remain_nonclaims(self):
+        for text in (
+            "Boundary: This does not prove HO-DET-001/Sysmon telemetry is Cribl-routed, does not prove Cribl-routed telemetry for production or fleet scope.",
+            'HO-DET-001 incomingClaim: "Blocked example: the detection package is production ready."',
+            "HO-DET-001 Verifier output: `RUNTIME_ACTIVE=false`; `SIGNAL_OBSERVED=false`.",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(scanner.scan_promotion_terms(text, "HO-DET-001", "proof", "record.md", True), [])
+                self.assertEqual(scanner.scan_status_tokens(text, "HO-DET-001", "proof", "record.md", True), [])
+        self.assertTrue(scanner.scan_status_tokens("HO-DET-001 RUNTIME_ACTIVE=false; RUNTIME_ACTIVE=true", "HO-DET-001", "proof", "record.md", True))
+        self.assertTrue(scanner.scan_status_tokens("HO-DET-001 RUNTIME_ACTIVE=0.5", "HO-DET-001", "proof", "record.md", True))
+        self.assertTrue(scanner.scan_promotion_terms("This does not prove public safety and HO-DET-001 is production-ready", "HO-DET-001", "proof", "record.md", True))
+
     def test_structured_statuses_are_bound_to_their_own_records(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td).resolve()

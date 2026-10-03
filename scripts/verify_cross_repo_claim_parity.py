@@ -305,6 +305,12 @@ def has_negative_context_for_phrase(
         r"\b(?:not|no|never|without)(?:\s+(?:claim|claiming|prove|proving|establish|support|assert))?\s*$",
         line[clause_start:start], re.IGNORECASE,
     )
+    if re.match(r"\s*(?:is|are|:|=)\s*(?:false|no|0)(?![\w.])", direct_suffix, re.IGNORECASE):
+        return True
+    explicit_negative_claim = re.search(
+        r"\b(?:(?:does|do)\s+not\s+(?:prove|claim|authorize|support)|blocked\s+example:)",
+        re.split(r"\band\b", line[clause_start:start], flags=re.IGNORECASE)[-1], re.IGNORECASE,
+    )
     attached_prefix = re.search(r"\b(?:is|are|has|have)\s*$", line[clause_start:start], re.IGNORECASE)
     if not directly_negated and re.match(
         r"\s*(?:is|are|:|=)\s*(?:true|yes|active|approved|authorized|confirmed|enabled|live|ready|observed|[-+]?[1-9][0-9]*)\b",
@@ -312,7 +318,7 @@ def has_negative_context_for_phrase(
     ):
         return False
     if has_negative_context(local):
-        if not directly_negated and attached_prefix:
+        if not directly_negated and not explicit_negative_claim and attached_prefix:
             return False
         return True
     direct_suffix = line[end:clause_end]
@@ -561,6 +567,7 @@ def structured_claim_items(
     context_ids: tuple[str, ...] = (),
     status_by_id: dict[str, set[str]] | None = None,
     schema_context: bool = False,
+    list_item: bool = False,
 ) -> list[DriftItem]:
     items: list[DriftItem] = []
     leaf = ancestry[-1] if ancestry else ""
@@ -620,6 +627,7 @@ def structured_claim_items(
                     context_ids,
                     status_by_id,
                     schema_context,
+                    True,
                 )
             )
         return items
@@ -643,12 +651,20 @@ def structured_claim_items(
     if isinstance(value, str):
         mentioned_ids = tuple(identity for identity in detection_ids
                               if identity.casefold() in value.casefold())
+        bounded_terms = (*PROMOTION_TERMS, *REQUIRED_BLOCKED_CLAIMS, *DANGEROUS_STATUS_TOKENS)
         bounded_leaf = leaf in {
             "blocked_claims", "blocked_public_claims", "claims_not_supported",
             "does_not_support", "does_not_prove", "not_claimed_here",
-        } and value.strip().casefold() in {
-            term.casefold() for term in (*PROMOTION_TERMS, *REQUIRED_BLOCKED_CLAIMS, *DANGEROUS_STATUS_TOKENS)
-        }
+        } and value.strip().casefold() in {term.casefold() for term in bounded_terms}
+        if list_item and leaf in {"not_proven", "blocked_repo_claim"}:
+            # These owner fields enumerate blocked noun phrases or quoted claims,
+            # never free-form summaries or nested claim-bearing records.
+            identity_prefix = "|".join(re.escape(identity) for identity in detection_ids)
+            bounded_leaf = any(re.fullmatch(
+                rf"(?:(?:{identity_prefix})\s+(?:is|has)\s+)?{re.escape(term)}"
+                r"(?:\s+(?:detection|status|proof|public proof|runtime proof))?",
+                value.strip(), re.IGNORECASE,
+            ) for term in bounded_terms)
         for detection_id in mentioned_ids or context_ids:
             if status_by_id is not None:
                 status_by_id[detection_id].update(extract_status_tokens(value))
