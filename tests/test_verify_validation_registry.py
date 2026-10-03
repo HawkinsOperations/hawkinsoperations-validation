@@ -2,6 +2,8 @@ import copy
 import importlib.util
 import json
 import os
+import shutil
+import sys
 import subprocess
 import tempfile
 import unittest
@@ -154,6 +156,93 @@ class VerifyValidationRegistryTests(unittest.TestCase):
             "ci_source_dependency_mode": "none",
             "notes": "controlled validation only",
         }
+
+    def _standalone_registry_clone(self, org):
+        clone = org / "hawkinsoperations-validation"
+        shutil.copytree(self.root, clone)
+        shutil.copyfile(MODULE_PATH, clone / "scripts/verify_validation_registry.py")
+        registry = copy.deepcopy(self.registry)
+        registry["packages"][0].update({"source_dependency_required": True,
+            "source_owner": "hawkinsoperations-detections",
+            "source_reference": "hawkinsoperations-detections/detections/example",
+            "ci_source_dependency_mode": "required"})
+        (clone / "validation/VALIDATION_REGISTRY.yml").write_text(json.dumps(registry), encoding="utf-8")
+        report_path = clone / "reports/example/validation-result.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report["source_owner"] = "hawkinsoperations-detections"
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        return clone
+
+    def _run_registry_cli(self, clone, *args):
+        return subprocess.run([sys.executable, "-B", str(clone / "scripts/verify_validation_registry.py"), *args],
+                              cwd=clone, capture_output=True, text=True, env=module.sanitized_git_environment())
+
+    def test_standalone_registry_cli_requires_explicit_missing_source_mode(self):
+        with tempfile.TemporaryDirectory() as td:
+            clone = self._standalone_registry_clone(Path(td).resolve())
+            for args in ((), ("--source-contract", "required")):
+                result = self._run_registry_cli(clone, *args)
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn("source-backed validation requires", result.stderr)
+            result = self._run_registry_cli(clone, "--source-contract", "skip-if-missing")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("SOURCE_CONTRACT=skipped", result.stdout)
+            self.assertIn("VALIDATION_REGISTRY=pass", result.stdout)
+            result = self._run_registry_cli(clone, "--source-contract", "skip-if-missing", "--format", "json")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            inventory = json.loads(result.stdout)
+            self.assertEqual(inventory["source_contract"], "skipped")
+            self.assertNotIn("detection_source_observation", inventory)
+            self.assertEqual(inventory["packages"][0]["public_safe_status"], "NOT_PUBLIC_SAFE")
+
+    def test_standalone_registry_cli_rejects_partial_or_explicit_source_handoffs(self):
+        with tempfile.TemporaryDirectory() as td:
+            org = Path(td).resolve()
+            clone = self._standalone_registry_clone(org)
+            for supplied in (("--detections-root", str(org / "missing")),
+                             ("--detections-ref", "HEAD"),
+                             ("--source-manifest", str(clone / "validation/SOURCE_AUTHORITY_MANIFEST.json"))):
+                result = self._run_registry_cli(clone, "--source-contract", "skip-if-missing", *supplied)
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertNotIn("SOURCE_CONTRACT=skipped", result.stdout)
+            sibling = org / "hawkinsoperations-detections"
+            for shape in ("directory", "file"):
+                if shape == "directory": sibling.mkdir()
+                else: sibling.write_text("partial handoff", encoding="utf-8")
+                result = self._run_registry_cli(clone, "--source-contract", "skip-if-missing")
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertNotIn("SOURCE_CONTRACT=skipped", result.stdout)
+                if shape == "directory": sibling.rmdir()
+                else: sibling.unlink()
+            sibling.mkdir()
+            for command in (("init",), ("config", "user.name", "test"),
+                            ("config", "user.email", "test@example.invalid"),
+                            ("remote", "add", "origin", "https://github.com/HawkinsOperations/hawkinsoperations-detections.git")):
+                subprocess.run(["git", "-C", str(sibling), *command], check=True, capture_output=True)
+            (sibling / "README.md").write_text("incomplete public source fixture", encoding="utf-8")
+            subprocess.run(["git", "-C", str(sibling), "add", "README.md"], check=True, capture_output=True)
+            subprocess.run(["git", "-C", str(sibling), "commit", "-m", "partial source"], check=True, capture_output=True)
+            result = self._run_registry_cli(clone, "--source-contract", "skip-if-missing")
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("VALIDATION_REGISTRY=fail", result.stderr)
+            self.assertNotIn("SOURCE_CONTRACT=skipped", result.stdout)
+            (sibling / "README.md").write_text("dirty source fixture", encoding="utf-8")
+            result = self._run_registry_cli(clone, "--source-contract", "skip-if-missing")
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("dirty", result.stderr)
+            self.assertNotIn("SOURCE_CONTRACT=skipped", result.stdout)
+
+    def test_standalone_registry_cli_still_checks_local_report_authority(self):
+        with tempfile.TemporaryDirectory() as td:
+            clone = self._standalone_registry_clone(Path(td).resolve())
+            report_path = clone / "reports/example/validation-result.json"
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            report["runtime_active"] = True
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            result = self._run_registry_cli(clone, "--source-contract", "skip-if-missing")
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("VALIDATION_REGISTRY=fail", result.stderr)
+            self.assertNotIn("SOURCE_CONTRACT=skipped", result.stdout)
 
     def test_valid_registry_passes(self):
         packages = module.validate_registry(self.registry, self.root)

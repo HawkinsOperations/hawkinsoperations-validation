@@ -1817,6 +1817,10 @@ def main() -> int:
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--detections-root", type=Path)
     parser.add_argument(
+        "--source-contract", choices=("required", "skip-if-missing"), default="required",
+        help="Require the detection handoff, or explicitly check standalone registry truth when only its sibling is absent.",
+    )
+    parser.add_argument(
         "--detections-ref",
         help="intended checked detections ref; required for detached source checkouts",
     )
@@ -1829,9 +1833,10 @@ def main() -> int:
     try:
         packages = validate_registry(load_registry(args.registry), ROOT)
         detections_root = args.detections_root
+        source_skipped = False
         if detections_root is None:
             sibling = ROOT.parent / "hawkinsoperations-detections"
-            if sibling.is_dir():
+            if sibling.exists() or sibling.is_symlink():
                 detections_root = sibling
         if detections_root is not None:
             detections_root = detections_root.resolve()
@@ -1846,8 +1851,12 @@ def main() -> int:
                 load_detection_source_inventory(detections_root),
                 manifest,
             )
+        elif args.detections_ref is not None or args.source_manifest is not None:
+            fail("explicit source handoff inputs require a detections repository")
         elif any(package["source_dependency_required"] for package in packages):
-            fail("source-backed validation requires an explicit or sibling detections repository")
+            if args.source_contract == "required":
+                fail("source-backed validation requires an explicit or sibling detections repository")
+            source_skipped = True
     except RegistryFailure as exc:
         print(f"VALIDATION_REGISTRY=fail: {exc}", file=sys.stderr)
         return 1
@@ -1856,8 +1865,12 @@ def main() -> int:
         inventory = build_inventory(packages, ROOT)
         if detections_root is not None:
             inventory["detection_source_observation"] = source_state
+        elif source_skipped:
+            inventory["source_contract"] = "skipped"
         print(json.dumps(inventory, indent=2, sort_keys=True))
         return 0
+    if source_skipped:
+        print("SOURCE_CONTRACT=skipped")
     print("VALIDATION_REGISTRY=pass")
     print(f"REGISTERED_PACKAGES={len(packages)}")
     for package in packages:
