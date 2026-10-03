@@ -20,7 +20,7 @@ from datetime import date
 from pathlib import Path
 from typing import Iterable
 
-from verify_validation_registry import CANONICAL_ID, RegistryFailure, _load_strict_yaml
+from verify_validation_registry import AUTHORITY_PROMOTION_KEYS, CANONICAL_ID, RegistryFailure, _load_strict_yaml
 
 DETECTION_IDS = [
     "HO-DET-001",
@@ -635,6 +635,7 @@ def structured_claim_items(
     cumulative = "_".join(filter(None, ancestry))
     if (
         any("_".join(ancestry[offset:]) in DANGEROUS_AUTHORITY_PATHS
+            or "".join(ancestry[offset:]).replace("_", "") in AUTHORITY_PROMOTION_KEYS
             for offset in range(len(ancestry)))
         and not has_negative_context(leaf)
         and assertive_authority_value(value)
@@ -987,7 +988,7 @@ def scan_surface(
         lines = text.splitlines()
         prose_contract = is_public_boundary_contract(text)
         for detection_id in detection_ids:
-            if detection_id in text:
+            if detection_id.casefold() in text.casefold():
                 associated_text = "\n".join(
                     line
                     for index, line in enumerate(lines)
