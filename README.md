@@ -128,7 +128,7 @@ Detailed route notes live in [`validation/successor/ho-det-001/README.md`](valid
 Run every registry-listed validation package check:
 
 ```powershell
-python -B scripts/verify_validation_registry.py
+python -B scripts/verify_validation_registry.py --source-contract skip-if-missing
 python -B scripts/verify_all_validation_packages.py
 ```
 
@@ -139,13 +139,19 @@ python -B scripts/verify_all_validation_packages.py
 These commands are the safest first path when a reviewer clones only `hawkinsoperations-validation`:
 
 ```powershell
-python -B scripts/verify_validation_registry.py
+python -B scripts/verify_validation_registry.py --source-contract skip-if-missing
 python -B scripts/verify_all_validation_packages.py
 python -B scripts/verify_validation_contract.py
 python -B scripts/verify_wazuh_logtest_registry.py
 python -B scripts/verify_ho_lab_wazuh_001.py
 python -B -m unittest discover -s tests
 ```
+
+The registry command defaults to required source verification. The explicit
+`skip-if-missing` mode checks owned registry/report contracts and labels the
+missing sibling check `SOURCE_CONTRACT=skipped`; an existing, partial, dirty,
+or explicitly supplied source handoff still undergoes strict verification.
+CI keeps required mode and its pinned source checkout.
 
 For HO-DET-001 alone in a single-repo clone:
 
