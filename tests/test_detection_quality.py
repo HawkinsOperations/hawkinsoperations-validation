@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
 from pathlib import Path
@@ -244,6 +245,60 @@ class HoDet001FactsTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(quality.QualityError):
                 quality.project_ho_det_001_facts(self.rule, {**self.rows[0]["event"], **change})
 
+    def test_process_selector_source_drift_blocks_matching_unsupported_processes(self):
+        for name, field, source, event in (
+            ("selection_image", "Image|endswith", "\\cmd.exe",
+             {"Image": "\\cmd.exe", "CommandLine": "cmd.exe -enc REDACTED"}),
+            ("selection_original_filename", "OriginalFileName|contains", "cmd.exe",
+             {"OriginalFileName": "cmd.exe", "CommandLine": "cmd.exe -enc REDACTED"}),
+        ):
+            for values in (source, [source], ["\\powershell.exe" if name == "selection_image" else "PowerShell", source]):
+                with self.subTest(name=name, values=values):
+                    changed = copy.deepcopy(self.rule)
+                    changed["detection"][name][field] = values
+                    self.assertTrue(quality.execute(changed["detection"], event))
+                    with self.assertRaisesRegex(quality.QualityError, "source process selector"):
+                        quality.project_ho_det_001_facts(changed, event)
+
+    def test_supported_process_selector_values_preserve_casefold_and_source_matching(self):
+        for image, original, event, identity in (
+            ("\\PoWeRsHeLl.ExE", ["PowerShell", "pwsh"],
+             {"Image": "\\TOOLS\\POWERSHELL.EXE", "CommandLine": "host -enc REDACTED"}, "POWERSHELL"),
+            (["\\powershell.exe", "\\pwsh.exe"], "PwSh",
+             {"OriginalFileName": "PWSH.DLL", "CommandLine": "host -enc REDACTED"}, "PWSH"),
+            ("\\pwsh.exe", "pwsh",
+             {"Image": "\\powershell.exe", "CommandLine": "host -enc REDACTED"}, "UNKNOWN"),
+        ):
+            with self.subTest(image=image, original=original):
+                changed = copy.deepcopy(self.rule)
+                changed["detection"]["selection_image"]["Image|endswith"] = image
+                changed["detection"]["selection_original_filename"]["OriginalFileName|contains"] = original
+                before = copy.deepcopy(changed)
+                facts = quality.project_ho_det_001_facts(changed, event)
+                self.assertEqual(changed, before)
+                self.assertEqual(facts["executable_identity"], identity)
+                self.assertEqual(facts["image_selector_match"], quality.match_selector(changed["detection"]["selection_image"], event))
+                self.assertEqual(facts["original_filename_selector_match"], quality.match_selector(changed["detection"]["selection_original_filename"], event))
+                self.assertEqual(quality.execute(changed["detection"], event), identity != "UNKNOWN")
+
+    def test_source_process_selector_failure_is_blocked_without_event_context(self):
+        self.rule["detection"]["selection_image"]["Image|endswith"] = ["\\cmd.exe"]
+        event = {"Image": "\\cmd.exe", "CommandLine": "cmd.exe -enc PRIVATE_CONTEXT_SENTINEL"}
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with patch.object(quality, "git", side_effect=self.fake_git), patch.object(quality, "source_identity", side_effect=self.identity), \
+             patch.object(quality, "read_ho_det_001_event", return_value=event), redirect_stdout(stdout), redirect_stderr(stderr):
+            result = quality.main(["--detections-root", "private-selected-source", "--detections-ref", "a" * 40,
+                                   "--facts-event", "private-selected-event.json", "--execution-id", self.execution_id])
+        self.assertEqual(result, 2)
+        report = json.loads(stdout.getvalue())
+        self.assertEqual(report["status"], "BLOCKED")
+        self.assertEqual(report["error"], "selected fact source, input or receipt unavailable or invalid")
+        self.assertEqual(report["boundary"]["proof_ceiling"], "SOURCE_EXISTS")
+        self.assertFalse(report["boundary"]["proof_promotion_authority"])
+        for private in ("cmd.exe", "PRIVATE_CONTEXT_SENTINEL", "private-selected"):
+            self.assertNotIn(private, stdout.getvalue() + stderr.getvalue())
+        self.assertEqual(stderr.getvalue(), "")
+
     def test_receipt_tampering_rehash_does_not_bypass_owner_reexecution(self):
         with patch.object(quality, "git", side_effect=self.fake_git), patch.object(quality, "source_identity", side_effect=self.identity):
             receipt = self.receipt()
@@ -344,6 +399,33 @@ class HoDet001FactsTests(unittest.TestCase):
                 with self.assertRaises(quality.QualityError) as failure:
                     quality.read_ho_det_001_event(Path("operator-selected.json"))
                 self.assertNotIn("private", str(failure.exception))
+
+    def test_oversized_integer_parse_is_sanitized_and_cli_blocks_without_traceback(self):
+        raw = b'{"EventID":' + b"9" * 5000 + b',"CommandLine":"PRIVATE_CONTEXT_SENTINEL"}'
+        self.assertLess(len(raw), 65536)
+        previous_limit = sys.get_int_max_str_digits()
+        try:
+            sys.set_int_max_str_digits(4300)
+            with patch.object(Path, "open", return_value=io.BytesIO(raw)):
+                with self.assertRaisesRegex(quality.QualityError, "operator event unavailable or invalid") as failure:
+                    quality.read_ho_det_001_event(Path("private-selected-event.json"))
+            self.assertNotIn("PRIVATE_CONTEXT_SENTINEL", str(failure.exception))
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with patch.object(Path, "open", return_value=io.BytesIO(raw)), \
+                 patch.object(quality, "source_identity") as source, redirect_stdout(stdout), redirect_stderr(stderr):
+                result = quality.main(["--detections-ref", "a" * 40, "--facts-event", "private-selected-event.json",
+                                       "--execution-id", self.execution_id])
+            source.assert_not_called()
+            self.assertEqual(result, 2)
+            report = json.loads(stdout.getvalue())
+            self.assertEqual(report["status"], "BLOCKED")
+            self.assertEqual(report["error"], "selected fact source, input or receipt unavailable or invalid")
+            self.assertEqual(report["boundary"]["proof_ceiling"], "SOURCE_EXISTS")
+            for private in ("PRIVATE_CONTEXT_SENTINEL", "private-selected", "9999999999", "Traceback"):
+                self.assertNotIn(private, stdout.getvalue() + stderr.getvalue())
+            self.assertEqual(stderr.getvalue(), "")
+        finally:
+            sys.set_int_max_str_digits(previous_limit)
 
 
 if __name__ == "__main__":

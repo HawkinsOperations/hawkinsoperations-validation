@@ -366,6 +366,14 @@ def project_ho_det_001_facts(rule: dict, event: dict) -> dict:
     for name, field in (("selection_image", "Image|endswith"), ("selection_original_filename", "OriginalFileName|contains"), ("selection_cli", "CommandLine|contains")):
         if set(detection[name]) != {field}:
             raise QualityError("source field binding changed beyond the facts contract")
+    for name, field, supported in (
+        ("selection_image", "Image|endswith", {"\\powershell.exe", "\\pwsh.exe"}),
+        ("selection_original_filename", "OriginalFileName|contains", {"powershell", "pwsh"}),
+    ):
+        values = detection[name][field]
+        values = values if isinstance(values, list) else [values]
+        if any(value.casefold() not in supported for value in values):
+            raise QualityError("source process selector lacks an approved sanitized category")
     indicators = detection["selection_cli"]["CommandLine|contains"]
     indicators = indicators if isinstance(indicators, list) else [indicators]
     if any(value.casefold() not in HO001_INDICATORS for value in indicators):
@@ -512,7 +520,7 @@ def read_ho_det_001_event(path: Path) -> dict:
         if len(raw) > 65536:
             raise QualityError("operator event exceeds size bound")
         return strict_json_object(raw.decode("utf-8"), "operator event")
-    except (OSError, UnicodeError, ContractFailure, RecursionError) as exc:
+    except (OSError, UnicodeError, ContractFailure, ValueError, RecursionError) as exc:
         raise QualityError("operator event unavailable or invalid") from exc
 
 
