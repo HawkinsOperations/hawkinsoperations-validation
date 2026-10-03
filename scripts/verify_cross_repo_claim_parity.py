@@ -22,7 +22,7 @@ from typing import Iterable
 
 from verify_validation_registry import (
     AUTHORITY_CLAIM_SUFFIXES, AUTHORITY_PROMOTION_KEYS, CANONICAL_ID, RegistryFailure,
-    _load_json, _load_strict_yaml, _rel_path, _validate_package_identity,
+    _explicitly_bounded_authority_value, _load_json, _load_strict_yaml, _rel_path, _validate_package_identity,
     _validate_registry_identity, _validate_report_shape, load_registry,
 )
 
@@ -257,11 +257,13 @@ def line_is_associated_with_detection(
     lines: list[str],
     index: int,
     detection_id: str,
+    detection_ids: list[str] | None = None,
 ) -> bool:
+    governed_ids = detection_ids if detection_ids is not None else DETECTION_IDS
     scoped_ids = {
         candidate
         for line in lines
-        for candidate in DETECTION_IDS
+        for candidate in governed_ids
         if candidate.casefold() in line.casefold()
     }
     if scoped_ids == {detection_id}:
@@ -278,7 +280,7 @@ def line_is_associated_with_detection(
             break
         referenced = [
             candidate
-            for candidate in DETECTION_IDS
+            for candidate in governed_ids
             if candidate.casefold() in candidate_line.casefold()
         ]
         if referenced:
@@ -286,19 +288,31 @@ def line_is_associated_with_detection(
     return False
 
 
+AFFIRMATIVE_CLAIM_PREDICATE = (
+    r"(?:is|are|has|have|proves|establishes|confirms|"
+    r"claims|declares|enables|enabled|observed|approved|authorized|deployed)"
+)
+
+
 def has_negative_context_for_phrase(
     lines: list[str],
     index: int,
     phrase: str,
     phrase_start: int | None = None,
+    detection_id: str | None = None,
+    detection_ids: list[str] | None = None,
 ) -> bool:
     line = lines[index]
     folded = line.casefold()
     start = folded.find(phrase.casefold()) if phrase_start is None else phrase_start
     if start < 0:
         return False
+    if re.fullmatch(rf'\s*\{{\s*label\s*:\s*["\']{re.escape(phrase)}["\']\s*,\s*value\s*:\s*["\'](?:false|0|blocked|not_approved)["\']\s*\}}\s*,?\s*', line, re.IGNORECASE):
+        return True
     end = start + len(phrase)
-    boundaries = re.compile(r"[;\r\n]|(?<=[.!?])\s+|\b(?:but|however|although|yet|while|whereas)\b", re.IGNORECASE)
+    governed_ids = detection_ids if detection_ids is not None else DETECTION_IDS
+    identities = "|".join(re.escape(identity) for identity in governed_ids)
+    boundaries = re.compile(rf"[;\r\n]|(?<=[.!?])\s+|\b(?:but|however|although|(?<!not )yet|while|whereas)\b|,\s*(?=(?:{identities})\b|(?:it|this)\s+(?:is|are|has|have)\b)", re.IGNORECASE)
     prefix_boundaries = list(boundaries.finditer(line[:start]))
     clause_start = prefix_boundaries[-1].end() if prefix_boundaries else 0
     suffix_boundary = boundaries.search(line[end:])
@@ -315,7 +329,7 @@ def has_negative_context_for_phrase(
         r"\b(?:(?:does|do)\s+not\s+(?:prove|claim|authorize|support)|blocked\s+example:)",
         re.split(r"\band\b", line[clause_start:start], flags=re.IGNORECASE)[-1], re.IGNORECASE,
     )
-    attached_prefix = re.search(r"\b(?:is|are|has|have)\s*$", line[clause_start:start], re.IGNORECASE)
+    attached_prefix = re.search(rf"(?<![-_\w]){AFFIRMATIVE_CLAIM_PREDICATE}(?![-_\w])\s*$", line[clause_start:start], re.IGNORECASE)
     if not directly_negated and re.match(
         r"\s*(?:is|are|:|=)\s*(?:true|yes|active|approved|authorized|confirmed|enabled|live|ready|observed|[-+]?[1-9][0-9]*)\b",
         direct_suffix, re.IGNORECASE,
@@ -333,59 +347,73 @@ def has_negative_context_for_phrase(
         re.IGNORECASE,
     ):
         return True
-    if index > 0:
-        previous = lines[index - 1]
-        if (
-            previous.strip()
-            and not previous.rstrip().endswith((".", "?", "!"))
-            and has_negative_context(previous)
-        ):
-            return True
-    stripped = line.lstrip()
-    if stripped.startswith(("-", "*")) or line.startswith((" ", "\t")):
-        for section_index in range(index - 1, max(-1, index - 80), -1):
-            candidate = lines[section_index]
-            candidate_stripped = candidate.lstrip()
-            if candidate_stripped.startswith("#"):
-                return has_negative_context(candidate)
-            if candidate.rstrip().endswith(":") and has_negative_context(candidate):
-                return True
-    for parent_index in range(index - 1, -1, -1):
-        candidate = lines[parent_index]
-        if not candidate.strip():
-            break
-        if candidate.strip() and candidate.rstrip().endswith(":") and has_negative_context(candidate):
-            return True
-        if candidate.lstrip().startswith("#"):
-            if has_negative_context(candidate):
-                return True
-            break
-    continuation = stripped.startswith(("-", "*")) or line.startswith((" ", "\t"))
-    for offset in range(1, 41):
-        parent_index = index - offset
-        if parent_index < 0:
-            break
-        candidate = lines[parent_index]
-        if not candidate.strip():
-            break
-        if candidate.rstrip().endswith(":") and has_negative_context(candidate):
-            return True
-        candidate_stripped = candidate.lstrip()
-        if (
-            candidate_stripped
-            and not candidate_stripped.startswith(("-", "*"))
-            and not candidate.startswith((" ", "\t"))
-            and candidate.rstrip().endswith(":")
-        ):
-            break
-    paragraph: list[str] = []
-    for parent_index in range(index - 1, -1, -1):
-        candidate = lines[parent_index]
-        if not candidate.strip() or candidate.rstrip().endswith((".", "?", "!")):
-            break
-        paragraph.append(candidate)
-    if paragraph and has_negative_context(" ".join(reversed(paragraph))):
+    governed_ids = detection_ids if detection_ids is not None else DETECTION_IDS
+    def foreign_identity(candidate: str) -> bool:
+        return detection_id is not None and any(
+            identity.casefold() in candidate.casefold() and identity.casefold() != detection_id.casefold()
+            for identity in governed_ids
+        )
+    literal = r'(?:"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|`[^`]*`)'
+    # A complete current-line denial field owns its literal value. Extra fields,
+    # containers and affirmative text outside the literal cannot inherit it.
+    if re.fullmatch(rf"\s*does(?:Not|_not_| not )Prove\s*:\s*{literal}\s*,?\s*", line, re.IGNORECASE):
         return True
+    bounded_qualification = r"(?:\s+unless explicitly scoped to private controlled lab (?:evidence|signal observed)\.)?"
+    quoted_item_pattern = rf"\s*(?:[-*]\s+)?{literal}{bounded_qualification}\s*[,;]?\s*"
+    quoted_item = bool(re.fullmatch(quoted_item_pattern, line))
+    bare_item = bool(re.fullmatch(rf"\s*[-*]\s+{re.escape(phrase)}(?:\s+(?:status|proof))?\s*[.,]?\s*", line, re.IGNORECASE))
+    if quoted_item or bare_item:
+        for parent_index in range(index - 1, max(-1, index - 80), -1):
+            candidate = lines[parent_index]
+            caption = re.sub(r"^\s*#{1,6}\s+", "", candidate).strip().rstrip(": [")
+            for identity in governed_ids:
+                caption = re.sub(rf"^{re.escape(identity)}\s+", "", caption, flags=re.IGNORECASE)
+            if normalize_path_key(caption).replace("_", "") in {"blockedclaims", "blockedcurrentwording", "doesnotprove", "donotclaim"}:
+                return not foreign_identity(candidate)
+            if not candidate.strip() or re.fullmatch(quoted_item_pattern, candidate):
+                continue
+            if bare_item and re.fullmatch(r"\s*[-*]\s+[^.!?]+[,.]?\s*", candidate):
+                continue
+            break
+    # These connected bullets specify inputs that a verifier rejects. They do
+    # not assert the rejected state; a fresh subject or outside clause cannot
+    # acquire that role merely by appearing below the conditional caption.
+    criterion_pattern = r"\s*[-*]\s+(?:omits|uses|includes|promotes|claims|gives|decides)\s+[^;!?\n]+"
+    def safe_rejection_criterion(candidate: str) -> bool:
+        if not re.fullmatch(criterion_pattern, candidate, re.IGNORECASE) or any(
+            identity.casefold() in candidate.casefold() for identity in governed_ids
+        ) or re.search(r"\b(?:it|this)\s+(?:is|are|has|have)\b|[.]\s+\S", candidate, re.IGNORECASE):
+            return False
+        body = re.sub(r"^\s*[-*]\s+(?:omits|uses|includes|promotes|claims|gives|decides)\s+", "", candidate, flags=re.IGNORECASE)
+        return not any(term_is_affirmative_claim(body, term, detection_ids=governed_ids)
+                       for term in (*PROMOTION_TERMS, *DANGEROUS_STATUS_TOKENS))
+    if safe_rejection_criterion(line):
+        for parent_index in range(index - 1, max(-1, index - 40), -1):
+            candidate = lines[parent_index]
+            if candidate.strip() == "The verifier fails closed if the packet:":
+                return True
+            if not candidate.strip() or safe_rejection_criterion(candidate):
+                continue
+            break
+    if attached_prefix and term_is_affirmative_claim(line, phrase, detection_ids=governed_ids):
+        return False
+    # A fresh subject/predicate cannot borrow even the same identity's prior
+    # complete denial. Only unfinished, identity-bound denial lists wrap lines.
+    if (detection_id is not None and detection_id.casefold() in line.casefold()) or re.match(
+        r"\s*(?:[-*]\s+)?(?:this|it)\s+(?:is|are|has|have)\b", line, re.IGNORECASE
+    ):
+        return False
+    for parent_index in range(index - 1, max(-1, index - 40), -1):
+        candidate = lines[parent_index]
+        if not candidate.strip() or foreign_identity(candidate):
+            break
+        if has_negative_context(candidate) and (
+            candidate.rstrip().endswith((":", ","))
+            or re.search(r"\b(?:does|do|must)\s+not\s+(?:prove|claim|support|authorize)\s*$", candidate, re.IGNORECASE)
+        ):
+            return True
+        if candidate.rstrip().endswith((".", "?", "!")) or not candidate.rstrip().endswith(","):
+            break
     return False
 
 
@@ -459,29 +487,28 @@ def term_is_nonclaim_structure(line: str, term: str) -> bool:
     return term.casefold() in key.casefold() and not value.strip()
 
 
-def term_is_affirmative_claim(line: str, term: str, readiness_cell: bool = False) -> bool:
+def term_is_affirmative_claim(line: str, term: str, readiness_cell: bool = False,
+                              detection_ids: list[str] | None = None) -> bool:
     stripped = line.strip().strip('`"\'')
     stripped = re.sub(r"(?<!\w)(\*\*|__|\*|_)(?=\S)(.+?)(?<=\S)\1(?!\w)", r"\2", stripped)
     if readiness_cell and stripped.casefold() == term.casefold():
         return True
-    identities = "|".join(re.escape(identity) for identity in DETECTION_IDS)
+    identities = "|".join(re.escape(identity) for identity in
+                          (detection_ids if detection_ids is not None else DETECTION_IDS))
     if re.fullmatch(rf"(?:#{{1,6}}\s+(?:{identities})(?:\s*[:—–-]\s*|\s+)|(?:{identities})\s*[:—–-]\s*){re.escape(term)}\s*[.!]?", stripped, re.IGNORECASE):
         return True
     folded_line = line.casefold()
     folded_term = term.casefold()
     escaped = re.escape(folded_term)
-    predicate = (
-        r"(?:is|are|has|have|proves|establishes|confirms|"
-        r"claims|declares|enables|enabled|observed|approved|authorized|deployed)"
-    )
-    if re.search(rf"\b{predicate}\b.{{0,120}}{escaped}", folded_line):
+    predicate = AFFIRMATIVE_CLAIM_PREDICATE
+    if re.search(rf"(?<![-_\w]){predicate}(?![-_\w]).{{0,120}}{escaped}", folded_line):
         return True
     if folded_term != "production" and re.search(
         rf"\b(?:uses|use)\b.{{0,120}}{escaped}",
         folded_line,
     ):
         return True
-    if re.search(rf"{escaped}.{{0,80}}\b(?:is|are|enabled|true|approved|active)\b", folded_line):
+    if re.search(rf"{escaped}.{{0,80}}(?<![-_\w])(?:is|are|enabled|true|approved|active)(?![-_\w])", folded_line):
         return True
     key_pattern = re.escape(
         re.sub(r"[^a-z0-9]+", "_", folded_term).strip("_")
@@ -552,31 +579,7 @@ def assertive_authority_value(value: object) -> bool:
         # Inspect the mantissa exactly: avoid float underflow/overflow and keep
         # arbitrarily scaled mathematical zero inert.
         return any(character in "123456789" for character in numeric.group(1))
-    normalized = normalize_path_key(value)
-    return normalized in {
-        "active",
-        "approved",
-        "authorized",
-        "closed",
-        "complete",
-        "customer_deployed",
-        "deployed",
-        "enabled",
-        "final",
-        "observed",
-        "production",
-        "production_ready",
-        "public_safe",
-        "granted",
-        "live",
-        "ready",
-        "true",
-        "yes",
-        "on",
-        "runtime_active",
-        "signal_observed",
-        "socaas_active",
-    }
+    return normalize_path_key(value) not in {"off", "no"} and not _explicitly_bounded_authority_value(value)
 
 
 def rejected_contract_fixture_case_ids(repo_root: Path, rel_path: str, fixture: object) -> frozenset[str]:
@@ -720,6 +723,9 @@ def structured_claim_items(
         authority_context and not rejected_fixture_input
         and not (leaf == "requires_human_approval" and value is True and not list_item
                  and "requires_human_approval" not in ancestry[:-1])
+        and not (schema_context and "properties" in ancestry and "examples" not in ancestry
+                 and ((leaf == "type" and value in {"object", "array", "boolean", "string", "integer", "number", "null"})
+                      or (leaf == "enum" and value == "UNKNOWN")))
         and assertive_authority_value(value)
     ):
         items.append(
@@ -758,8 +764,8 @@ def structured_claim_items(
             text = value if detection_id.casefold() in value.casefold() else f"{detection_id}: {value}"
             if bounded_leaf:
                 text = f"{detection_id}: do not claim {value}"
-            items.extend(scan_promotion_terms(text, detection_id, surface, rel_path, enforce))
-            items.extend(scan_status_tokens(text, detection_id, surface, rel_path, enforce))
+            items.extend(scan_promotion_terms(text, detection_id, surface, rel_path, enforce, detection_ids))
+            items.extend(scan_status_tokens(text, detection_id, surface, rel_path, enforce, detection_ids))
     return items
 
 
@@ -782,6 +788,7 @@ def scan_promotion_terms(
     surface: str,
     rel_path: str,
     enforce: bool,
+    detection_ids: list[str] | None = None,
 ) -> list[DriftItem]:
     items: list[DriftItem] = []
     lower_text = text.lower()
@@ -794,13 +801,13 @@ def scan_promotion_terms(
         for index, line in enumerate(lines):
             table_cells = markdown_table_claim_cells(lines, index, term)
             if table_cells is not None:
-                if not line_is_associated_with_detection(lines, index, detection_id):
+                if not line_is_associated_with_detection(lines, index, detection_id, detection_ids):
                     continue
                 for cell, negative_header, readiness_cell in table_cells:
                     if (
                         not negative_header
                         and not has_negative_context(cell)
-                        and term_is_affirmative_claim(cell, term, readiness_cell)
+                        and term_is_affirmative_claim(cell, term, readiness_cell, detection_ids)
                     ):
                         items.append(
                             DriftItem(
@@ -814,11 +821,11 @@ def scan_promotion_terms(
                 continue
             if (
                 term_l in line.lower()
-                and line_is_associated_with_detection(lines, index, detection_id)
+                and line_is_associated_with_detection(lines, index, detection_id, detection_ids)
                 and not term_is_nonclaim_structure(line, term)
-                and not all(has_negative_context_for_phrase(lines, index, term, match.start())
+                and not all(has_negative_context_for_phrase(lines, index, term, match.start(), detection_id, detection_ids)
                             for match in re.finditer(re.escape(term), line, re.IGNORECASE))
-                and term_is_affirmative_claim(line, term)
+                and term_is_affirmative_claim(line, term, detection_ids=detection_ids)
             ):
                 sev = "fail" if enforce else "warning"
                 items.append(
@@ -847,6 +854,7 @@ def scan_status_tokens(
     surface: str,
     rel_path: str,
     enforce: bool,
+    detection_ids: list[str] | None = None,
 ) -> list[DriftItem]:
     items: list[DriftItem] = []
     if detection_id.lower() not in text.lower():
@@ -854,7 +862,7 @@ def scan_status_tokens(
 
     lines = text.splitlines()
     for index, line in enumerate(lines):
-        if not line_is_associated_with_detection(lines, index, detection_id):
+        if not line_is_associated_with_detection(lines, index, detection_id, detection_ids):
             continue
         for token in extract_candidate_status_tokens(line):
             if token in ALLOWED_PROOF_CEILING_TOKENS:
@@ -868,14 +876,13 @@ def scan_status_tokens(
                     continue
             if (
                 token in DANGEROUS_STATUS_TOKENS
-                and not all(has_negative_context_for_phrase(lines, index, token, match.start())
+                and not all(has_negative_context_for_phrase(lines, index, token, match.start(), detection_id, detection_ids)
                             for match in re.finditer(re.escape(token), line, re.IGNORECASE))
                 and not (
-                    line.lstrip().startswith("#")
-                    and any(
-                        has_negative_context(candidate)
-                        for candidate in lines[index + 1 : index + 4]
-                    )
+                    re.fullmatch(rf"\s*#{{1,6}}\s+{re.escape(token)}\s*", line)
+                    and re.fullmatch(r"\s*-?\s*Status\s*:\s*(?:NOT_SATISFIED|BLOCKED|NOT_PUBLIC_SAFE|false|0)\s*",
+                                     next((candidate for candidate in lines[index + 1 : index + 4] if candidate.strip()), ""),
+                                     re.IGNORECASE)
                 )
             ):
                 items.append(
@@ -1079,7 +1086,7 @@ def scan_surface(
                 associated_text = "\n".join(
                     line
                     for index, line in enumerate(lines)
-                    if line_is_associated_with_detection(lines, index, detection_id)
+                    if line_is_associated_with_detection(lines, index, detection_id, detection_ids)
                 )
                 status_by_id[detection_id].update(
                     extract_status_tokens(associated_text)
@@ -1091,6 +1098,7 @@ def scan_surface(
                         surface=surface,
                         rel_path=rel_path,
                         enforce=enforce,
+                        detection_ids=detection_ids,
                     )
                 )
                 drift.extend(
@@ -1100,6 +1108,7 @@ def scan_surface(
                         surface=surface,
                         rel_path=rel_path,
                         enforce=enforce,
+                        detection_ids=detection_ids,
                     )
                 )
                 if surface in PUBLIC_BOUNDARY_SURFACES and prose_contract:
@@ -1149,6 +1158,14 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     return args
 
 
+def governed_detection_ids(validation_root: Path) -> list[str]:
+    packages = _validate_registry_identity(load_registry(validation_root / "validation/VALIDATION_REGISTRY.yml"))
+    identities = [_validate_package_identity(package) for package in packages]
+    if len({identity.casefold() for identity in identities}) != len(identities):
+        raise RegistryFailure("governed detection identities are duplicated")
+    return identities
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv if argv is not None else sys.argv[1:])
     org_root = Path(args.repo_root).resolve()
@@ -1160,7 +1177,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
         "validation": (
             org_root / "hawkinsoperations-validation",
-            ["reports/**/*.json", "validation/**/*.json", "docs/**/*.md"],
+            ["reports/**/*.json", "validation/**/*.json", "validation/VALIDATION_REGISTRY.yml", "docs/**/*.md"],
         ),
         "proof": (
             org_root / "hawkinsoperations-proof",
@@ -1183,7 +1200,13 @@ def main(argv: list[str] | None = None) -> int:
     enforce = args.enforce or args.fail_on_public_promotion
     drift_items: list[DriftItem] = []
     per_surface_status: dict[str, dict[str, set[str]]] = {}
-    all_ids = DETECTION_IDS.copy()
+    try:
+        all_ids = governed_detection_ids(org_root / "hawkinsoperations-validation")
+    except (RegistryFailure, KeyError, TypeError, ValueError, OSError):
+        print("STATUS=fail\nFAIL_COUNT=1\nWARNING_COUNT=0\nUNKNOWN_COUNT=0")
+        print('DRIFT_ITEMS=' + json.dumps([DriftItem("fail", "GLOBAL", "validation", "validation/VALIDATION_REGISTRY.yml",
+              "governed detection inventory unavailable or invalid").to_dict()]))
+        return 1
 
     for surface, (repo_path, patterns) in surface_specs.items():
         items, status_map, unknown = scan_surface(
