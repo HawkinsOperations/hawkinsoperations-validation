@@ -390,6 +390,38 @@ class CrossRepoClaimParityTests(unittest.TestCase):
                 self.assertEqual(unknown, 0)
                 self.assertEqual(items, [])
 
+    def test_owning_authority_aliases_direct_and_nested_fail_in_json_and_yaml(self):
+        for extension in ("json", "yaml"):
+            for assertion in (
+                {"production_ready": True}, {"productionReady": "yes"},
+                {"wrapper": {"production": {"ready": 1}}},
+                {"wrapper": {"aiApprovedDisposition": "approved"}},
+                {"wrapper": {"customer_deployment": "live"}},
+                {"blocked_claims": {"public": {"safeRuntime": True}}},
+            ):
+                with self.subTest(extension=extension, assertion=assertion), tempfile.TemporaryDirectory() as td:
+                    root = Path(td).resolve()
+                    (root / ("status." + extension)).write_text(json.dumps(assertion), encoding="utf-8")
+                    items, _, _ = scanner.scan_surface("proof", root, ["status." + extension], ["HO-DET-001"], True)
+                    self.assertTrue(any("assertive authority value" in item.message for item in items), items)
+            benign = {"productionReady": False, "wrapper": {"production": {"ready": 0}},
+                      "aiApprovedDisposition": "blocked", "customer_deployment": "not_approved"}
+            self.assertEqual(scanner.structured_claim_items(benign, ["HO-DET-001"], "proof", "status.json", True), [])
+
+    def test_prose_casefolds_identity_for_claim_scan_and_status_attribution(self):
+        for identity in ("ho-det-001", "Ho-DeT-001"):
+            with self.subTest(identity=identity), tempfile.TemporaryDirectory() as td:
+                root = Path(td).resolve()
+                (root / "README.md").write_text(identity + " SOURCE_EXISTS\n" + identity + " is production-ready.\n", encoding="utf-8")
+                items, statuses, unknown = scanner.scan_surface("website", root, ["README.md"],
+                                                               ["HO-DET-001", "HO-DET-011"], True)
+                self.assertEqual(unknown, 0)
+                self.assertEqual(statuses["HO-DET-001"], {"SOURCE_EXISTS"})
+                self.assertEqual(statuses["HO-DET-011"], set())
+                self.assertTrue(any(item.detection_id == "HO-DET-001" and "promotion" in item.message for item in items), items)
+                (root / "README.md").write_text(identity + " SOURCE_EXISTS; production-ready remains blocked.\n", encoding="utf-8")
+                self.assertEqual(scanner.scan_surface("website", root, ["README.md"], ["HO-DET-001"], True)[0], [])
+
     def test_sibling_and_descendant_prose_inherit_enclosing_detection_identity(self):
         for record in (
             {"detection_id": "HO-DET-001", "summary": "production-ready is true"},
