@@ -419,7 +419,7 @@ def markdown_table_claim_cells(
     lines: list[str],
     index: int,
     phrase: str,
-) -> list[tuple[str, bool]] | None:
+) -> list[tuple[str, bool, bool]] | None:
     cells = markdown_table_cells(lines[index])
     if cells is None:
         return None
@@ -435,12 +435,13 @@ def markdown_table_claim_cells(
                     break
     if cells and has_negative_context(cells[0]):
         row_is_negative = True
-    result: list[tuple[str, bool]] = []
+    result: list[tuple[str, bool, bool]] = []
     for cell_index, cell in enumerate(cells):
         if phrase.casefold() not in cell.casefold():
             continue
         header = headers[cell_index] if headers and cell_index < len(headers) else ""
-        result.append((cell, row_is_negative or has_negative_context(header)))
+        readiness_header = bool(re.search(r"\b(?:truth\s+label|status|state|claim\s+class)\b", header, re.IGNORECASE))
+        result.append((cell, row_is_negative or has_negative_context(header), readiness_header))
     return result
 
 
@@ -454,7 +455,14 @@ def term_is_nonclaim_structure(line: str, term: str) -> bool:
     return term.casefold() in key.casefold() and not value.strip()
 
 
-def term_is_affirmative_claim(line: str, term: str) -> bool:
+def term_is_affirmative_claim(line: str, term: str, readiness_cell: bool = False) -> bool:
+    stripped = line.strip().strip('`"\'')
+    stripped = re.sub(r"(?<!\w)(\*\*|__|\*|_)(?=\S)(.+?)(?<=\S)\1(?!\w)", r"\2", stripped)
+    if readiness_cell and stripped.casefold() == term.casefold():
+        return True
+    identities = "|".join(re.escape(identity) for identity in DETECTION_IDS)
+    if re.fullmatch(rf"(?:#{{1,6}}\s+(?:{identities})\s+(?:[:—–-]\s*)?|(?:{identities})\s*[:—–-]\s*){re.escape(term)}\s*[.!]?", stripped, re.IGNORECASE):
+        return True
     folded_line = line.casefold()
     folded_term = term.casefold()
     escaped = re.escape(folded_term)
@@ -531,6 +539,11 @@ def assertive_authority_value(value: object) -> bool:
         return value != 0
     if not isinstance(value, str):
         return False
+    numeric = re.fullmatch(r"[+-]?([0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?", unicodedata.normalize("NFKC", value.strip()))
+    if numeric:
+        # Inspect the mantissa exactly: avoid float underflow/overflow and keep
+        # arbitrarily scaled mathematical zero inert.
+        return any(character in "123456789" for character in numeric.group(1))
     normalized = normalize_path_key(value)
     return normalized in {
         "active",
@@ -551,6 +564,7 @@ def assertive_authority_value(value: object) -> bool:
         "ready",
         "true",
         "yes",
+        "on",
         "runtime_active",
         "signal_observed",
         "socaas_active",
@@ -654,10 +668,13 @@ def structured_claim_items(
         mentioned_ids = tuple(identity for identity in detection_ids
                               if identity.casefold() in value.casefold())
         bounded_terms = (*PROMOTION_TERMS, *REQUIRED_BLOCKED_CLAIMS, *DANGEROUS_STATUS_TOKENS)
-        bounded_leaf = leaf in {
+        bounded_leaf = (leaf in {
             "blocked_claims", "blocked_public_claims", "claims_not_supported",
             "does_not_support", "does_not_prove", "not_claimed_here",
-        } and value.strip().casefold() in {term.casefold() for term in bounded_terms}
+        } or list_item and leaf in {
+            "blocked_claim_categories", "unsupported_claims", "required_blocked_claims",
+            "blocked_claim_wording", "blocked_proof_promotions", "not_supported",
+        }) and value.strip().casefold() in {term.casefold() for term in bounded_terms}
         if list_item and leaf in {"not_proven", "blocked_repo_claim"}:
             # These owner fields enumerate blocked noun phrases or quoted claims,
             # never free-form summaries or nested claim-bearing records.
@@ -711,11 +728,11 @@ def scan_promotion_terms(
             if table_cells is not None:
                 if not line_is_associated_with_detection(lines, index, detection_id):
                     continue
-                for cell, negative_header in table_cells:
+                for cell, negative_header, readiness_cell in table_cells:
                     if (
                         not negative_header
                         and not has_negative_context(cell)
-                        and term_is_affirmative_claim(cell, term)
+                        and term_is_affirmative_claim(cell, term, readiness_cell)
                     ):
                         items.append(
                             DriftItem(
@@ -778,7 +795,7 @@ def scan_status_tokens(
             if table_cells is not None:
                 if all(
                     negative_header or has_negative_context(cell)
-                    for cell, negative_header in table_cells
+                    for cell, negative_header, _ in table_cells
                 ):
                     continue
             if (

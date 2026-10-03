@@ -308,6 +308,52 @@ class CrossRepoClaimParityTests(unittest.TestCase):
         )
         self.assertTrue(any("production" in item.message for item in items), items)
 
+    def test_predicate_free_readiness_labels_fail_unless_explicitly_blocked(self):
+        for text in (
+            "# HO-DET-001 — production-ready", "# HO-DET-001 production-ready", "HO-DET-001: production-ready",
+            "# ho-det-001 - runtime-active", "# **HO-DET-001** — **production-ready**",
+            "HO-DET-001: *production-ready*",
+            "| Case | Status |\n|---|---|\n| HO-DET-001 | production-ready |",
+            "| Case | State |\n|---|---|\n| HO-DET-001 | runtime-active |",
+            "| Case | Status |\n|---|---|\n| HO-DET-001 | **production-ready** |",
+        ):
+            with self.subTest(text=text):
+                self.assertTrue(scanner.scan_promotion_terms(text, "HO-DET-001", "website", "README.md", True))
+        for text in (
+            "# HO-DET-001 — production-ready remains blocked", "HO-DET-001: not production-ready",
+            "| Case | Status |\n|---|---|\n| HO-DET-001 | not production-ready |",
+            "| Case | Blocked status |\n|---|---|\n| HO-DET-001 | production-ready |",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(scanner.scan_promotion_terms(text, "HO-DET-001", "website", "README.md", True), [])
+        for field in ("status", "summary"):
+            self.assertTrue(scanner.structured_claim_items({"detection_id": "HO-DET-001", field: "production-ready"},
+                                                           ["HO-DET-001"], "proof", "status.json", True))
+        self.assertEqual(scanner.structured_claim_items({"detection_id": "HO-DET-001", "blocked_claims": ["production-ready"]},
+                                                        ["HO-DET-001"], "proof", "status.json", True), [])
+
+    def test_truthy_string_authority_values_fail_in_json_and_yaml(self):
+        for extension in ("json", "yaml"):
+            for value in ("1", "2", "0.5", "-1", "+2e-3", "1e-400", "１", "on", "ON"):
+                for assertion in ({"runtime_active": value}, {"wrapper": {"production": {"ready": value}}}):
+                    with self.subTest(extension=extension, assertion=assertion), tempfile.TemporaryDirectory() as td:
+                        root = Path(td).resolve()
+                        (root / ("status." + extension)).write_text(json.dumps(assertion), encoding="utf-8")
+                        items, _, _ = scanner.scan_surface("proof", root, ["status." + extension], ["HO-DET-001"], True)
+                        self.assertTrue(any("assertive authority value" in item.message for item in items), items)
+        for value in ("0", "+0.0", "-0e9999", "off", "OFF", "false"):
+            self.assertEqual(scanner.structured_claim_items({"runtime_active": value}, ["HO-DET-001"], "proof", "status.json", True), [])
+
+    def test_owning_denied_term_lists_preserve_exact_terms_without_laundering_assertions(self):
+        for field in ("blocked_claim_categories", "unsupported_claims", "required_blocked_claims",
+                      "blocked_claim_wording", "blocked_proof_promotions", "not_supported"):
+            with self.subTest(field=field):
+                self.assertEqual(scanner.structured_claim_items({"detection_id": "HO-DET-001", field: ["production-ready"]},
+                                                                ["HO-DET-001"], "proof", "status.json", True), [])
+                for bad in ("production-ready = 1", {"summary": "production-ready"}):
+                    self.assertTrue(scanner.structured_claim_items({"detection_id": "HO-DET-001", field: [bad]},
+                                                                   ["HO-DET-001"], "proof", "status.json", True))
+
     def test_common_truthy_authority_values_are_assertive(self):
         for value in (1, -1, "live", "ready", "yes"):
             with self.subTest(value=value):
