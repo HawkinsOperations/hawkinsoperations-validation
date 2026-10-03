@@ -48,8 +48,9 @@ def build_commands(
         if not script_path:
             continue
         command = _script_command(script_path)
-        if label == "validator" and package.get("source_dependency_required") is True:
-            if not _script_supports_source_contract(root, script_path):
+        if label in {"validator", "parity"} and package.get("source_dependency_required") is True:
+            supports_source_contract = _script_supports_source_contract(root, script_path)
+            if label == "validator" and not supports_source_contract:
                 raise ValueError(
                     f"{package.get('detection_id')} validator lacks required source-contract support"
                 )
@@ -60,7 +61,8 @@ def build_commands(
                 raise ValueError(
                     f"{package.get('detection_id')} source dependency must fail closed in required mode"
                 )
-            command.extend(["--source-contract", source_contract])
+            if supports_source_contract:
+                command.extend(["--source-contract", source_contract])
         commands.append((label, command))
     return commands
 
