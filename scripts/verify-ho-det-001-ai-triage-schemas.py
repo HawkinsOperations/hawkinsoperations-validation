@@ -18,6 +18,8 @@ from pathlib import Path
 from copy import deepcopy
 from typing import Any
 
+from validation_lib import ContractFailure, strict_json_object
+
 
 ROOT = Path(__file__).resolve().parents[1]
 INPUT_SCHEMA = ROOT / ".github" / "contracts" / "ho-det-001-ai-triage-input.schema.json"
@@ -91,12 +93,9 @@ def load_json(path: Path, label: str) -> dict[str, Any]:
     if not path.exists():
         fail(f"missing {label}: {path}")
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        fail(f"invalid JSON in {label}: {exc}")
-    if not isinstance(value, dict):
-        fail(f"{label} must be a JSON object")
-    return value
+        return strict_json_object(path.read_text(encoding="utf-8"), label)
+    except ContractFailure as exc:
+        fail(str(exc))
 
 
 def sha256_file(path: Path) -> str:

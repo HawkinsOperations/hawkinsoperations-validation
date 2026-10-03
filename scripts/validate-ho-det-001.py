@@ -15,6 +15,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from validation_report_contract import controlled_report_contract
+from validation_lib import ContractFailure, strict_json_object
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DETECTIONS_ROOT = ROOT.parent / "hawkinsoperations-detections"
@@ -53,9 +56,9 @@ def read_text(path: Path, label: str) -> str:
 
 def load_json(path: Path, label: str) -> dict[str, Any]:
     try:
-        return json.loads(read_text(path, label))
-    except json.JSONDecodeError as exc:
-        fail(f"invalid JSON in {label}: {exc}")
+        return strict_json_object(read_text(path, label), label)
+    except ContractFailure as exc:
+        fail(str(exc))
 
 
 def extract_yaml_list(text: str, key: str) -> list[str]:
@@ -86,7 +89,7 @@ def validate_source_contract(text: str) -> None:
         "detection_id: HO-DET-001",
         "selection_image:",
         "selection_cli:",
-        "condition: selection_image and selection_cli",
+        "condition: (selection_image or selection_original_filename) and selection_cli",
         "Image|endswith:",
         "OriginalFileName|contains:",
         "CommandLine|contains:",
@@ -256,6 +259,11 @@ def main() -> int:
     status = "pass" if fail_count == 0 else "fail"
 
     report = {
+        **controlled_report_contract(
+            "HO-DET-001",
+            "CONTROLLED_TEST_VALIDATED",
+            passed=status == "pass",
+        ),
         "status": status,
         "detection_id": "HO-DET-001",
         "source_file": "hawkinsoperations-detections/detections/successor/ho-det-001/rule.yml",

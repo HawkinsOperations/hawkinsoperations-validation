@@ -11,6 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from validation_lib import ContractFailure, strict_json_object
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SUMMARY_PATH = ROOT / "validation" / "successor" / "ho-det-001" / "llm-summary.json"
@@ -34,9 +36,9 @@ def load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         fail(f"missing triage packet: {path}")
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        fail(f"invalid triage packet JSON: {exc}")
+        return strict_json_object(path.read_text(encoding="utf-8"), "triage packet")
+    except ContractFailure as exc:
+        fail(str(exc))
 
 
 def sha256_repo_text_file(path: Path) -> str:

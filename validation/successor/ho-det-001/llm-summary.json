@@ -2,7 +2,7 @@
   "detection_id": "HO-DET-001",
   "current_proof_ceiling": "CONTROLLED_TEST_VALIDATED",
   "input_packet_ref": "hawkinsoperations-validation/validation/successor/ho-det-001/autosoc-triage-packet.json",
-  "input_packet_hash": "c78127f9413a1303dbd9d55747daf3850015c29d1e5c3fc1305ace1370209994",
+  "input_packet_hash": "80e2899e8a807b79acdb14ed9d4df07e3f35dea634101dea9491f70fa5cd52ce",
   "case_packet_ref": "hawkinsoperations-validation/validation/successor/ho-det-001/case-packet.json",
   "model_runtime_status": "BLOCKED",
   "runtime_status": "BLOCKED",

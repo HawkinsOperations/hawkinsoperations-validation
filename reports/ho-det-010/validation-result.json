@@ -1,8 +1,17 @@
 {
+  "validation_owner": "hawkinsoperations-validation",
+  "source_owner": "hawkinsoperations-detections",
+  "fixture_version": 1,
+  "expected_result": "PASS",
+  "actual_result": "PASS",
+  "report_identity": "HO-DET-010_VALIDATION_RESULT_V1",
+  "parity_identity": "HO-DET-010_RESULT_PARITY_V1",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "human_review_required": true,
+  "ai_disposition_authority": false,
   "status": "pass",
   "detection_id": "HO-DET-010",
   "validation_scope": "controlled-test fixtures only",
-  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
   "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-010",
   "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-010/validation-cases.json",
   "total_cases": 10,
@@ -14,6 +23,7 @@
   "positive": [
     {
       "id": "pos-001-security-4732-admin-add",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "member added to local Administrators group",
@@ -21,6 +31,7 @@
     },
     {
       "id": "pos-002-security-4733-admin-remove",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "member removed from local Administrators group",
@@ -28,6 +39,7 @@
     },
     {
       "id": "pos-003-sysmon-net-localgroup-add",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "net.exe local Administrators membership add command",
@@ -35,6 +47,7 @@
     },
     {
       "id": "pos-004-sysmon-powershell-add-localgroupmember",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "PowerShell local Administrators membership add command",
@@ -42,6 +55,7 @@
     },
     {
       "id": "pos-005-sysmon-powershell-remove-localgroupmember",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "PowerShell local Administrators membership remove command",
@@ -51,6 +65,7 @@
   "negative": [
     {
       "id": "neg-001-approved-helpdesk-admin-add",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "approved local admin workflow",
@@ -58,6 +73,7 @@
     },
     {
       "id": "neg-002-non-admin-group-add",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "non-admin group membership change",
@@ -65,6 +81,7 @@
     },
     {
       "id": "neg-003-account-change-not-group-membership",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "account change only",
@@ -72,6 +89,7 @@
     },
     {
       "id": "neg-004-net-localgroup-query",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "group membership query only",
@@ -79,6 +97,7 @@
     },
     {
       "id": "neg-005-approved-endpoint-remediation-remove",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "approved remediation removal",

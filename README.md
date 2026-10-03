@@ -20,6 +20,37 @@ It does not answer whether a detection is running in production, whether a live 
 | HO-DET-001 validation result | Positive/negative controlled fixture result with missed-positive and false-positive tracking | [`reports/ho-det-001/validation-result.md`](reports/ho-det-001/validation-result.md) | Validation truth only |
 | CI validation gates | Public PR checks for registry, contracts, parity, claim boundaries, and trusted-runner separation | [`.github/workflows`](.github/workflows) | CI checks do not prove live deployment or public-safe runtime proof |
 
+## Source-executed mutation quality
+
+With the detection sibling clean at the exact requested commit, run:
+
+```powershell
+python -B scripts/detection_quality.py --detections-root ../hawkinsoperations-detections --detections-ref <exact-detection-commit>
+python -B scripts/detection_quality.py --detections-root ../hawkinsoperations-detections --detections-ref <exact-detection-commit> --verify <saved-quality.json>
+```
+
+The runner executes six canonical source `detection` predicates against 69
+existing controlled cases. It reports observed confusion matrices, precision,
+recall, F1, real source-mutation witnesses, survivors, errors, source/corpus hashes,
+and executing validator identity. Verification reexecutes all inputs and compares
+the entire report; a report cannot validate itself by supplying a new checksum.
+
+Supported syntax is explicit `and`/`or`/`not` with parentheses, field-map AND,
+value-list OR, exact scalar equality, case-insensitive `contains`/`endswith`/
+`startswith`, and `contains|all`. Missing fields do not match. Unsupported
+conditions, modifiers, wildcards, aliases, duplicate keys, contradictory labels,
+and malformed selected event fields fail closed. This is a bounded offline
+predicate interpreter, not a general Sigma compiler or SIEM backend.
+
+The existing group-owned HO-DET-001 expectations remain unchanged; the other five
+corpora also require their explicit boolean labels to agree with their groups.
+Mutants exist only in memory. Parser errors never count as kills, and survivors
+remain visible for corpus review. The Linux/Windows CI matrix executes these
+controlled paths and replay checks without executing event commands or touching
+endpoints. Source validation does not promote runtime, signal, public-safe proof,
+or case closure. `ChangeWindow` exclusions model controlled fixture enrichment;
+they do not establish trust in metadata supplied by a live event or by AI.
+
 ## Strongest Current Receipts
 
 - **HO-DET-001 controlled validation route**: 14 controlled process-creation cases, 7 positive cases, 7 negative cases, 0 missed positives, and 0 false-positive negatives in [`reports/ho-det-001/validation-result.md`](reports/ho-det-001/validation-result.md).
@@ -91,13 +122,13 @@ Detailed route notes live in [`validation/successor/ho-det-001/README.md`](valid
 | ID-DET-001..004 | Identity-event controlled fixtures | `python -B scripts/validate-id-det-001.py` through `validate-id-det-004.py` | No live IdP or SIEM proof |
 | HO-PIPE-001 | Pipeline route integrity contract fixtures | `python -B scripts/validate-ho-pipe-001.py` | No live Cribl/Wazuh/Splunk route proof |
 | HO-NDR-001 | Security Onion visibility and corroboration samples | `python -B scripts/verify-security-onion-visibility-rollup.py` | Contract samples only |
-| Wazuh logtest | Registry and synthetic sample contract | `python -B scripts/verify_wazuh_logtest_registry.py` | Static CI contract, not live Wazuh routing |
+| Wazuh logtest | Registry and controlled-test sample contract | `python -B scripts/verify_wazuh_logtest_registry.py` | Static CI contract, not live Wazuh routing |
 | HO-LAB-WAZUH-001 | Source/static Wazuh registry lab | `python -B scripts/verify_ho_lab_wazuh_001.py` | Source/static CI contract only |
 
 Run every registry-listed validation package check:
 
 ```powershell
-python -B scripts/verify_validation_registry.py
+python -B scripts/verify_validation_registry.py --source-contract skip-if-missing
 python -B scripts/verify_all_validation_packages.py
 ```
 
@@ -108,13 +139,19 @@ python -B scripts/verify_all_validation_packages.py
 These commands are the safest first path when a reviewer clones only `hawkinsoperations-validation`:
 
 ```powershell
-python -B scripts/verify_validation_registry.py
+python -B scripts/verify_validation_registry.py --source-contract skip-if-missing
 python -B scripts/verify_all_validation_packages.py
 python -B scripts/verify_validation_contract.py
 python -B scripts/verify_wazuh_logtest_registry.py
 python -B scripts/verify_ho_lab_wazuh_001.py
 python -B -m unittest discover -s tests
 ```
+
+The registry command defaults to required source verification. The explicit
+`skip-if-missing` mode checks owned registry/report contracts and labels the
+missing sibling check `SOURCE_CONTRACT=skipped`; an existing, partial, dirty,
+or explicitly supplied source handoff still undergoes strict verification.
+CI keeps required mode and its pinned source checkout.
 
 For HO-DET-001 alone in a single-repo clone:
 

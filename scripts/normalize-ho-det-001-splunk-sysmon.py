@@ -16,6 +16,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from validation_lib import ContractFailure, strict_json_object
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CASES_FILE = ROOT / "validation" / "successor" / "ho-det-001" / "runtime-backend-adapter-cases.json"
@@ -32,14 +34,11 @@ def fail(message: str) -> None:
 
 def load_json(path: Path) -> dict[str, Any]:
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        return strict_json_object(path.read_text(encoding="utf-8"), str(path))
     except FileNotFoundError:
         fail(f"missing input file: {path}")
-    except json.JSONDecodeError as exc:
-        fail(f"invalid JSON in {path}: {exc}")
-    if not isinstance(data, dict):
-        fail(f"{path} must contain a JSON object")
-    return data
+    except ContractFailure as exc:
+        fail(str(exc))
 
 
 def xml_event_id(raw: str) -> str:

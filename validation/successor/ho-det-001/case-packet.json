@@ -57,17 +57,17 @@
     {
       "name": "validation result",
       "path": "hawkinsoperations-validation/reports/ho-det-001/validation-result.json",
-      "sha256": "d5aa74d59b2f32ce85cc438a4e7178e7aee1110ada2c648d9ed5208b8f3b9b14"
+      "sha256": "7072b25e7610382451099931410796d3692d2ecdad99c1d53d7ad45bb3d4793d"
     },
     {
       "name": "autosoc controlled-test packet",
       "path": "hawkinsoperations-validation/validation/successor/ho-det-001/autosoc-triage-packet.json",
-      "sha256": "c78127f9413a1303dbd9d55747daf3850015c29d1e5c3fc1305ace1370209994"
+      "sha256": "80e2899e8a807b79acdb14ed9d4df07e3f35dea634101dea9491f70fa5cd52ce"
     },
     {
       "name": "blocked-runtime LLM stub",
       "path": "hawkinsoperations-validation/validation/successor/ho-det-001/llm-summary.json",
-      "sha256": "cfe50a003b76f009c1c96f359b29c55d522d16e97639de2d2e20aa4aaa002e38"
+      "sha256": "81776ceefa14ed6442cf9350ece852a6240a1900ffdbf4f3ccb6238be183650d"
     }
   ],
   "triage_boundary": {

@@ -14,6 +14,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from validation_lib import ContractFailure, strict_json_object
+
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX_JSON = ROOT / "validation" / "successor" / "ho-det-001" / "private-runtime-evidence-index.json"
@@ -135,12 +137,12 @@ def load_index() -> dict[str, Any]:
     if not INDEX_JSON.exists():
         fail(f"missing private runtime evidence index: {INDEX_JSON}")
     try:
-        value = json.loads(INDEX_JSON.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        fail(f"invalid JSON in private runtime evidence index: {exc}")
-    if not isinstance(value, dict):
-        fail("private runtime evidence index must be a JSON object")
-    return value
+        return strict_json_object(
+            INDEX_JSON.read_text(encoding="utf-8"),
+            "private runtime evidence index",
+        )
+    except ContractFailure as exc:
+        fail(str(exc))
 
 
 def require_equal(actual: Any, expected: Any, label: str) -> None:

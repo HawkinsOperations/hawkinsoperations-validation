@@ -1,8 +1,17 @@
 {
+  "validation_owner": "hawkinsoperations-validation",
+  "source_owner": "hawkinsoperations-detections",
+  "fixture_version": 1,
+  "expected_result": "PASS",
+  "actual_result": "PASS",
+  "report_identity": "HO-DET-013_VALIDATION_RESULT_V1",
+  "parity_identity": "HO-DET-013_RESULT_PARITY_V1",
+  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
+  "human_review_required": true,
+  "ai_disposition_authority": false,
   "status": "pass",
   "detection_id": "HO-DET-013",
   "validation_scope": "controlled-test fixtures only",
-  "proof_ceiling": "CONTROLLED_TEST_VALIDATED",
   "source_reference": "hawkinsoperations-detections/detections/successor/ho-det-013",
   "validation_cases_file": "hawkinsoperations-validation/validation/successor/ho-det-013/validation-cases.json",
   "total_cases": 10,
@@ -14,6 +23,7 @@
   "positive": [
     {
       "id": "pos-001-sysmon-sc-stop-wazuh",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "service stop targeting telemetry agent",
@@ -21,6 +31,7 @@
     },
     {
       "id": "pos-002-security-1102-log-clear",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "security event log cleared",
@@ -28,6 +39,7 @@
     },
     {
       "id": "pos-003-powershell-defender-disable",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "Defender preference tamper pattern",
@@ -35,6 +47,7 @@
     },
     {
       "id": "pos-004-auditpol-disable-success",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "audit policy disable pattern",
@@ -42,6 +55,7 @@
     },
     {
       "id": "pos-005-system-7040-sysmon-disabled",
+      "expected": true,
       "matched": true,
       "pass": true,
       "behavior": "telemetry service disabled",
@@ -51,6 +65,7 @@
   "negative": [
     {
       "id": "neg-001-approved-agent-restart",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "documented maintenance restart",
@@ -58,6 +73,7 @@
     },
     {
       "id": "neg-002-service-query-only",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "service query only",
@@ -65,6 +81,7 @@
     },
     {
       "id": "neg-003-non-security-service-restart",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "non-security service state change",
@@ -72,6 +89,7 @@
     },
     {
       "id": "neg-004-approved-defender-policy",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "approved policy context",
@@ -79,6 +97,7 @@
     },
     {
       "id": "neg-005-lab-maintenance-log-query",
+      "expected": false,
       "matched": false,
       "pass": true,
       "behavior": "log query without clear",

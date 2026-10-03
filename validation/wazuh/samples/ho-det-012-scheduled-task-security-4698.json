@@ -1,9 +1,9 @@
 {
   "detection_id": "HO-DET-012",
-  "sample_scope": "controlled_synthetic_wazuh_logtest_candidate",
+  "sample_scope": "controlled_test_wazuh_logtest_candidate",
   "source_channel": "Security",
   "event_id": 4698,
-  "event_summary": "Synthetic scheduled task creation event for Wazuh rule-source contract validation.",
+  "event_summary": "Controlled-test scheduled task creation event for Wazuh rule-source contract validation.",
   "runtime_status": false,
   "signal_status": false,
   "public_safe_status": "NOT_PUBLIC_SAFE",

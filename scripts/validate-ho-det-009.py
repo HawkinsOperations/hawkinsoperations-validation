@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from validation_report_contract import controlled_report_contract
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DETECTIONS_ROOT = ROOT.parent / "hawkinsoperations-detections"
@@ -145,6 +147,7 @@ def result_row(item: dict[str, Any], expected: bool) -> dict[str, Any]:
     matched = event_matches(item["event"])
     return {
         "id": item["id"],
+        "expected": expected,
         "matched": matched,
         "pass": matched is expected,
         "behavior": item["behavior"],
@@ -161,6 +164,11 @@ def build_report(cases: dict[str, Any], source_contract: str = "required") -> di
     false_positive = [item["id"] for item in neg_results if not item["pass"]]
     status = "pass" if not missed and not false_positive else "fail"
     return {
+        **controlled_report_contract(
+            "HO-DET-009",
+            PROOF_CEILING if status == "pass" else "VALIDATION_DRAFT",
+            passed=status == "pass",
+        ),
         "status": status,
         "detection_id": "HO-DET-009",
         "validation_scope": "controlled-test fixtures only",

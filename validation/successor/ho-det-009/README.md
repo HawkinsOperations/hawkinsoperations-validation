@@ -1,6 +1,6 @@
 # HO-DET-009 Controlled-test Validation
 
-This package validates controlled, synthetic fixtures for Windows local user creation source logic. It does not use live endpoint logs, raw private telemetry, runtime evidence, public proof, or production claims.
+This package validates controlled-test fixtures for Windows local user creation source logic. It does not use live endpoint logs, raw private telemetry, runtime evidence, public proof, or production claims.
 
 ## Scope
 

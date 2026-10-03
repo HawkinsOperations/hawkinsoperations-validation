@@ -18,6 +18,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from validation_lib import ContractFailure, strict_json_object
+
 
 PACKET_ID = "HO-DET-001_CONTROLLED_RUNTIME_SIGNAL_PACKET_001"
 DETECTION_ID = "HO-DET-001"
@@ -134,9 +136,9 @@ class PacketVerifier:
 
     def load_json(self, name: str) -> Any:
         try:
-            return json.loads(self.read_text(name))
-        except json.JSONDecodeError as exc:
-            self.fail("required_files_status", f"{name} is invalid JSON: {exc}", invalid=True)
+            return strict_json_object(self.read_text(name), name)
+        except ContractFailure as exc:
+            self.fail("required_files_status", str(exc), invalid=True)
             return None
 
     def verify_required_files(self) -> None:
