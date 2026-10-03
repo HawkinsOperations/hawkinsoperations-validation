@@ -917,6 +917,9 @@ def _scan_authority_markdown(text: str, path: str) -> None:
         heading = re.fullmatch(r"\s*#{1,6}\s+(.+?)\s*", line)
         if heading:
             flush()
+            _scan_authority_boundaries(
+                heading.group(1), f"{path}:line-{line_number}"
+            )
             current_heading = _normalized_key(heading.group(1))
             continue
         if not line.strip():
@@ -1113,7 +1116,10 @@ def _validate_report_shape(
     unknown = sorted(set(report) - REPORT_ALLOWED_FIELDS)
     if unknown:
         fail(f"{detection_id} report contains unknown fields: {', '.join(unknown)}")
-    if report.get("detection_id", report.get("rule_id")) != detection_id:
+    declared_identities = [
+        report[field] for field in ("detection_id", "rule_id") if field in report
+    ]
+    if not declared_identities or any(identity != detection_id for identity in declared_identities):
         fail(f"{detection_id} report identity is missing or contradictory")
     if package["validation_kind"] == "controlled_validation":
         required_contract = {
