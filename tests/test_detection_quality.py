@@ -427,6 +427,35 @@ class HoDet001FactsTests(unittest.TestCase):
         finally:
             sys.set_int_max_str_digits(previous_limit)
 
+    def test_oversized_receipt_integer_blocks_both_facts_modes_without_context(self):
+        raw = '{"EventID":' + "9" * 5000 + ',"private":"PRIVATE_RECEIPT_SENTINEL"}'
+        event = {"Image": "\\powershell.exe", "CommandLine": "powershell.exe -enc REDACTED"}
+        previous_limit = sys.get_int_max_str_digits()
+        try:
+            sys.set_int_max_str_digits(4300)
+            for mode in (["--facts-case", self.rows[0]["id"]], ["--facts-event", "private-selected-event.json"]):
+                with self.subTest(mode=mode):
+                    stdout, stderr = io.StringIO(), io.StringIO()
+                    with patch.object(quality, "git", side_effect=self.fake_git), \
+                         patch.object(quality, "source_identity", side_effect=self.identity), \
+                         patch.object(quality, "read_ho_det_001_event", return_value=event), \
+                         patch.object(Path, "read_text", return_value=raw) as receipt_reader, \
+                         redirect_stdout(stdout), redirect_stderr(stderr):
+                        result = quality.main(["--detections-root", "private-selected-source", "--detections-ref", "a" * 40,
+                                               "--execution-id", self.execution_id, "--verify", "private-selected-receipt.json", *mode])
+                    receipt_reader.assert_called_once_with(encoding="utf-8")
+                    self.assertEqual(result, 2)
+                    report = json.loads(stdout.getvalue())
+                    self.assertEqual(report["status"], "BLOCKED")
+                    self.assertEqual(report["error"], "selected fact source, input or receipt unavailable or invalid")
+                    self.assertEqual(report["boundary"]["proof_ceiling"], "SOURCE_EXISTS")
+                    self.assertFalse(report["boundary"]["proof_promotion_authority"])
+                    for private in ("PRIVATE_RECEIPT_SENTINEL", "private-selected", "9999999999", "Traceback"):
+                        self.assertNotIn(private, stdout.getvalue() + stderr.getvalue())
+                    self.assertEqual(stderr.getvalue(), "")
+        finally:
+            sys.set_int_max_str_digits(previous_limit)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -543,7 +543,10 @@ def main(argv: list[str] | None = None) -> int:
         else:
             report = run_ho_det_001_facts(args.detections_root, args.detections_ref, args.facts_case, args.execution_id) if args.facts_case else run_quality(args.detections_root, args.detections_ref)
         if args.verify:
-            supplied = strict_json_object(args.verify.read_text(encoding="utf-8"), "quality report")
+            try:
+                supplied = strict_json_object(args.verify.read_text(encoding="utf-8"), "quality report")
+            except ValueError as exc:
+                raise QualityError("supplied quality receipt is invalid") from exc
             if canonical(supplied) != canonical(report):
                 raise QualityError("replayed source execution differs from supplied report")
         print(json.dumps(report, indent=2, sort_keys=True, allow_nan=False))
